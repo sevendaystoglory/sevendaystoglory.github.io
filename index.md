@@ -7,8 +7,23 @@ title: Home
 
 This is the homepage of my personal website. Here you'll find my thoughts, projects, and more.
 
-## Recent Posts
+## Recent Blog Posts
+{% for post in site.posts %}
+  {% if post.category == 'blogs' %}
+    - [{{ post.title }}]({{ post.url | relative_url }}) - {{ post.date | date: "%B %d, %Y" }}
+  {% endif %}
+{% endfor %}
 
-{% for post in site.posts limit:5 %}
-- [{{ post.title }}]({{ post.url | relative_url }}) - {{ post.date | date: "%B %d, %Y" }}
+## Today I Learned
+{% for post in site.posts %}
+  {% if post.category == 'til' %}
+    - [{{ post.title }}]({{ post.url | relative_url }}) - {{ post.date | date: "%B %d, %Y" }}
+  {% endif %}
+{% endfor %}
+
+## Projects
+{% for post in site.posts %}
+  {% if post.category == 'projects' %}
+    - [{{ post.title }}]({{ post.url | relative_url }}) - {{ post.date | date: "%B %d, %Y" }}
+  {% endif %}
 {% endfor %} 

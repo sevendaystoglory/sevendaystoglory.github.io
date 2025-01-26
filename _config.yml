@@ -25,3 +25,22 @@ exclude:
   - .git/ 
   - .gitignore
   - _site/
+
+collections:
+  posts:
+    output: true
+    permalink: /:categories/:year/:month/:day/:title/
+
+defaults:
+  - scope:
+      path: "_posts/blogs"
+    values:
+      category: blogs
+  - scope:
+      path: "_posts/til"
+    values:
+      category: til
+  - scope:
+      path: "_posts/projects"
+    values:
+      category: projects
