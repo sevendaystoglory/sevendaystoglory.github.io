@@ -4,8 +4,8 @@ email: nishantsh2002@gmail.com
 description: >-
   This is my personal website. I've put my projects/blogs/notes here.
   in your document head meta and in your feed.xml site description.
-baseurl: "https://nishant-sharma.com"
-url: "https://nishant-sharma.com"
+baseurl: "" # remove the "/" to prevent double slashes
+url: "http://127.0.0.1:4000" # for local development
 twitter_username: nishantsh2002
 github_username: sevendaystoglory
 
@@ -24,3 +24,4 @@ exclude:
   - vendor
   - .git/ 
   - .gitignore
+  - _site/

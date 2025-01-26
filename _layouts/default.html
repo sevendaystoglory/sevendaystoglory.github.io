@@ -3,18 +3,18 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{{ site.title }}</title>
-    {% raw %}{{ seo }}
-    <link rel="stylesheet" href="{{ "/assets/css/main.scss" | relative_url }}">
-    {{ feed_meta }}{% endraw %}
+    <title>{{ page.title }} | {{ site.title }}</title>
+    {% seo %}
+    <link rel="stylesheet" href="{{ '/assets/css/main.css' | relative_url }}">
+    {% feed_meta %}
 </head>
 <body>
-    {% raw %}{% include navigation.html %}
+    {% include navigation.html %}
     
     <main class="container">
         {{ content }}
     </main>
 
-    {% include footer.html %}{% endraw %}
+    {% include footer.html %}
 </body>
 </html> 
