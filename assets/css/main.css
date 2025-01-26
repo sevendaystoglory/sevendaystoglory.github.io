@@ -34,6 +34,10 @@ body {
     flex: 1;
 }
 
+.post-date {
+    color: #666666;
+}
+
 /* Navigation styles */
 header {
     margin-bottom: 2rem;
@@ -57,7 +61,7 @@ header nav a:hover {
 
 /* Footer styles */
 footer {
-    margin-top: 2rem;
+    margin-top: 4rem;
     text-align: center;
     color: #666;
 }
@@ -128,3 +132,21 @@ footer {
 .post-content {
     flex: 1;
   }
+
+/* Heading styles for #*/
+h1 {
+    color: #2c3e50;
+    font-size: 2.2rem;
+    margin-top: 2rem;
+    margin-bottom: 1rem;
+    font-weight: 600;
+}
+
+/* Heading styles for ##*/
+h2 {
+    color: #34495e;
+    font-size: 1.3rem;
+    margin-top: 3.5rem;
+    margin-bottom: 0.8rem;
+    font-weight: 500;
+}
