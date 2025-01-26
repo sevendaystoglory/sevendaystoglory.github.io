@@ -4,7 +4,7 @@ email: nishantsh2002@gmail.com
 description: >-
   This is my personal website. I've put my projects/blogs/notes here.
   in your document head meta and in your feed.xml site description.
-baseurl: ""
+baseurl: "https://nishant-sharma.com"
 url: "https://nishant-sharma.com"
 twitter_username: nishantsh2002
 github_username: sevendaystoglory
