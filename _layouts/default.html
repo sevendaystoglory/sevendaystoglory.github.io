@@ -3,14 +3,15 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    {% raw %}{% seo %}
+    <title>{{ site.title }}</title>
+    {% raw %}{{ seo }}
     <link rel="stylesheet" href="{{ "/assets/css/main.css" | relative_url }}">
-    {% feed_meta %}{% endraw %}
+    {{ feed_meta }}{% endraw %}
 </head>
 <body>
-    {% raw %}{% include header.html %}
+    {% raw %}{% include navigation.html %}
     
-    <main>
+    <main class="container">
         {{ content }}
     </main>
 
