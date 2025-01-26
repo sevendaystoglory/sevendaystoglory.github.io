@@ -1,0 +1,24 @@
+# Site settings
+title: Nishant Sharma
+email: nishantsh2002@gmail.com
+description: >- 
+This is my personal website. I've put my projects/blogs/notes here.
+baseurl: "" # the subpath of your site, e.g. /blog
+url: "https://nishant-sharma.com" # your site's production URL
+twitter_username: nishantsh2002
+github_username:  sevendaystoglory
+
+# Build settings
+markdown: kramdown
+plugins:
+  - jekyll-feed
+  - jekyll-seo-tag
+  - jekyll-sitemap
+
+# Exclude from processing
+exclude:
+  - Gemfile
+  - Gemfile.lock
+  - node_modules
+  - vendor
+  - .git/ 
