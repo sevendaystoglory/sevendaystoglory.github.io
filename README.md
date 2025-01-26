@@ -1,1 +1,0 @@
-# sevendaystoglory.github.io
