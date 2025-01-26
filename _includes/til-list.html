@@ -1,0 +1,13 @@
+
+<div class="blog-list">
+    {% for post in site.posts %}
+      {% if post.category == 'til' %}
+        <a href="{{ post.url | relative_url }}" class="post-link">
+          <div class="post-item">
+            <h3>{{ post.title }}</h3>
+            <span class="post-date">{{ post.date | date: "%B %d, %Y" }}</span>
+          </div>
+        </a>
+      {% endif %}
+    {% endfor %}
+  </div>

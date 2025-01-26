@@ -29,7 +29,7 @@ exclude:
 collections:
   posts:
     output: true
-    permalink: /:categories/:year/:month/:day/:title/
+    permalink: _posts/:categories/:year/:month/:day/:title/
 
 defaults:
   - scope:

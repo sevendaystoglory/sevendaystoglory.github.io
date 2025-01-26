@@ -5,4 +5,4 @@ title: Projects
 
 # My Projects
 
-List your projects here... 
+{% include projects-list.html %}

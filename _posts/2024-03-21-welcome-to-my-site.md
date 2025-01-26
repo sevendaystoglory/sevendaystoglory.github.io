@@ -3,6 +3,7 @@ layout: post
 title: "Welcome to My Site"
 date: 2024-03-21
 categories: general
+permalink: /til/welcome-to-my-site/
 ---
 
 This is my first blog post! Welcome to my personal site.

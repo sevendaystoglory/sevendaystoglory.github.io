@@ -3,27 +3,22 @@ layout: default
 title: Home
 ---
 
-# Welcome to My Site
+<div class="profile-section">
+  <img src="/assets/images/profile.jpg" alt="Nishant Sharma" class="profile-image">
+  <div class="profile-text">
+    <h1>I'm Nishant</h1>
+    <p>I founded a company called <a href="https://www.insituate.ai">Eigenfrequency Technologies</a> where we wrote AI agents for global banks and supreme courts. I am interested in affective computing. I built <a href="https://play.google.com/store/apps/details?id=com.insituate.nora">Nora</a>. Released to 10,000+ users in Qatar. I've graduated in Physics from IITD'24, with a bachelor's thesis in computational neuroscience. I make art occasionally.</p>
+  </div>
+</div>
 
-This is the homepage of my personal website. Here you'll find my thoughts, projects, and more.
+## Recent Blogs
 
-## Recent Blog Posts
-{% for post in site.posts %}
-  {% if post.category == 'blogs' %}
-    - [{{ post.title }}]({{ post.url | relative_url }}) - {{ post.date | date: "%B %d, %Y" }}
-  {% endif %}
-{% endfor %}
+{% include blog-list.html %}
 
 ## Today I Learned
-{% for post in site.posts %}
-  {% if post.category == 'til' %}
-    - [{{ post.title }}]({{ post.url | relative_url }}) - {{ post.date | date: "%B %d, %Y" }}
-  {% endif %}
-{% endfor %}
+
+{% include til-list.html %}
 
 ## Projects
-{% for post in site.posts %}
-  {% if post.category == 'projects' %}
-    - [{{ post.title }}]({{ post.url | relative_url }}) - {{ post.date | date: "%B %d, %Y" }}
-  {% endif %}
-{% endfor %} 
+
+{% include projects-list.html %}

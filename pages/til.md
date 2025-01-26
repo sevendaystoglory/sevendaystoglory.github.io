@@ -5,4 +5,4 @@ title: Today I Learned
 
 # Today I Learned
 
-Share your learning experiences here... 
+{% include til-list.html %}
