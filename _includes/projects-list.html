@@ -1,11 +1,20 @@
-
 <div class="blog-list">
   {% for post in site.posts %}
     {% if post.category == 'projects' %}
       <a href="{{ post.url | relative_url }}" class="post-link">
         <div class="post-item">
-          <h3>{{ post.title }}</h3>
-          <span class="post-date">{{ post.date | date: "%B %d, %Y" }}</span>
+          <div class="post-content">
+            <h3>{{ post.title }}</h3>
+            <span class="post-date">{{ post.date | date: "%B %d, %Y" }}</span>
+            {% if post.content %}
+              <p class="project-excerpt">{{ post.content | strip_html | truncatewords: 30 }}</p>
+            {% endif %}
+          </div>
+          {% if post.image %}
+            <div class="post-thumbnail-container">
+              <img src="{{ post.image | relative_url }}" alt="{{ post.title }}" class="post-thumbnail">
+            </div>
+          {% endif %}
         </div>
       </a>
     {% endif %}

@@ -11,6 +11,10 @@ title: Home
   </div>
 </div>
 
+## Projects
+
+{% include projects-list.html %}
+
 ## Recent Blogs
 
 {% include blog-list.html %}
@@ -18,7 +22,3 @@ title: Home
 ## Today I Learned
 
 {% include til-list.html %}
-
-## Projects
-
-{% include projects-list.html %}

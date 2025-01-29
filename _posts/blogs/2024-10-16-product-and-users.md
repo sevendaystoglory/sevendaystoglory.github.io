@@ -1,13 +1,14 @@
 ---
 layout: post
 title: "What I Learned About Users and Product Features"
-date: 2024/03/11 
+date: 2024/10/16 
 category: blogs
 image: 
 permalink: /blogs/learning-from-users-and-product-features/
 ---
 
 # What I Learned About Users and Product Features
+<p class="post-date">Oct 16, 2024</p>
 
 This blog is not meant to be a lousy read for everyone. Nor is this a guide filled with expert tips or hard-and-fast rules. I just penned down the learnings that resonated with me about understanding the users and deciding what product features to ship. By way of background, I work as a startup founder of a B2B enterprise platform.
 

@@ -8,6 +8,7 @@ permalink: /blogs/how-many-humans-are-possible/
 ---
 
 # How Many Humans are Possible?
+<p class="post-date">Mar 28, 2024</p>
 
 In this blog, I'll explore the intriguing questions: How many humans have lived on Earth, and how many will there ever be?
 

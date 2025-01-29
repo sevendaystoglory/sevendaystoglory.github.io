@@ -8,6 +8,7 @@ permalink: /blogs/the-war-between-creators-and-proclaimers/
 ---
 
 # The War between Creators and Proclaimers
+<p class="post-date">Feb 2, 2024</p>
 
 > The society that separates its scholars from its warriors will have its thinking done by cowards and its fighting by fools.
 > 

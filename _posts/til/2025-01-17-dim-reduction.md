@@ -4,14 +4,17 @@ title: "How to dimensionally reduce data for the purposes of visualization"
 date: 2025-01-17
 category: til
 permalink: /til/dimensional-reduction
+image: /assets/images/arxiv-papers.png
 ---
 
 # How to dimensionally reduce data for the purposes of visualization
 <p class="post-date">Jan 17, 2025</p>
 
 
-## There are generally two ways to reduce high dimensional data:
+## There are generally the following ways to reduce high dimensional data:
 - [ ] PCA - linear dimensionality reduction using a global covariant matrix
+- [ ] UMAP - Uniform Manifold Approximation and Projection
+- [ ] SVD - Singular Value Decomposition
 - [ ] t-SNE (t-Distributed Stochastic Neighbor Embedding)
 
 ## How does t-SNE work?
@@ -22,4 +25,4 @@ Given a set of points in high dimension space, t-SNE seeks to _preserve the loca
 
 <img src="/assets/images/arxiv-papers.png" width="800" style="max-width: 100%; height: auto;">
 
-*t-SNE visualization of a small subset of human knowledge (from paperscape). Each circle is an arxiv paper and size indicates the number of citations. Sourced from - <a href="https://karpathy.github.io/2016/09/07/phd/">Karpathy's Blog</a>*
+*t-SNE visualization of a small subset of human knowledge (from <a href="https://paperscape.org/">paperscape</a>). Each circle is an arxiv paper and size indicates the number of citations. Sourced from - <a href="https://karpathy.github.io/2016/09/07/phd/">Karpathy's Blog</a>*

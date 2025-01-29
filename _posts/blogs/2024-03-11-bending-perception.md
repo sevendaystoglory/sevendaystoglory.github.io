@@ -8,6 +8,7 @@ permalink: /blogs/bending-perception/
 ---
 
 # Bending People's Perception to Your Will
+<p class="post-date">Mar 11, 2024</p>
 
 <img src="/assets/images/caesar.webp" alt="Caesar in Stone" width="600" style="max-width: 100%; height: auto;">
 
