@@ -146,20 +146,20 @@ h1 {
 
 /* Heading styles for ##*/
 h2 {
-    color: #2c3e50;
-    font-size: 1.8rem;
-    margin-top: 2rem;
-    margin-bottom: 1rem;
-    font-weight: 600;
+    color: #2c3e50 !important;
+    font-size: 1.8rem !important;
+    margin-top: 2rem !important;
+    margin-bottom: 1rem !important;
+    font-weight: 600 !important;
 }
 
 /* Heading styles for ###*/
 h3 {
-    color: #2c3e50;
-    font-size: 1.4rem;
-    margin-top: 2.0rem;
-    margin-bottom: 0.8rem;
-    font-weight: 600;
+    color: #2c3e50 !important;
+    font-size: 1.4rem !important;
+    margin-top: 2.0rem !important;
+    margin-bottom: 0.8rem !important;
+    font-weight: 600 !important;
 }
 
 /* Bold text styles for caption text in *---* */
@@ -182,12 +182,12 @@ em {
 
 /* Link styles */
 a {
-    text-decoration: none;
-    color: #0066cc;
+    text-decoration: none !important;
+    color: #0066cc !important;
 }
 
 a:hover {
-    text-decoration: underline;
+    text-decoration: underline !important;
 }
 
 /* TIL list styles */
