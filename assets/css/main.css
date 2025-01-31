@@ -39,6 +39,12 @@ body {
     color: #666666;
 }
 
+.name-age {
+    display: flex;
+    flex-direction: row;
+    float: bottom
+}
+
 /* Navigation styles */
 header {
     margin-bottom: 2rem;
