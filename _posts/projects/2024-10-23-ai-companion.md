@@ -50,6 +50,8 @@ All of my readings and implementations have produced very apparent differences i
 <img src="/assets/images/difference.jpg" style="max-width : 80%; height : auto">
 *An ERC response is the standard 'Emotion Recognition in Conversation' reply. The ERC 3.2 is the one with ACE framework implemented along with NTVs for mood.*
 
-
 ## Chapter 3: Building an AI buddy for mass market!
 
+... How I built Nora. 
+
+This section is yet to be written.

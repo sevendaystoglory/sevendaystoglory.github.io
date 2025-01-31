@@ -1,7 +1,7 @@
 ---
 layout: post
 title: "How Many Humans are Possible?"
-date: 2024/03/11 
+date: 2024/03/28 
 category: blogs
 image: /assets/images/many-people.jpg
 permalink: /blogs/how-many-humans-are-possible/
