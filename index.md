@@ -10,7 +10,8 @@ title: Home
     <h1 style="display: flex; align-items: flex-end; height: 100%; line-height: 1;">I'm Nishant</h1>
     <p style="display: flex; align-items: flex-end; font-size: 1.0em; color: #999; margin-left: 10px;">22</p>
     </div>
-    <p>I founded <a href="https://www.insituate.ai">Eigenfrequency Technologies</a> where we wrote AI agents for global banks and supreme courts. I've graduated in Physics from IITD'24, with a bachelor's thesis in computational neuroscience. I am interested in AI, neuroscience and HCI - I built <a href="https://play.google.com/store/apps/details?id=com.insituate.nora">Nora</a>. I make art occasionally.</p>
+    <p style="display: flex; align-items: flex-end; font-size: 1.0em; color: #555; margin-top: -10px;">Contact me @ nishant.sharma.iitd@gmail.com</p>
+    <p>I founded <a href="https://www.insituate.ai">Eigenfrequency Technologies</a> where we wrote AI agents for global banks and supreme courts. I've graduated in Physics from IITD'24, with a bachelor's thesis in computational neuroscience. I am interested in AI and ML - I built <a href="https://play.google.com/store/apps/details?id=com.insituate.nora">Nora</a>. Currently working on LLMs. I make art occasionally.</p>
   </div>
 </div>
 
