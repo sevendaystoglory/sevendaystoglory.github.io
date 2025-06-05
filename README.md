@@ -1,6 +1,8 @@
 ## drop me a hi &nbsp;
-<a href="https://x.com/nishantsh2002" target="_blank" rel="noopener noreferrer"><img alt="X (Twitter) Logo" src="https://abs.twimg.com/favicons/twitter.ico" height="18px" />
+<a href="https://x.com/nishantsh2002" target="_blank" rel="noopener noreferrer">
+  <img alt="X (formerly Twitter) Logo" src="https://upload.wikimedia.org/wikipedia/commons/9/9b/X_logo_2023_original.svg" height="18px" style="vertical-align: text-bottom;" />
 </a>
+
 
 ## check out [my webpage](https://nishant-sharma.com)
 all about ai. currently working on LLMs with UCSD. i founded [Eigenfrequency Technologies](https://www.insituate.ai/) where we wrote AI agents for global banks and supreme courts. I've graduated in physics from IITD'24, w/ a thesis in computational neuroscience. i am interested in AI and ML - i built [Nora](https://play.google.com/store/apps/details?id=com.insituate.nora&pli=1). i make art occasionally.
