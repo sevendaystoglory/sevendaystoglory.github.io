@@ -1,6 +1,6 @@
 ## drop me a hi  &nbsp; <a href='https://x.com/nishantsh2002'><img alt="x" src="https://x.com/home" height='18px'/></a>
-
-all about ai. currently working on LLMs with UCSD. i founded [Eigenfrequency Technologies](https://www.insituate.ai/) where we wrote AI agents for global banks and supreme courts. I've graduated in physics from IITD'24, w/ a thesis in computational neuroscience. i am interested in AI and ML - i built Nora. i make art occasionally.
+## visit https://nishant-sharma.com/
+all about ai. currently working on LLMs with UCSD. i founded [Eigenfrequency Technologies](https://www.insituate.ai/) where we wrote AI agents for global banks and supreme courts. I've graduated in physics from IITD'24, w/ a thesis in computational neuroscience. i am interested in AI and ML - i built [Nora](https://play.google.com/store/apps/details?id=com.insituate.nora&pli=1). i make art occasionally.
 
 ## Stats
 <a href='https://github.com/sevendaystoglory/github-stats-transparent'>
