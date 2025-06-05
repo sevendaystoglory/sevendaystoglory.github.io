@@ -1,4 +1,3 @@
-## drop me a hi &nbsp;
 <a href="https://x.com/nishantsh2002" target="_blank" rel="noopener noreferrer">
   <img alt="X " src="https://about.x.com/content/dam/about-twitter/x/large-x-logo.png.twimg.1920.png" height="18px" />
 </a>
