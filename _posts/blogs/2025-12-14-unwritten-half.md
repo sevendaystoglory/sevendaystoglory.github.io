@@ -10,6 +10,9 @@ image: /assets/images/stories.jpg
 # The Unwritten Half of Scientific Research
 <p class="post-date">Dec 15, 2025</p>
 
+Modern ML papers look more polished than ever, yet feel hard to read and harder to build upon. This blog is about the unwritten half of scientific research: the tacit decisions and missing details that never make it into the PDF. At the end, I also point to what a better publishable artifact could look like.
+
+
 ### Scapegoat
 It was November 2025, and I was burnt out from the ICLR review cycle. I kept seeing the same patterns across X. Authors felt the reviews were low effort, and reviewers felt they were drowning in lousy submissions. I was quick to diagnose this issue as stemming from the LLM usage and ranted on X (which wasn't a particularly wise judgement looking back). 
 
@@ -39,11 +42,13 @@ I think two things are broken in ML publishing.
 
 First, as discussed, is writing. The 10-page PDF has become ubiquitous. The real contribution is often small and sharp, but it gets wrapped in a lot of prose whose job is to look like a proper paper.
 
-Second, I will talk about this now, is reproducibility. Even when you understand the main idea, it can still be hard to reproduce the results. That becomes a real problem the moment you want to build on the work. There seems to be some confusion between replication and reproducibility. [ReScience C](https://rescience.github.io/faq) explains this distinction cleanly. Reproducibility means rerunning the same computation and getting the same result. Replication means independently re-implementing and still getting the claim.
+Second, I will talk about this in a bit, is reproducibility. Even when you understand the main idea, it can still be hard to reproduce the results. This becomes a real problem the moment you want to build on the work. (There seems to be some confusion between replication and reproducibility. [ReScience C](https://rescience.github.io/faq) explains this distinction cleanly. Reproducibility means rerunning the same computation and getting the same result. Replication means independently re-implementing and still getting the claim)
 
 These two problems connect. A lot of papers are not written to be self-contained. They assume the reader already knows the background, the common tricks, the usual defaults, and the missing steps. This is why I think stories are worth bringing up.
 
-![image](/assets/images/stories.jpg)
+<img src="/assets/images/stories.jpg" alt="stories" style="max-width: 100%; height: auto;">
+
+*This image of my desk is purely for illustrative purposes. I promise I have a better collection of books at home!*
 
 Stories are not science, and they are not rigorous and "suffer" from a wide gamut of interpretability. But they do one thing really really well: they are self-contained. You can start reading Lord of the Rings at page one. You do not need hidden context from the author to follow what is happening. There is no implied information, and that's why anyone can start reading. That is why an 18-year-old and a 50-year-old can both read it, follow it, and even imagine what a sequel might look like. However, research papers often fail at this. The experienced reader can skim and still get it. The newer reader gets stuck because the paper assumes implied information and implicit steps.
 
@@ -73,9 +78,9 @@ Tacit knowledge is often withheld to monopolize research. If you can prevent peo
 
 Someone in a Hacker News article rightly pointed out that <b> academic papers are like publishing software into a blockchain </b> (not source but binaries, meaning PDFs full of shortcuts): you do not want people to easily find bugs and contribute fixes, so you handwave a lot so that no one can reproduce your exact thing.
 
-The real bottleneck is not reading the PDF. It is everything the PDF cannot carry: the exact data path, the environment, the code, the seeds, et al. If we want papers to be trustworthy and buildable, the paper cannot just describe computation.
+The real bottleneck is not reading the PDF. It is everything the PDF cannot carry: the exact data path, the environment, the code, the seeds, et al. If we want papers to be trustworthy and buildable, the paper cannot just describe computation. To this end, I define the <b> unwritten half </b> of scientific research as the information that is not present in the paper but is required to build on top of it.
 
-The following is one of the most compelling implementations of that idea that I have seen.
+The following is the first thing I’ve seen that makes the unwritten half of scientific research feel publishable.
 
 ### NeuroLibre
 
