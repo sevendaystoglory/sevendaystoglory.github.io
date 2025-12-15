@@ -53,7 +53,7 @@ To clarify, I do not blame PhD researchers who are burdened by the need to publi
 
 ### Incentives that aggravate the PDF problem and the Reproducibility Problem
 
-*Writing for acceptance* A paper serves reviewers and readers at the same time. To a reader, you want clarity and truth. To a reviewer, you want acceptance. So you adopt a pitch-like tone. That pushes authors toward safe looking writing that avoids raising flags.
+*Optimised for Peer Review* A paper serves reviewers and readers at the same time. To a reader, you want clarity and truth. To a reviewer, you want acceptance. So you adopt a pitch-like tone. That pushes authors toward safe looking writing that avoids raising flags.
 
 *No reward for clarity* There is little direct reward for producing work that is optimized for human understanding, especially for humans of different backgrounds. Research is not organized like coursework. A lot of mental horsepower goes into inflating ideas into publishable hunks of 10-page PDFs.
 
@@ -67,9 +67,9 @@ On the bright side, I expect we will see this writing crisis abate soon! There i
 
 We are, however, reaching another mountain which is more strenuous. Even the most powerful chatbots won't be able to help if they cannot see how a paper came about its results!
 
-*Reproducibility is optional* While working on my own research experiments, I often get stuck trying to reproduce results. Responses from authors along the lines of "we used GPT 4 turbo for LLM-as-a-judge evaluations" and it so happens that OpenAI discontinued this model through its API so the past evaluations are of no good use. How convenient. Or "we used a second stage of reranking to get better results" which is nowhere to be seen in the manuscript or the source code but I luckily stumbled upon a GitHub issue that mentions how this is common practice with such methods. Really! Who would've guessed, right? More common are papers with no code available whatsoever, or incomplete bug-ridden code, with parts commented out, and hyperparameters missing. 
+*Reproducibility is optional* While working on my own research experiments, I often get stuck trying to reproduce results. Responses from authors along the lines of "we used GPT 4 turbo for LLM-as-a-judge evaluations" and it so happens that OpenAI discontinued this model through its API so the past evaluations are of no good use. How convenient. Or "we used a second stage of reranking to get better results" which is nowhere to be seen in the manuscript or the source code but I luckily stumbled upon a GitHub issue that mentions how this is common practice with such methods. Really! Who would've guessed, right? More common are papers with incomplete or bug-ridden code, parts commented out, and undefined hyperparameters, or no code available whatsoever.
 
-Tacit knowledge is often withheld to monopolize research. If you can prevent people from building on top of your work, while still having this work out there in public so colleagues appreciate your contributions, while you squeeze out publications on top of your past work, then congratulations! You've achieved what is now common practice. You see what is happening? This tacit information is becoming a moat. I acknowledge it is not always intentional.
+Tacit knowledge is often withheld to monopolize research. If you can prevent people from building on top of your work, while still having this work out there in public so colleagues appreciate your contributions, while you squeeze out publications on top of your past work, then congratulations! You've achieved what is now common practice. You see what is happening? This tacit information is becoming a moat. (I do acknowledge it is not always intentional)
 
 Someone in a Hacker News article rightly pointed out that <b> academic papers are like publishing software into a blockchain </b> (not source but binaries, meaning PDFs full of shortcuts): you do not want people to easily find bugs and contribute fixes, so you handwave a lot so that no one can reproduce your exact thing.
 
