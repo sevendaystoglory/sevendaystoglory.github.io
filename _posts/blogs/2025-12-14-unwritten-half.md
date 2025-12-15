@@ -68,7 +68,7 @@ You know what bothers me even more than unorganization? Unwarranted verbosity. P
 
 ![image](/assets/images/wordcount.png)
 
-On the bright side, I expect we will see this writing crisis abate soon! There is a funny side effect to LLMs democratising access to polished text. Papers have been written lousily and low-effort, polished text — just with the LLMs anything with an iota of generic sounding BS gets accused of as GPT generated. When it gets so easy for everyone to cook up a word salad, and the ability to make one is no longer an indicator of articulation prowess or intellect, people realise this and revert back to using their own style. I'd like to believe that papers would receive the same treatment and improve.
+On the bright side, I expect we will see this writing crisis abate soon. There is a funny side effect to LLMs democratising access to polished text. Papers have been written lousily and low-effort, polished text — just that with LLMs, anything with an iota of generic sounding BS gets accused of as GPT generated. When it gets so easy for everyone to cook up a word salad, and the ability to make one is no longer an indicator of articulation prowess or intellect, people realise this and revert back to using their own style. I'd like to believe that papers would receive the same treatment and improve.
 
 ![image](/assets/images/super.png)
 
@@ -82,24 +82,24 @@ Someone in a Hacker News article rightly pointed out that <b> academic papers ar
 
 The real bottleneck is not reading the PDF. It is everything the PDF cannot carry: the exact data path, the environment, the code, the seeds, et al. If we want papers to be trustworthy and buildable, the paper cannot just describe computation. To this end, I define the <b> unwritten half </b> of scientific research as the information that is not present in the paper but is required to build on top of it.
 
-The following is the first thing I’ve seen that makes the unwritten half of scientific research feel publishable.
+The hanging question is in figuring out how to publish that missing half. Following is the first thing I’ve seen that makes the unwritten half of scientific research publishable.
 
 ### NeuroLibre
 
 ![image](/assets/images/neurolibre.png)
 
-What you see in this image is a living preprint. It looks like a paper, but it behaves like a runnable project. If you’re learning, you can treat the paper like a guided lab with jupyter books. If you’re reviewing, you can check claims easily without becoming tech support, because the whole process to publish here has these checks built-in. If you're building on top, you have all the resources you need here.
+What you see in this image is a living preprint. It looks like a paper, but it behaves like a runnable project. If you’re learning, you can it like a guided lab with jupyter books. If you’re reviewing, you can check claims easily without becoming tech support, because the publishing process has these checks built-in. If you're building on top, you have all the resources you need here.
 
 NeuroLibre is a preprint publishing platform for reproducible, executable research objects. Instead of treating the PDF or the TeX file as the main artifact, a NeuroLibre publication packages the paper with the its code, data, and a defined runtime so the work can be executed from a web browser. NeuroLibre describes these as “reproducible publications” and supports Jupyter notebooks that can be render as a living, interactive preprint.  
 
-A useful way to frame the real value is provenance. Instead of treating plots as final pictures, the paper exposes where they come from and how they were produced. The goal is that results are traceable back to data and code, and executable end to end in the same environment the authors used.
+A useful way to frame the real value of this platform is provenance. Instead of treating plots as just infographic images, the paper exposes where they come from and how they were produced. The goal is that results are traceable back to data and code, and executable end to end in the same environment thath the authors originally used.
 
-NeuroLibre’s review process is primarily technical. Its mainly concerned on whether the resource builds and runs, and whether the reproducibility assets are present and usable, not on judging scientific novelty. NeuroLibre automates the build and reproducibility checks, but humans moderate submissions and run a technical screening process before anything is published.
+NeuroLibre’s review process is primarily technical. Its mainly concerned on whether the resource builds and runs, and whether the reproducibility assets are present and usable, not on judging scientific novelty. NeuroLibre automates the build and reproducibility checks, but humans moderate submissions and run a technical screening process before anything is published. 
 
 ![image](/assets/images/pipeline.png)
 *Illustration of the whole process of putting your article on the platform.*
 
-“If only research outputs were more machine interpretable, searchable and discoverable then research could be incrementally automated and progress would go through the roof.” This is one of my favorite lines from the article [The Business of Extracting Knowledge from Academic Publications](https://www.neurolibre.org/blog/2025/06/26/the-business-of-extracting-knowledge-from-academic-publications/). The spirit of NeuroLibre is an embodiment of this idea.
+“If only research outputs were more machine interpretable, searchable and discoverable then research could be incrementally automated and progress would go through the roof.” This is one of my favorite lines from the article [The Business of Extracting Knowledge from Academic Publications](https://www.neurolibre.org/blog/2025/06/26/the-business-of-extracting-knowledge-from-academic-publications/). The spirit of NeuroLibre is an embodiment of this idea. If we can make publishing on an open platform like fully frictionless for authors, we get much closer to truly complete papers.
 
 ---
 
