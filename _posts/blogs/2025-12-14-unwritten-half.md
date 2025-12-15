@@ -67,6 +67,7 @@ I remember in my senior secondary, when I was preparing for my JEE exam, how wel
 You know what bothers me even more than unorganization? Unwarranted verbosity. People flexing a about the word count in their theses. Once again, as I'd like it to be known, the real problem is not just that papers have more content than necessary. It is that papers hide the information you need to trust them and build on them.
 
 <img src="/assets/images/wordcount.png" alt="wordcount" style="max-width: 60%; height: auto;">
+*A random post I found on X. Representative of what I am trying to convey with the above para.*
 
 On the bright side, I expect we will see this writing crisis abate soon. There is a funny side effect to LLMs democratising access to polished text. Papers have been written lousily and low-effort, polished text — just that with LLMs, anything with an iota of generic sounding BS gets accused of as GPT generated. When it gets so easy for everyone to cook up a word salad, and the ability to make one is no longer an indicator of articulation prowess or intellect, people realise this and revert back to using their own style. I'd like to believe that papers would receive the same treatment and improve.
 
