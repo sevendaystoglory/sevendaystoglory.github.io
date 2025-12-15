@@ -86,11 +86,11 @@ The following is the first thing I’ve seen that makes the unwritten half of sc
 
 ![image](/assets/images/neurolibre.png)
 
-What you see in this image is a living preprint. It looks like a paper, but it behaves like a runnable project. If you’re learning, you can treat the paper like a guided lab with jupyter notebooks. If you’re reviewing, you can check claims easily without becoming tech support, because the whole process to publish here has these checks built-in. If you're building on top, you have all the resources you need here.
+What you see in this image is a living preprint. It looks like a paper, but it behaves like a runnable project. If you’re learning, you can treat the paper like a guided lab with jupyter books. If you’re reviewing, you can check claims easily without becoming tech support, because the whole process to publish here has these checks built-in. If you're building on top, you have all the resources you need here.
 
 NeuroLibre is a preprint publishing platform for reproducible, executable research objects. Instead of treating the PDF or the TeX file as the main artifact, a NeuroLibre publication packages the paper with the its code, data, and a defined runtime so the work can be executed from a web browser. NeuroLibre describes these as “reproducible publications” and supports Jupyter notebooks that can be render as a living, interactive preprint.  
 
-Instead of having plots that show now sense of where the data comes from or how it is manipulated, the idea here is to include that data as a part of the publication. 
+A useful way to frame the real value is provenance. Instead of treating plots as final pictures, the paper exposes where they come from and how they were produced. The goal is that results are traceable back to data and code, and executable end to end in the same environment the authors used.
 
 NeuroLibre’s review process is primarily technical. Its mainly concerned on whether the resource builds and runs, and whether the reproducibility assets are present and usable, not on judging scientific novelty. NeuroLibre automates the build and reproducibility checks, but humans moderate submissions and run a technical screening process before anything is published.
 
@@ -103,7 +103,7 @@ NeuroLibre’s review process is primarily technical. Its mainly concerned on wh
 
 My position and all views, at the time of writing, come from the POV of a beginner in ML research. All views are my own and do not reflect the ideology of my affiliates.
 
-Thanks to Dr. Nikola Stikov for motivating me to write this blog. I got a chance to read some of his writing, and learn about the work he is doing with NeuroLibre.
+Thanks to Dr. Nikola Stikov for motivating me to write this blog. I had the chance to speak with him and share his unconventional, potentially world-changing vision with you.
 
 ### Bib
 
