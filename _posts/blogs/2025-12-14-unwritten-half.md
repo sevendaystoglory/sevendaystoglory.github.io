@@ -95,6 +95,7 @@ Instead of having plots that show now sense of where the data comes from or how 
 NeuroLibre’s review process is primarily technical. Its mainly concerned on whether the resource builds and runs, and whether the reproducibility assets are present and usable, not on judging scientific novelty. NeuroLibre automates the build and reproducibility checks, but humans moderate submissions and run a technical screening process before anything is published.
 
 ![image](/assets/images/pipeline.png)
+*Illustration of the whole process of putting your article on the platform.*
 
 “If only research outputs were more machine interpretable, searchable and discoverable then research could be incrementally automated and progress would go through the roof.” This is one of my favorite lines from the article [The Business of Extracting Knowledge from Academic Publications](https://www.neurolibre.org/blog/2025/06/26/the-business-of-extracting-knowledge-from-academic-publications/). The spirit of NeuroLibre is an embodiment of this idea.
 
