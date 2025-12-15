@@ -102,17 +102,17 @@ Thanks to Dr. Nikola Stikov for motivating me to write this blog. I got a chance
 ### Bib
 
 1. Andrej Karpathy. [A Survival Guide to a PhD (PDF)](http://clouds.cis.unimelb.edu.au/~jbailey/karpathy_phd_guide.pdf)
-2. ICLR 2026 Program Chairs. “[ICLR 2026 Response to Security Incident](https://blog.iclr.cc/iclr-2026-response-to-security-incident/).” ICLR Blog (Dec 3, 2025)
-3. ReScience C. “[FAQ: replication vs reproduction](https://rescience.github.io/faq/)”
-4. alphaXiv. “[Explore](https://alphaxiv.org/)”
-5. alphaXiv. “[alphaXiv: Understand Research Papers](https://chromewebstore.google.com/detail/alphaxiv-understand-resea/hflgfvpicnhnjxonjboaddbedkppjcdl)” (Chrome Web Store listing)
-6. Distill. “[Distill: Latest articles about machine learning](https://distill.pub/)”
+2. ICLR 2026 Program Chairs. [ICLR 2026 Response to Security Incident](https://blog.iclr.cc/iclr-2026-response-to-security-incident/). ICLR Blog (Dec 3, 2025)
+3. ReScience C. [FAQ: replication vs reproduction](https://rescience.github.io/faq/)
+4. alphaXiv. [Explore](https://alphaxiv.org/)
+5. alphaXiv. [alphaXiv: Understand Research Papers](https://chromewebstore.google.com/detail/alphaxiv-understand-resea/hflgfvpicnhnjxonjboaddbedkppjcdl) (Chrome Web Store listing)
+6. Distill. [Distill: Latest articles about machine learning](https://distill.pub/)
 7. Journal of Machine Learning Research (JMLR) ([website](https://jmlr.org/))
 8. Transactions on Machine Learning Research (TMLR) ([website](https://jmlr.org/tmlr/))
-9. Markus Strasser. “[The Business of Extracting Knowledge from Academic Publications](https://theseedsofscience.pub/2021/12/06/the-business-of-extracting-knowledge-from-academic-publications/).” The Seeds of Science
-10. Hacker News discussion page for “[The Business of Extracting Knowledge from Academic Publications](https://news.ycombinator.com/item?id=29462573)” (source for the “papers as binaries on a blockchain” analogy)
+9. Markus Strasser. [The Business of Extracting Knowledge from Academic Publications](https://theseedsofscience.pub/2021/12/06/the-business-of-extracting-knowledge-from-academic-publications/). The Seeds of Science
+10. Hacker News discussion page for [The Business of Extracting Knowledge from Academic Publications](https://news.ycombinator.com/item?id=29462573) (source for the “papers as binaries on a blockchain” analogy)
 11. NeuroLibre ([project site](https://neurolibre.org/))
-12. Agah Karakuzu et al. “[NeuroLibre: A preprint server for full-fledged reproducible neuroscience](https://osf.io/h89js/).” OSF Preprints (DOI: 10.31219/osf.io/h89js)
-13. Agah Karakuzu. “[Toward a woven literature: Open-source infrastructure for reproducible publishing](https://doi.org/10.55458/neurolibre.00041).” NeuroLibre (DOI: 10.55458/neurolibre.00041)
+12. Agah Karakuzu et al. [NeuroLibre: A preprint server for full-fledged reproducible neuroscience](https://osf.io/h89js/). OSF Preprints (DOI: 10.31219/osf.io/h89js)
+13. Agah Karakuzu. [Toward a woven literature: Open-source infrastructure for reproducible publishing](https://doi.org/10.55458/neurolibre.00041). NeuroLibre (DOI: 10.55458/neurolibre.00041)
 14. [ChatGPT and Galactica are taking scientific papers to their logical conclusion](https://qantarot.substack.com/p/chatgpt-and-galactica-are-taking).
 15. Interview. [Nikola Stikov on Open Science inspiration](https://www.youtube.com/watch?v=OSpVDvAQbxE&t=7s)
