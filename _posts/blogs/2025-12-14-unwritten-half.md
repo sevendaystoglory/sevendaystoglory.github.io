@@ -4,12 +4,13 @@ title: "The Unwritten Half of Scientific Research"
 date: 2025/12/14
 category: blogs
 permalink: /blogs/the-unwritten-half-of-scientific-research/
+image: /assets/images/stories.jpg
 ---
 
 # The Unwritten Half of Scientific Research
 <p class="post-date">Dec 15, 2025</p>
 
-### The scapegoat
+### Scapegoat
 It was November 2025, and I was burnt out from the ICLR review cycle. I kept seeing the same patterns across X. Authors felt the reviews were low effort, and reviewers felt they were drowning in lousy submissions. I was quick to diagnose this issue as stemming from the LLM usage and ranted on X (which wasn't a particularly wise judgement looking back). 
 
 ![image](/assets/images/iclr_X.png)
