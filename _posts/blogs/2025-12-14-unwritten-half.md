@@ -86,7 +86,7 @@ The following is the first thing I’ve seen that makes the unwritten half of sc
 
 ![image](/assets/images/neurolibre.png)
 
-What you see in this image is a living preprint. It looks like a paper, but it behaves more like a runnable project.
+What you see in this image is a living preprint. It looks like a paper, but it behaves like a runnable project. If you’re learning, you can treat the paper like a guided lab with jupyter notebooks. If you’re reviewing, you can check claims easily without becoming tech support, because the whole process to publish here has these checks built-in. If you're building on top, you have all the resources you need here.
 
 NeuroLibre is a preprint publishing platform for reproducible, executable research objects. Instead of treating the PDF or the TeX file as the main artifact, a NeuroLibre publication packages the paper with the its code, data, and a defined runtime so the work can be executed from a web browser. NeuroLibre describes these as “reproducible publications” and supports Jupyter notebooks that can be render as a living, interactive preprint.  
 
