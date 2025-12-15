@@ -99,7 +99,7 @@ My position and all views, at the time of writing, come from the POV of a beginn
 
 Thanks to Dr. Nikola Stikov for motivating me to write this blog. I got a chance to read some of his writing, and learn about the work he is doing with NeuroLibre.
 
-### References
+### Bib
 
 1. Andrej Karpathy. [A Survival Guide to a PhD (PDF)](http://clouds.cis.unimelb.edu.au/~jbailey/karpathy_phd_guide.pdf).
 2. ICLR 2026 Program Chairs. “[ICLR 2026 Response to Security Incident](https://blog.iclr.cc/iclr-2026-response-to-security-incident/).” ICLR Blog (Dec 3, 2025).
