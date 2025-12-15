@@ -42,7 +42,7 @@ Second, I will talk about this now, is reproducibility. Even when you understand
 
 These two problems connect. A lot of papers are not written to be self-contained. They assume the reader already knows the background, the common tricks, the usual defaults, and the missing steps. This is why I think stories are worth bringing up.
 
-![image](/assets/images/stories.png)
+![image](/assets/images/stories.jpg)
 
 Stories are not science, and they are not rigorous and "suffer" from a wide gamut of interpretability. But they do one thing really really well: they are self-contained. You can start reading Lord of the Rings at page one. You do not need hidden context from the author to follow what is happening. There is no implied information, and that's why anyone can start reading. That is why an 18-year-old and a 50-year-old can both read it, follow it, and even imagine what a sequel might look like. However, research papers often fail at this. The experienced reader can skim and still get it. The newer reader gets stuck because the paper assumes implied information and implicit steps.
 
@@ -52,9 +52,9 @@ To clarify, I do not blame PhD researchers who are burdened by the need to publi
 
 ### Incentives that aggravate the PDF problem and the Reproducibility Problem
 
-*Writing for acceptance.* A paper serves reviewers and readers at the same time. To a reader, you want clarity and truth. To a reviewer, you want acceptance. So you adopt a pitch-like tone. That pushes authors toward safe looking writing that avoids raising flags.
+*Writing for acceptance* A paper serves reviewers and readers at the same time. To a reader, you want clarity and truth. To a reviewer, you want acceptance. So you adopt a pitch-like tone. That pushes authors toward safe looking writing that avoids raising flags.
 
-*No reward for clarity.* There is little direct reward for producing work that is optimized for human understanding, especially for humans of different backgrounds. Research is not organized like coursework. A lot of mental horsepower goes into inflating ideas into publishable hunks of 10-page PDFs.
+*No reward for clarity* There is little direct reward for producing work that is optimized for human understanding, especially for humans of different backgrounds. Research is not organized like coursework. A lot of mental horsepower goes into inflating ideas into publishable hunks of 10-page PDFs.
 
 I remember in my senior secondary, when I was preparing for my JEE exam, how well organized everything was. Mathematics, organic, inorganic, physical chemistry, and physics were packaged into coaching modules, test series, and notes that compressed two years of knowledge very well. All because of incentive. It was in the best interest of the publisher to organise text for maximal understanding, and have their pupil succeed in an exam of 1.5 million candidates and 1% selection rate.
 
@@ -66,7 +66,7 @@ On the bright side, I expect we will see this writing crisis abate soon! There i
 
 We are, however, reaching another mountain which is more strenuous. Even the most powerful chatbots won't be able to help if they cannot see how a paper came about its results!
 
-[Reproducibility is optional] While working on my own research experiments, I often get stuck trying to reproduce results. Responses from authors along the lines of "we used GPT 4 turbo for LLM-as-a-judge evaluations" and it so happens that OpenAI discontinued this model through its API so the past evaluations are of no good use. How convenient. Or "we used a second stage of reranking to get better results" which is nowhere to be seen in the manuscript or the source code but I luckily stumbled upon a GitHub issue that mentions how this is common practice with such methods. Really! Who would've guessed, right? More common are papers with no code available whatsoever, or incomplete bug-ridden code, with parts commented out, and hyperparameters missing. 
+*Reproducibility is optional* While working on my own research experiments, I often get stuck trying to reproduce results. Responses from authors along the lines of "we used GPT 4 turbo for LLM-as-a-judge evaluations" and it so happens that OpenAI discontinued this model through its API so the past evaluations are of no good use. How convenient. Or "we used a second stage of reranking to get better results" which is nowhere to be seen in the manuscript or the source code but I luckily stumbled upon a GitHub issue that mentions how this is common practice with such methods. Really! Who would've guessed, right? More common are papers with no code available whatsoever, or incomplete bug-ridden code, with parts commented out, and hyperparameters missing. 
 
 Tacit knowledge is often withheld to monopolize research. If you can prevent people from building on top of your work, while still having this work out there in public so colleagues appreciate your contributions, while you squeeze out publications on top of your past work, then congratulations! You've achieved what is now common practice. You see what is happening? This tacit information is becoming a moat. I acknowledge it is not always intentional.
 
@@ -95,3 +95,20 @@ NeuroLibre’s review process is primarily technical. Its mainly concerned on wh
 My position and all views, at the time of writing, come from the POV of a beginner in ML research. All views are my own and do not reflect the ideology of my affiliates.
 
 Thanks to Dr. Nikola Stikov for motivating me to write this blog. I got a chance to read some of his writing, and learn about the work he is doing with NeuroLibre.
+
+### References
+
+1. Andrej Karpathy. [A Survival Guide to a PhD (PDF)](http://clouds.cis.unimelb.edu.au/~jbailey/karpathy_phd_guide.pdf).
+2. ICLR 2026 Program Chairs. “[ICLR 2026 Response to Security Incident](https://blog.iclr.cc/iclr-2026-response-to-security-incident/).” ICLR Blog (Dec 3, 2025).
+3. ReScience C. “[FAQ: replication vs reproduction](https://rescience.github.io/faq/).”
+4. alphaXiv. “[Explore](https://alphaxiv.org/).”
+5. alphaXiv. “[alphaXiv: Understand Research Papers](https://chromewebstore.google.com/detail/alphaxiv-understand-resea/hflgfvpicnhnjxonjboaddbedkppjcdl)” (Chrome Web Store listing).
+6. Distill. “[Distill: Latest articles about machine learning](https://distill.pub/).”
+7. Journal of Machine Learning Research (JMLR) ([website](https://jmlr.org/)).
+8. Transactions on Machine Learning Research (TMLR) ([website](https://jmlr.org/tmlr/)).
+9. Markus Strasser. “[The Business of Extracting Knowledge from Academic Publications](https://theseedsofscience.pub/2021/12/06/the-business-of-extracting-knowledge-from-academic-publications/).” The Seeds of Science.
+10. Hacker News discussion page for “[The Business of Extracting Knowledge from Academic Publications](https://news.ycombinator.com/item?id=29462573)” (source for the “papers as binaries on a blockchain” analogy).
+11. NeuroLibre ([project site](https://neurolibre.org/)).
+12. Agah Karakuzu et al. “[NeuroLibre: A preprint server for full-fledged reproducible neuroscience](https://osf.io/h89js/).” OSF Preprints (DOI: 10.31219/osf.io/h89js).
+13. Agah Karakuzu. “[Toward a woven literature: Open-source infrastructure for reproducible publishing](https://doi.org/10.55458/neurolibre.00041).” NeuroLibre (DOI: 10.55458/neurolibre.00041).
+14. [ChatGPT and Galactica are taking scientific papers to their logical conclusion](https://qantarot.substack.com/p/chatgpt-and-galactica-are-taking).
