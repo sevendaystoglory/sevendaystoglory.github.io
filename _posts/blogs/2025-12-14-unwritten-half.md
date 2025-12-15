@@ -17,6 +17,7 @@ Modern ML papers look more polished than ever, yet feel hard to read and harder 
 It was November 2025, and I was burnt out from the ICLR review cycle. I kept seeing the same patterns across X. Authors felt the reviews were low effort, and reviewers felt they were drowning in lousy submissions. I was quick to diagnose this issue as stemming from the LLM usage and ranted on X (which wasn't a particularly wise judgement looking back). 
 
 <img src="/assets/images/iclr_X.png" alt="image" style="max-width: 70%; height: auto;">
+![alt text](image.png)
 
 I frequently saw posts like this one. [This was my first ICLR submission ... and I must say that I'm not impressed. There may not be a second.](https://x.com/ry4335127356065/status/1994136778228592675?s=20)
 
@@ -48,7 +49,7 @@ These two problems connect. A lot of papers are not written to be self-contained
 
 <img src="/assets/images/stories.jpg" alt="stories" style="max-width: 100%; height: auto;">
 
-*This image of my desk is purely for illustrative purposes. I promise I have a better collection of books at home!*
+*Before you judge my lineup, this is just my desk setup, and my bookshelves at home are better, I promise.*
 
 Stories are not science, and they are not rigorous and "suffer" from a wide gamut of interpretability. But they do one thing really really well: they are self-contained. You can start reading Lord of the Rings at page one. You do not need hidden context from the author to follow what is happening. There is no implied information, and that's why anyone can start reading. That is why an 18-year-old and a 50-year-old can both read it, follow it, and even imagine what a sequel might look like. However, research papers often fail at this. The experienced reader can skim and still get it. The newer reader gets stuck because the paper assumes implied information and implicit steps.
 
