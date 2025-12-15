@@ -1,7 +1,7 @@
 ---
 layout: post
 title: "The Unwritten Half of Scientific Research"
-date: 2025/12/14
+date: 2025/12/15
 category: blogs
 permalink: /blogs/the-unwritten-half-of-scientific-research/
 image: /assets/images/stories.jpg
@@ -15,7 +15,7 @@ It was November 2025, and I was burnt out from the ICLR review cycle. I kept see
 
 ![image](/assets/images/iclr_X.png)
 
-I frequently saw posts like this one. “This was my first ICLR submission ... and I must say that I'm not impressed. There may not be a second.” — https://x.com/ry4335127356065/status/1994136778228592675?s=20
+I frequently saw posts like this one. [This was my first ICLR submission ... and I must say that I'm not impressed. There may not be a second.](https://x.com/ry4335127356065/status/1994136778228592675?s=20)
 
 Or consider this infamous case of a reviewer who always gave 40 verbose Weaknesses and Questions to all the papers they reviewed, then miraculously got convinced by the rebuttal and increased the score to 10, after they were flamed publicly and after the public information leak of OpenReview. I could list hundreds of raging posts, or argue that conferences should allocate substantial screening resources before papers hit the reviewers. However, that would deviate from the goal of this blog. I am not trying to paint someone, or some technology, as the villain. I want to figure out what drives these experiences.
 
@@ -71,7 +71,7 @@ We are, however, reaching another mountain which is more strenuous. Even the mos
 
 Tacit knowledge is often withheld to monopolize research. If you can prevent people from building on top of your work, while still having this work out there in public so colleagues appreciate your contributions, while you squeeze out publications on top of your past work, then congratulations! You've achieved what is now common practice. You see what is happening? This tacit information is becoming a moat. I acknowledge it is not always intentional.
 
-Someone in a Hacker News article rightly pointed out that academic papers are like publishing software into a blockchain (not source but binaries, meaning PDFs full of shortcuts): you do not want people to easily find bugs and contribute fixes, so you handwave a lot so that no one can reproduce your exact thing.
+Someone in a Hacker News article rightly pointed out that <b> academic papers are like publishing software into a blockchain </b> (not source but binaries, meaning PDFs full of shortcuts): you do not want people to easily find bugs and contribute fixes, so you handwave a lot so that no one can reproduce your exact thing.
 
 The real bottleneck is not reading the PDF. It is everything the PDF cannot carry: the exact data path, the environment, the code, the seeds, et al. If we want papers to be trustworthy and buildable, the paper cannot just describe computation.
 
@@ -89,7 +89,7 @@ NeuroLibre’s review process is primarily technical. Its mainly concerned on wh
 
 ![image](/assets/images/pipeline.png)
 
-“If only research outputs were more machine interpretable, searchable and discoverable then research could be incrementally automated and progress would go through the roof.” This is one of my favorite lines from the article _The Business of Extracting Knowledge from Academic Publications_. The spirit of NeuroLibre is an embodiment of this idea.
+“If only research outputs were more machine interpretable, searchable and discoverable then research could be incrementally automated and progress would go through the roof.” This is one of my favorite lines from the article [The Business of Extracting Knowledge from Academic Publications](https://www.neurolibre.org/blog/2025/06/26/the-business-of-extracting-knowledge-from-academic-publications/). The spirit of NeuroLibre is an embodiment of this idea.
 
 ---
 
