@@ -17,7 +17,6 @@ Modern ML papers look more polished than ever, yet feel hard to read and harder 
 It was November 2025, and I was burnt out from the ICLR review cycle. I kept seeing the same patterns across X. Authors felt the reviews were low effort, and reviewers felt they were drowning in lousy submissions. I was quick to diagnose this issue as stemming from the LLM usage and ranted on X (which wasn't a particularly wise judgement looking back). 
 
 <img src="/assets/images/iclr_X.png" alt="image" style="max-width: 70%; height: auto;">
-![alt text](image.png)
 
 I frequently saw posts like this one. [This was my first ICLR submission ... and I must say that I'm not impressed. There may not be a second.](https://x.com/ry4335127356065/status/1994136778228592675?s=20)
 
