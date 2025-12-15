@@ -13,7 +13,7 @@ image: /assets/images/stories.jpg
 ### Scapegoat
 It was November 2025, and I was burnt out from the ICLR review cycle. I kept seeing the same patterns across X. Authors felt the reviews were low effort, and reviewers felt they were drowning in lousy submissions. I was quick to diagnose this issue as stemming from the LLM usage and ranted on X (which wasn't a particularly wise judgement looking back). 
 
-![image](/assets/images/iclr_X.png)
+<img src="/assets/images/iclr_X.png" alt="image" style="max-width: 40%; height: auto;">
 
 I frequently saw posts like this one. [This was my first ICLR submission ... and I must say that I'm not impressed. There may not be a second.](https://x.com/ry4335127356065/status/1994136778228592675?s=20)
 
