@@ -110,7 +110,7 @@ Thanks to Dr. Nikola Stikov for motivating me to write this blog. I had the chan
 
 ### Bib
 
-1. Andrej Karpathy. [A Survival Guide to a PhD (PDF)](http://clouds.cis.unimelb.edu.au/~jbailey/karpathy_phd_guide.pdf)
+1. Andrej Karpathy. [A Survival Guide to a PhD](https://karpathy.github.io/2016/09/07/phd/)
 2. ICLR 2026 Program Chairs. [ICLR 2026 Response to Security Incident](https://blog.iclr.cc/iclr-2026-response-to-security-incident/). ICLR Blog (Dec 3, 2025)
 3. ReScience C. [FAQ: replication vs reproduction](https://rescience.github.io/faq/)
 4. alphaXiv. [Explore](https://alphaxiv.org/)
