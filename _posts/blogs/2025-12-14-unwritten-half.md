@@ -118,7 +118,7 @@ Thanks to Dr. Nikola Stikov for motivating me to write this blog. I had the chan
 6. Distill. [Distill: Latest articles about machine learning](https://distill.pub/)
 7. Journal of Machine Learning Research (JMLR) ([website](https://jmlr.org/))
 8. Transactions on Machine Learning Research (TMLR) ([website](https://jmlr.org/tmlr/))
-9. Markus Strasser. [The Business of Extracting Knowledge from Academic Publications](https://theseedsofscience.pub/2021/12/06/the-business-of-extracting-knowledge-from-academic-publications/). The Seeds of Science
+9. Markus Strasser. [The Business of Extracting Knowledge from Academic Publications](https://markusstrasser.org/extracting-knowledge-from-literature#fundamental-issues-with-structuring-academic-literature-as-a-business)
 10. Hacker News discussion page for [The Business of Extracting Knowledge from Academic Publications](https://news.ycombinator.com/item?id=29462573) (source for the “papers as binaries on a blockchain” analogy)
 11. NeuroLibre ([project site](https://neurolibre.org/))
 12. Agah Karakuzu et al. [NeuroLibre: A preprint server for full-fledged reproducible neuroscience](https://osf.io/h89js/). OSF Preprints (DOI: 10.31219/osf.io/h89js)
