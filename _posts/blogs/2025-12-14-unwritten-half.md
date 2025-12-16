@@ -117,8 +117,8 @@ Thanks to Dr. Nikola Stikov for motivating me to write this blog. I had the chan
 5. Distill. [Distill: Latest articles about machine learning](https://distill.pub/)
 6. Journal of Machine Learning Research (JMLR) ([website](https://jmlr.org/))
 7. Markus Strasser. [The Business of Extracting Knowledge from Academic Publications](https://markusstrasser.org/extracting-knowledge-from-literature#fundamental-issues-with-structuring-academic-literature-as-a-business)
-8. Hacker News discussion page for [The Business of Extracting Knowledge from Academic Publications](https://news.ycombinator.com/item?id=29462573) (source for the “papers as binaries on a blockchain” analogy)
-9. NeuroLibre ([project site](https://neurolibre.org/))
+8. Hacker News discussion page for [The Business of Extracting Knowledge from Academic Publications](https://news.ycombinator.com/item?id=29481061)
+9. NeuroLibre. [project site](https://neurolibre.org/)
 10. Agah Karakuzu. [Toward a woven literature: Open-source infrastructure for reproducible publishing](https://doi.org/10.55458/neurolibre.00041). NeuroLibre (DOI: 10.55458/neurolibre.00041)
 11. [ChatGPT and Galactica are taking scientific papers to their logical conclusion](https://qantarot.substack.com/p/chatgpt-and-galactica-are-taking).
 12. Interview. [Nikola Stikov on Open Science inspiration](https://www.youtube.com/watch?v=OSpVDvAQbxE&t=7s)
