@@ -121,8 +121,7 @@ Thanks to Dr. Nikola Stikov for motivating me to write this blog. I had the chan
 9. Markus Strasser. [The Business of Extracting Knowledge from Academic Publications](https://markusstrasser.org/extracting-knowledge-from-literature#fundamental-issues-with-structuring-academic-literature-as-a-business)
 10. Hacker News discussion page for [The Business of Extracting Knowledge from Academic Publications](https://news.ycombinator.com/item?id=29462573) (source for the “papers as binaries on a blockchain” analogy)
 11. NeuroLibre ([project site](https://neurolibre.org/))
-12. Agah Karakuzu et al. [NeuroLibre: A preprint server for full-fledged reproducible neuroscience](https://osf.io/h89js/). OSF Preprints (DOI: 10.31219/osf.io/h89js)
-13. Agah Karakuzu. [Toward a woven literature: Open-source infrastructure for reproducible publishing](https://doi.org/10.55458/neurolibre.00041). NeuroLibre (DOI: 10.55458/neurolibre.00041)
-14. [ChatGPT and Galactica are taking scientific papers to their logical conclusion](https://qantarot.substack.com/p/chatgpt-and-galactica-are-taking).
-15. Interview. [Nikola Stikov on Open Science inspiration](https://www.youtube.com/watch?v=OSpVDvAQbxE&t=7s)
-16. Does Peer Review Penalize Scientific Risk Taking? [MIT Sloan Review](https://mitsloan.mit.edu/shared/ods/documents?PublicationDocumentID=10562)
+12. Agah Karakuzu. [Toward a woven literature: Open-source infrastructure for reproducible publishing](https://doi.org/10.55458/neurolibre.00041). NeuroLibre (DOI: 10.55458/neurolibre.00041)
+13. [ChatGPT and Galactica are taking scientific papers to their logical conclusion](https://qantarot.substack.com/p/chatgpt-and-galactica-are-taking).
+14. Interview. [Nikola Stikov on Open Science inspiration](https://www.youtube.com/watch?v=OSpVDvAQbxE&t=7s)
+15. Does Peer Review Penalize Scientific Risk Taking? [MIT Sloan Review](https://mitsloan.mit.edu/shared/ods/documents?PublicationDocumentID=10562)
