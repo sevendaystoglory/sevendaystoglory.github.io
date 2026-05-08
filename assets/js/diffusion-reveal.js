@@ -104,10 +104,12 @@
 
     let started = false;
     let aborted = false;
+    let videoMode = true;            // false = sample static <img> (mobile fallback)
     let t0 = 0;
     let duration = 2780;
     let lastCellSize = -1;
     let lastVidOpacity = -1;
+    let lastCanvasOpacity = -1;
 
     const SAT    = 1.30;   // chroma scale around per-cell luminance
     const BRIGHT = 1.06;   // overall brightness multiplier
@@ -124,29 +126,43 @@
       const elapsed = now - t0;
       const t = Math.min(elapsed / duration, 1);
 
-      // Linear ramp of the live <video> from opacity 0 → 1 across the
-      // final 12 frames of the timeline.  Canvas keeps drawing underneath
-      // so the chars and the actual frame visually cross-blend.
-      const fadeStartMs = duration - fadeWindowMs;
-      let vOp = elapsed > fadeStartMs ? Math.min(1, (elapsed - fadeStartMs) / fadeWindowMs) : 0;
-      if (vOp !== lastVidOpacity) {
-        video.style.opacity = vOp;
-        lastVidOpacity = vOp;
+      if (videoMode) {
+        // Linear ramp of the live <video> from opacity 0 → 1 across the
+        // final 12 frames of the timeline.  Canvas keeps drawing underneath
+        // so the chars and the actual frame visually cross-blend.
+        const fadeStartMs = duration - fadeWindowMs;
+        let vOp = elapsed > fadeStartMs ? Math.min(1, (elapsed - fadeStartMs) / fadeWindowMs) : 0;
+        if (vOp !== lastVidOpacity) {
+          video.style.opacity = vOp;
+          lastVidOpacity = vOp;
+        }
+      } else {
+        // Fallback (mobile): the <img> sits underneath at z=0 and is the
+        // final state. Fade the canvas overlay out across the final 0.5 s
+        // so the chars resolve into the static photo.
+        const fadeOutMs = 500;
+        const fadeStartMs = duration - fadeOutMs;
+        let cOp = elapsed > fadeStartMs ? Math.max(0, 1 - (elapsed - fadeStartMs) / fadeOutMs) : 1;
+        if (cOp !== lastCanvasOpacity) {
+          canvas.style.opacity = cOp;
+          lastCanvasOpacity = cOp;
+        }
       }
 
-      // Cover-crop the current video frame onto the 144×144 sample buffer.
-      const vw = video.videoWidth  || W;
-      const vh = video.videoHeight || H;
-      const scale = Math.max(W / vw, H / vh);
-      const dw = vw * scale;
-      const dh = vh * scale;
+      // Cover-crop the source onto the 144×144 sample buffer.
+      const source = videoMode ? video : img;
+      const sw = videoMode ? (video.videoWidth  || W) : (img.naturalWidth  || W);
+      const sh = videoMode ? (video.videoHeight || H) : (img.naturalHeight || H);
+      const scale = Math.max(W / sw, H / sh);
+      const dw = sw * scale;
+      const dh = sh * scale;
       const dx = (W - dw) / 2;
       const dy = (H - dh) / 2;
 
       sCtx.fillStyle = '#000';
       sCtx.fillRect(0, 0, W, H);
       try {
-        sCtx.drawImage(video, dx, dy, dw, dh);
+        sCtx.drawImage(source, dx, dy, dw, dh);
       } catch (e) {
         requestAnimationFrame(frame);
         return;
@@ -239,27 +255,45 @@
 
       if (t < 1) {
         requestAnimationFrame(frame);
-      } else {
+      } else if (videoMode) {
         // Pin the video at full opacity so the static last frame is the
         // final state, regardless of any rAF rounding.
         video.style.opacity = 1;
         lastVidOpacity = 1;
+      } else {
+        // Pin the canvas hidden so only the <img> remains.
+        canvas.style.opacity = 0;
+        lastCanvasOpacity = 0;
       }
     }
 
     function abort() {
-      // Autoplay was blocked or the video never became playable.
-      // Hide the canvas so the underlying <img> (which we never hid) shows.
+      // Autoplay was blocked or the video never became playable. Switch to
+      // the static-source fallback: keep <img> visible underneath, run the
+      // ASCII reveal on top, fade the canvas out at the end. Same look as
+      // the desktop reveal minus the live-photo motion.
       if (started || aborted) return;
       aborted = true;
-      canvas.style.display = 'none';
+      videoMode = false;
+      try { video.pause(); } catch (_) {}
+      runAnimation();
     }
 
     function startAnimation() {
       if (started || aborted) return;
+      runAnimation();
+    }
+
+    function runAnimation() {
+      if (started) return;
       started = true;
-      duration = (video.duration && isFinite(video.duration)) ? video.duration * 1000 : 2780;
-      img.classList.add('is-hidden');           // canvas takes over from here
+      if (videoMode) {
+        duration = (video.duration && isFinite(video.duration)) ? video.duration * 1000 : 2780;
+        img.classList.add('is-hidden');         // canvas takes over from here
+      } else {
+        duration = 3000;                         // fixed-length fallback reveal
+        // Leave <img> visible. The canvas overlay fades out at the end.
+      }
       t0 = performance.now();
       requestAnimationFrame(frame);
     }
