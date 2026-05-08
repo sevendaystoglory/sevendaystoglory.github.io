@@ -98,7 +98,7 @@ img { max-width: 100%; height: auto; display: block; }
     display: block;
     width: 200px;
     height: 200px;
-    border-radius: 50%;
+    border-radius: 0;
     overflow: hidden;
     border: 1px solid var(--border);
     background: #0a0a0a;
