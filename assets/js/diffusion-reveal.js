@@ -41,12 +41,14 @@
   // bin 3: gradient ≈ −45° / +135°   → '\' diagonal edge   → '\'
   const DIRGLYPH = ['|', '/', '-', '\\'];
 
-  // Cell side per timeline phase.  Internal grid is 144 px so all cells fit.
+  // Cell side per timeline phase.  Internal grid is 144 px so every cell
+  // size below divides cleanly: 8, 6, 4, 3, 2.
   function cellSizeAt(t) {
-    if (t < 0.22) return 8;
-    if (t < 0.45) return 6;
-    if (t < 0.72) return 4;
-    return 3;
+    if (t < 0.20) return 8;
+    if (t < 0.40) return 6;
+    if (t < 0.62) return 4;
+    if (t < 0.85) return 3;
+    return 2;
   }
 
   function start() {
@@ -113,7 +115,10 @@
       ctx.fillRect(0, 0, W, H);
 
       if (cs !== lastCellSize) {
-        ctx.font = '600 ' + (cs + 2) + 'px ui-monospace, "SF Mono", Menlo, Consolas, monospace';
+        // Slightly oversize the glyph for cs ≥ 3, but keep the smallest
+        // cell's font tight so chars don't bleed into neighbours.
+        const fontPx = cs >= 3 ? (cs + 2) : (cs + 1);
+        ctx.font = '600 ' + fontPx + 'px ui-monospace, "SF Mono", Menlo, Consolas, monospace';
         lastCellSize = cs;
       }
 
@@ -156,14 +161,14 @@
           const gMag = (gx < 0 ? -gx : gx) + (gy < 0 ? -gy : gy);
 
           let ch;
-          if (gMag > edgeThresh) {
-            // Edge cell: pick directional glyph perpendicular to gradient
+          // Skip edge detection at the smallest cell — gradients from
+          // just 2 samples per edge are too noisy to be reliable.
+          if (cs >= 3 && gMag > edgeThresh) {
             let ang = Math.atan2(gy, gx);
             if (ang < 0) ang += Math.PI;
             const bin = (((ang + PI8) % Math.PI) / PI4) | 0;
             ch = DIRGLYPH[bin];
           } else {
-            // Flat cell: pick by luminance from density ramp
             ch = RAMP[((lumAvg / 255) * (RAMP_LEN - 1)) | 0];
           }
 
