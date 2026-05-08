@@ -454,8 +454,8 @@ h1 {
     position: absolute;
     right: 0;
     bottom: calc(100% - 6px);
-    width: 160px;
-    height: 100px;
+    width: 220px;
+    height: 140px;
     border-radius: 4px;
     overflow: hidden;
     border: 1px solid var(--border-soft);
@@ -468,12 +468,16 @@ h1 {
     transition: opacity 0.22s ease, transform 0.22s ease;
     z-index: 5;
 }
+/* !important needed to override the global .container img post-content
+   rule, which has (0,4,2) specificity from its three :not() pseudos. */
 .news-preview img {
-    width: 100%;
-    height: 100%;
+    width: 100% !important;
+    height: 100% !important;
+    max-width: none !important;
+    margin: 0 !important;
+    border-radius: 0 !important;
     object-fit: cover;
     display: block;
-    margin: 0;
 }
 .news-item:hover .news-preview {
     opacity: 1;
