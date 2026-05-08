@@ -33,6 +33,11 @@ title: Home
 </section>
 
 <section class="section">
+  <h2 class="section-title">News</h2>
+  {% include news-list.html %}
+</section>
+
+<section class="section">
   <h2 class="section-title">Selected Publications</h2>
   <p class="section-note">Authors who equally contributed to a publication are marked with a † (dagger).</p>
   {% include publications-list.html %}
