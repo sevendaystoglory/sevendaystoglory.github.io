@@ -293,11 +293,8 @@ h2 {
     margin: 2.4rem 0 1rem;
     letter-spacing: 0;
 }
-/* Only homepage section dividers carry the underline. */
 .section-title {
     margin: 0 0 1.25rem;
-    padding-bottom: 0.4rem;
-    border-bottom: 1px solid var(--border);
 }
 
 /* Replace markdown horizontal rules with vertical breathing room. */
