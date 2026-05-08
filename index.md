@@ -34,11 +34,6 @@ title: Home
 </section>
 
 <section class="section">
-  <h2 class="section-title">Recent Writing</h2>
-  {% include blog-list.html %}
-</section>
-
-<section class="section">
-  <h2 class="section-title">Today I Learned</h2>
-  {% include til-list.html %}
+  <h2 class="section-title">Writing / TIL</h2>
+  {% include writing-list.html %}
 </section>

@@ -554,6 +554,21 @@ h1 {
 
 .til-link { font-size: 0.95rem; }
 
+.news-tag {
+    display: inline-block;
+    font-family: var(--sans);
+    font-size: 0.62rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    background: var(--cream-2);
+    color: var(--ink-muted);
+    padding: 0.1em 0.5em;
+    border-radius: 3px;
+    margin-left: 0.55em;
+    vertical-align: 1px;
+}
+
 /* ------------------------------------------------------------------
    Long-form post body styling (used on individual posts)
 ------------------------------------------------------------------ */
