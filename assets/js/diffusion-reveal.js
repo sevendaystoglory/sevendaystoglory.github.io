@@ -1,222 +1,166 @@
-// Phase-retrieval reveal of the profile photo.
+// ASCII reveal of the profile Live Photo.
 //
-// Setup: let X[k] = |X[k]| · e^{i θ_true[k]} be the 2D DFT of the photo.
-// Pick a Hermitian-symmetric random phase field θ_rand[k] (so the inverse
-// FFT stays real-valued).  Define the time-varying spectrum
+// The hidden <video> plays the iPhone Live Photo in real time. Each
+// requestAnimationFrame we draw the current video frame onto a 128×128
+// sampling canvas, partition it into square cells, average each cell's
+// RGB → pick a glyph from a luminance ramp (light → dense) → paint that
+// glyph in the cell's mean color on the visible canvas.
 //
-//     X_t[k] = |X[k]| · exp( i · θ_t[k] ),
-//     θ_t[k] = θ_rand[k] + s(t) · Δθ[k],   Δθ = shortest-arc(θ_true − θ_rand)
-//
-// where s(t) ∈ [0,1] is a smoothstep ease.  Then the displayed frame is
-//
-//     x(t) = Re{ F^{−1}{ X_t } }
-//
-// Endpoints: at s=0, magnitude is exactly |X[k]| but phases are random →
-// "textured noise" with the photo's exact spatial-frequency statistics.
-// At s=1, X_t = X exactly → photo.  In between, phases continuously rotate
-// toward truth on the unit circle ("phasing into focus") — this is the
-// classical phase-retrieval picture from optics / X-ray crystallography.
-//
-// Hermitian symmetry: θ_rand[−k] ≡ −θ_rand[k] (mod 2π), and self-conjugate
-// bins (DC, Nyquist) keep their original real phase 0 or π.  Without this
-// the inverse FFT would have a non-zero imaginary part.
+// "Density grows with time" = the cell side shrinks in 5 discrete steps
+// across the video's duration: 16 → 12 → 8 → 6 → 4 px. So early frames
+// look like ~8×8 colored chunks of glyph; later frames pack ~32×32 finer
+// glyphs and start to resolve the actual photo. When the video ends we
+// crossfade to the crisp <img>, which is exactly the video's last frame.
 
 (function () {
   if (!window.requestAnimationFrame) return;
   if (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
 
-  const img = document.querySelector('.sidebar-photo');
+  const video  = document.querySelector('.sidebar-photo-video');
   const canvas = document.querySelector('.sidebar-photo-canvas');
-  if (!img || !canvas) return;
+  const img    = document.querySelector('.sidebar-photo');
+  if (!video || !canvas || !img) return;
 
-  const N = 128;
-  const N2 = N * N;
-  const HALF = N >> 1;
-  const TWO_PI = 2 * Math.PI;
+  // Standard 70-glyph luminance ramp, light → dense.
+  const CHARSET = " .'`^\",:;Il!i><~+_-?][}{1)(|/tfjrxnuvczXYUJCLQ0OZmwqpdbkhao*#MW&8%B@$";
+  const CHAR_LEN = CHARSET.length;
 
-  // -------- in-place radix-2 Cooley–Tukey 1D FFT --------------------
-  function fft1d(re, im, n, inverse) {
-    for (let i = 1, j = 0; i < n; i++) {
-      let bit = n >> 1;
-      for (; j & bit; bit >>= 1) j ^= bit;
-      j ^= bit;
-      if (i < j) {
-        let t = re[i]; re[i] = re[j]; re[j] = t;
-        t = im[i]; im[i] = im[j]; im[j] = t;
-      }
-    }
-    const sign = inverse ? 1 : -1;
-    for (let len = 2; len <= n; len <<= 1) {
-      const half = len >> 1;
-      const ang = sign * TWO_PI / len;
-      const wnRe = Math.cos(ang);
-      const wnIm = Math.sin(ang);
-      for (let i = 0; i < n; i += len) {
-        let wr = 1, wi = 0;
-        for (let k = 0; k < half; k++) {
-          const a = i + k;
-          const b = a + half;
-          const tRe = wr * re[b] - wi * im[b];
-          const tIm = wr * im[b] + wi * re[b];
-          re[b] = re[a] - tRe;
-          im[b] = im[a] - tIm;
-          re[a] += tRe;
-          im[a] += tIm;
-          const nwr = wr * wnRe - wi * wnIm;
-          wi = wr * wnIm + wi * wnRe;
-          wr = nwr;
-        }
-      }
-    }
-    if (inverse) {
-      const inv = 1 / n;
-      for (let i = 0; i < n; i++) { re[i] *= inv; im[i] *= inv; }
-    }
-  }
-
-  function fft2d(re, im, w, h, inverse) {
-    const lineRe = new Float64Array(Math.max(w, h));
-    const lineIm = new Float64Array(Math.max(w, h));
-    for (let y = 0; y < h; y++) {
-      const off = y * w;
-      for (let x = 0; x < w; x++) { lineRe[x] = re[off + x]; lineIm[x] = im[off + x]; }
-      fft1d(lineRe, lineIm, w, inverse);
-      for (let x = 0; x < w; x++) { re[off + x] = lineRe[x]; im[off + x] = lineIm[x]; }
-    }
-    for (let x = 0; x < w; x++) {
-      for (let y = 0; y < h; y++) { lineRe[y] = re[y * w + x]; lineIm[y] = im[y * w + x]; }
-      fft1d(lineRe, lineIm, h, inverse);
-      for (let y = 0; y < h; y++) { re[y * w + x] = lineRe[y]; im[y * w + x] = lineIm[y]; }
-    }
+  // 5-step cell schedule across the video timeline.
+  function cellSizeAt(t) {
+    if (t < 0.20) return 16;
+    if (t < 0.40) return 12;
+    if (t < 0.60) return 8;
+    if (t < 0.80) return 6;
+    return 4;
   }
 
   function start() {
-    const off = document.createElement('canvas');
-    off.width = N;
-    off.height = N;
-    const offCtx = off.getContext('2d');
-
-    let imgData;
-    try {
-      const iw = img.naturalWidth || N;
-      const ih = img.naturalHeight || N;
-      const scale = Math.max(N / iw, N / ih);
-      const dw = iw * scale;
-      const dh = ih * scale;
-      offCtx.drawImage(img, (N - dw) / 2, (N - dh) / 2, dw, dh);
-      imgData = offCtx.getImageData(0, 0, N, N);
-    } catch (e) {
-      return;
-    }
-    const px = imgData.data;
-
-    // ---- One-time prep: per channel compute |X|, θ_true, θ_rand, Δθ -----
-    const magX       = [new Float64Array(N2), new Float64Array(N2), new Float64Array(N2)];
-    const thetaStart = [new Float64Array(N2), new Float64Array(N2), new Float64Array(N2)];
-    const thetaDelta = [new Float64Array(N2), new Float64Array(N2), new Float64Array(N2)];
-
-    const tmpRe = new Float64Array(N2);
-    const tmpIm = new Float64Array(N2);
-
-    for (let c = 0; c < 3; c++) {
-      // Load channel as real signal
-      for (let i = 0; i < N2; i++) {
-        tmpRe[i] = px[i * 4 + c] / 255;
-        tmpIm[i] = 0;
-      }
-      // X = F{x_0}
-      fft2d(tmpRe, tmpIm, N, N, false);
-
-      // Cache magnitude and true phase
-      const mag = magX[c];
-      const tt = new Float64Array(N2);
-      for (let i = 0; i < N2; i++) {
-        const r = tmpRe[i], im = tmpIm[i];
-        mag[i] = Math.sqrt(r * r + im * im);
-        tt[i] = Math.atan2(im, r);
-      }
-
-      // Generate Hermitian-symmetric random phases.
-      const tr = thetaStart[c];
-      const visited = new Uint8Array(N2);
-      for (let y = 0; y < N; y++) {
-        for (let x = 0; x < N; x++) {
-          const idx = y * N + x;
-          if (visited[idx]) continue;
-          const cy = (N - y) % N;
-          const cx = (N - x) % N;
-          const conj = cy * N + cx;
-          if (idx === conj) {
-            // Self-conjugate (DC, Nyquist) — phase must be 0 or π. Keep truth.
-            tr[idx] = tt[idx];
-          } else {
-            const ang = (Math.random() * 2 - 1) * Math.PI;
-            tr[idx] = ang;
-            tr[conj] = -ang;
-            visited[conj] = 1;
-          }
-          visited[idx] = 1;
-        }
-      }
-
-      // Δθ = shortest-arc(θ_true − θ_rand) so phases rotate the short way
-      const td = thetaDelta[c];
-      for (let i = 0; i < N2; i++) {
-        let d = tt[i] - tr[i];
-        if (d > Math.PI) d -= TWO_PI;
-        else if (d < -Math.PI) d += TWO_PI;
-        td[i] = d;
-      }
-    }
-
-    // ---- Display setup ---------------------------------------------------
-    canvas.width = N;
-    canvas.height = N;
+    const W = 128, H = 128;                                 // internal grid
+    const dpr = Math.min(window.devicePixelRatio || 1, 2);  // crisper text
+    canvas.width  = W * dpr;
+    canvas.height = H * dpr;
+    canvas.style.width  = '100%';
+    canvas.style.height = '100%';
     const ctx = canvas.getContext('2d');
-    const out = ctx.createImageData(N, N);
-    const outData = out.data;
-    for (let i = 0; i < N2; i++) outData[i * 4 + 3] = 255;
+    ctx.scale(dpr, dpr);
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
 
-    const wRe = new Float64Array(N2);
-    const wIm = new Float64Array(N2);
+    // Off-screen canvas used to read pixel data from the <video>.
+    const sample = document.createElement('canvas');
+    sample.width = W;
+    sample.height = H;
+    const sCtx = sample.getContext('2d', { willReadFrequently: true });
 
     img.classList.add('is-hidden');
 
-    const duration = 3500;
-    const t0 = performance.now();
+    let started = false;
+    let t0 = 0;
+    let duration = 2780;
+    let lastCellSize = -1;
 
     function frame(now) {
-      const p = Math.min((now - t0) / duration, 1);
-      const s = p * p * (3 - 2 * p); // smoothstep
+      const elapsed = now - t0;
+      const t = Math.min(elapsed / duration, 1);
 
-      for (let c = 0; c < 3; c++) {
-        const mag = magX[c];
-        const tr  = thetaStart[c];
-        const td  = thetaDelta[c];
-        for (let i = 0; i < N2; i++) {
-          const theta = tr[i] + s * td[i];
-          const m = mag[i];
-          wRe[i] = m * Math.cos(theta);
-          wIm[i] = m * Math.sin(theta);
-        }
-        fft2d(wRe, wIm, N, N, true);
-        for (let i = 0; i < N2; i++) {
-          let v = wRe[i] * 255;
-          if (v < 0) v = 0; else if (v > 255) v = 255;
-          outData[i * 4 + c] = v;
+      // Cover-crop the current video frame onto the 128×128 sample buffer
+      const vw = video.videoWidth  || W;
+      const vh = video.videoHeight || H;
+      const scale = Math.max(W / vw, H / vh);
+      const dw = vw * scale;
+      const dh = vh * scale;
+      const dx = (W - dw) / 2;
+      const dy = (H - dh) / 2;
+
+      sCtx.fillStyle = '#000';
+      sCtx.fillRect(0, 0, W, H);
+      try {
+        sCtx.drawImage(video, dx, dy, dw, dh);
+      } catch (e) {
+        requestAnimationFrame(frame);
+        return;
+      }
+      const data = sCtx.getImageData(0, 0, W, H).data;
+
+      const cs   = cellSizeAt(t);
+      const cols = (W / cs) | 0;
+      const rows = (H / cs) | 0;
+
+      // Clear with the wrap's bg so glyph color carries the image
+      ctx.fillStyle = '#0a0a0a';
+      ctx.fillRect(0, 0, W, H);
+
+      if (cs !== lastCellSize) {
+        ctx.font = '600 ' + (cs + 2) + 'px ui-monospace, "SF Mono", Menlo, Consolas, monospace';
+        lastCellSize = cs;
+      }
+
+      const cellPx = cs * cs;
+
+      for (let r = 0; r < rows; r++) {
+        const y0 = r * cs;
+        for (let c = 0; c < cols; c++) {
+          const x0 = c * cs;
+
+          // Average the cell's RGB
+          let rs = 0, gs = 0, bs = 0;
+          for (let yy = 0; yy < cs; yy++) {
+            const rowOff = (y0 + yy) * W;
+            for (let xx = 0; xx < cs; xx++) {
+              const px = (rowOff + x0 + xx) << 2;
+              rs += data[px];
+              gs += data[px + 1];
+              bs += data[px + 2];
+            }
+          }
+          const ra = rs / cellPx;
+          const ga = gs / cellPx;
+          const ba = bs / cellPx;
+
+          // Luminance → glyph index (light → dense ramp; bright pixel = denser glyph)
+          const lum = 0.299 * ra + 0.587 * ga + 0.114 * ba;
+          const ch  = CHARSET[((lum / 255) * (CHAR_LEN - 1)) | 0];
+
+          ctx.fillStyle = 'rgb(' + (ra | 0) + ',' + (ga | 0) + ',' + (ba | 0) + ')';
+          ctx.fillText(ch, x0 + cs * 0.5, y0 + cs * 0.5);
         }
       }
 
-      ctx.putImageData(out, 0, 0);
-
-      if (p < 1) {
+      if (t < 1) {
         requestAnimationFrame(frame);
       } else {
+        // Crossfade to the crisp last frame.
         img.classList.remove('is-hidden');
       }
     }
 
-    requestAnimationFrame(frame);
+    function begin() {
+      if (started) return;
+      started = true;
+      duration = (video.duration && isFinite(video.duration)) ? video.duration * 1000 : 2780;
+      t0 = performance.now();
+      const playPromise = video.play();
+      if (playPromise && typeof playPromise.catch === 'function') {
+        playPromise.catch(function () {
+          // Autoplay blocked: just reveal the static photo.
+          img.classList.remove('is-hidden');
+        });
+      }
+      requestAnimationFrame(frame);
+    }
+
+    if (video.readyState >= 2) {
+      begin();
+    } else {
+      video.addEventListener('loadeddata', begin, { once: true });
+      video.addEventListener('canplay',   begin, { once: true });
+      // Safety net if the video never fires the events (network issue, etc.)
+      setTimeout(function () {
+        if (!started) {
+          img.classList.remove('is-hidden');
+        }
+      }, 6000);
+    }
   }
 
   if (img.complete && img.naturalWidth > 0) {
