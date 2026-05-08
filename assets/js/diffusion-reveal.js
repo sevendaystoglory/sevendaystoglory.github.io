@@ -16,7 +16,10 @@
 //
 // Cell size shrinks 8 → 6 → 4 → 3 in 4 discrete steps across the video
 // timeline, so glyph density grows as the photo materializes.  When the
-// video ends we crossfade to the crisp <img> (the video's last frame).
+// video ends we freeze on the last rendered ASCII frame — that frozen
+// frame *is* the final state.  The <img> is hidden the moment JS runs
+// and never reappears; it remains in the DOM purely for SEO and no-JS
+// fallback.
 
 (function () {
   if (!window.requestAnimationFrame) return;
@@ -66,47 +69,18 @@
     img.classList.add('is-hidden');
 
     let started = false;
-    let imgFadeStarted = false;
     let t0 = 0;
     let duration = 2780;
     let lastCellSize = -1;
 
-    const SAT_EARLY = 1.30;    // chroma punch at the start
-    const SAT_END   = 1.00;    // exact match to source by the end
-    const BRIGHT_EARLY = 1.06;
-    const BRIGHT_END   = 1.00;
-    const PI8 = Math.PI / 8;
-    const PI4 = Math.PI / 4;
-
-    // Smoothstep — used for the easing the chars dissolve into pixels.
-    function smoothstep(edge0, edge1, x) {
-      let v = (x - edge0) / (edge1 - edge0);
-      if (v <= 0) return 0;
-      if (v >= 1) return 1;
-      return v * v * (3 - 2 * v);
-    }
+    const SAT    = 1.30;   // chroma scale around per-cell luminance
+    const BRIGHT = 1.06;   // overall brightness multiplier
+    const PI8    = Math.PI / 8;
+    const PI4    = Math.PI / 4;
 
     function frame(now) {
       const elapsed = now - t0;
       const t = Math.min(elapsed / duration, 1);
-
-      // Sequencing:
-      //   t ∈ [0.00, 0.55] — pure ASCII reveal (chars on near-black).
-      //   t ∈ [0.55, 0.85] — cells fill with their mean color and the
-      //                      sat/bright boost relaxes to identity, so
-      //                      the canvas converges to the photo's pixels.
-      //   t ∈ [0.85, 1.00] — <img> crossfades over the now-solid canvas.
-      // The img CSS transition (0.55s) lines up so img reaches full
-      // opacity right at t≈1 and never covers the live ASCII phase.
-      if (!imgFadeStarted && t >= 0.85) {
-        imgFadeStarted = true;
-        img.classList.remove('is-hidden');
-      }
-
-      const bgFill    = smoothstep(0.55, 0.85, t);
-      const colorEase = smoothstep(0.55, 0.85, t);
-      const SAT    = SAT_EARLY    + (SAT_END    - SAT_EARLY)    * colorEase;
-      const BRIGHT = BRIGHT_EARLY + (BRIGHT_END - BRIGHT_EARLY) * colorEase;
 
       // Cover-crop the current video frame onto the 144×144 sample buffer.
       const vw = video.videoWidth  || W;
@@ -203,27 +177,14 @@
           if (g2 < 0) g2 = 0; else if (g2 > 255) g2 = 255;
           if (b2 < 0) b2 = 0; else if (b2 > 255) b2 = 255;
 
-          const ri = r2 | 0, gi = g2 | 0, bi = b2 | 0;
-
-          // Fill cell with its mean color (alpha = bgFill). At t≈1 each
-          // cell becomes a solid colored square, so the chars appear to
-          // "settle into" the underlying photo rather than being painted
-          // over. We composite over the existing #0a0a0a so partial
-          // bgFill blends cleanly.
-          if (bgFill > 0.005) {
-            ctx.fillStyle = 'rgba(' + ri + ',' + gi + ',' + bi + ',' + bgFill + ')';
-            ctx.fillRect(x0, y0, cs, cs);
-          }
-
-          ctx.fillStyle = 'rgb(' + ri + ',' + gi + ',' + bi + ')';
+          ctx.fillStyle = 'rgb(' + (r2 | 0) + ',' + (g2 | 0) + ',' + (b2 | 0) + ')';
           ctx.fillText(ch, x0 + cs * 0.5, y0 + cs * 0.5);
         }
       }
 
-      if (t < 1) {
-        requestAnimationFrame(frame);
-      }
-      // (img fade-in was triggered earlier at t=0.72; nothing more to do.)
+      if (t < 1) requestAnimationFrame(frame);
+      // Else: stop here. The canvas freezes on the last rendered ASCII
+      // frame, which is the final static state.
     }
 
     function begin() {
@@ -233,6 +194,7 @@
       t0 = performance.now();
       const playPromise = video.play();
       if (playPromise && typeof playPromise.catch === 'function') {
+        // Autoplay blocked: undo the hide so the static <img> shows.
         playPromise.catch(function () { img.classList.remove('is-hidden'); });
       }
       requestAnimationFrame(frame);
@@ -243,6 +205,7 @@
     } else {
       video.addEventListener('loadeddata', begin, { once: true });
       video.addEventListener('canplay',   begin, { once: true });
+      // Safety net: if the video never becomes playable, keep the static photo visible.
       setTimeout(function () { if (!started) img.classList.remove('is-hidden'); }, 6000);
     }
   }
