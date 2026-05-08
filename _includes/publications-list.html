@@ -9,9 +9,6 @@
         <em>{{ pub.venue }}</em>{% if pub.year %}, {{ pub.year }}{% endif %}
         {% if pub.type %}<span class="pub-type pub-type-{{ pub.type | downcase }}">{{ pub.type }}</span>{% endif %}
       </p>
-      {% if pub.abstract %}
-        <p class="pub-abstract">{{ pub.abstract }}</p>
-      {% endif %}
       {% if pub.links %}
         <p class="pub-links">
           {% for l in pub.links %}<a class="pub-link" href="{{ l.url }}" target="_blank" rel="noopener">{{ l.label }}</a>{% endfor %}
