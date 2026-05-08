@@ -66,18 +66,48 @@
     img.classList.add('is-hidden');
 
     let started = false;
+    let imgFadeStarted = false;
     let t0 = 0;
     let duration = 2780;
     let lastCellSize = -1;
 
-    const SAT = 1.30;        // chroma scale around per-cell luminance
-    const BRIGHT = 1.06;     // overall brightness multiplier
+    const SAT_EARLY = 1.30;    // chroma punch at the start
+    const SAT_END   = 1.00;    // exact match to source by the end
+    const BRIGHT_EARLY = 1.06;
+    const BRIGHT_END   = 1.00;
     const PI8 = Math.PI / 8;
     const PI4 = Math.PI / 4;
+
+    // Smoothstep — used for the easing the chars dissolve into pixels.
+    function smoothstep(edge0, edge1, x) {
+      let v = (x - edge0) / (edge1 - edge0);
+      if (v <= 0) return 0;
+      if (v >= 1) return 1;
+      return v * v * (3 - 2 * v);
+    }
 
     function frame(now) {
       const elapsed = now - t0;
       const t = Math.min(elapsed / duration, 1);
+
+      // Ease into the static photo: start the <img> crossfade well before
+      // the timeline ends, so it overlaps the cell-fill convergence below.
+      if (!imgFadeStarted && t >= 0.72) {
+        imgFadeStarted = true;
+        img.classList.remove('is-hidden');
+      }
+
+      // Two ramps that drive the "ease into the static frame" phase:
+      //  - bgFill: 0→1 over [0.55, 1.0]. Each cell fills with its mean
+      //    color, dissolving the chars into a continuous low-res photo.
+      //  - colorEase: 0→1 over [0.55, 1.0]. The saturation/brightness
+      //    boost relaxes back to identity, so cell colors match the
+      //    actual photo's pixels by t=1 (and the crossfade has nothing
+      //    visible to slap onto).
+      const bgFill    = smoothstep(0.55, 1.0, t);
+      const colorEase = smoothstep(0.55, 1.0, t);
+      const SAT    = SAT_EARLY    + (SAT_END    - SAT_EARLY)    * colorEase;
+      const BRIGHT = BRIGHT_EARLY + (BRIGHT_END - BRIGHT_EARLY) * colorEase;
 
       // Cover-crop the current video frame onto the 144×144 sample buffer.
       const vw = video.videoWidth  || W;
@@ -174,16 +204,27 @@
           if (g2 < 0) g2 = 0; else if (g2 > 255) g2 = 255;
           if (b2 < 0) b2 = 0; else if (b2 > 255) b2 = 255;
 
-          ctx.fillStyle = 'rgb(' + (r2 | 0) + ',' + (g2 | 0) + ',' + (b2 | 0) + ')';
+          const ri = r2 | 0, gi = g2 | 0, bi = b2 | 0;
+
+          // Fill cell with its mean color (alpha = bgFill). At t≈1 each
+          // cell becomes a solid colored square, so the chars appear to
+          // "settle into" the underlying photo rather than being painted
+          // over. We composite over the existing #0a0a0a so partial
+          // bgFill blends cleanly.
+          if (bgFill > 0.005) {
+            ctx.fillStyle = 'rgba(' + ri + ',' + gi + ',' + bi + ',' + bgFill + ')';
+            ctx.fillRect(x0, y0, cs, cs);
+          }
+
+          ctx.fillStyle = 'rgb(' + ri + ',' + gi + ',' + bi + ')';
           ctx.fillText(ch, x0 + cs * 0.5, y0 + cs * 0.5);
         }
       }
 
       if (t < 1) {
         requestAnimationFrame(frame);
-      } else {
-        img.classList.remove('is-hidden');
       }
+      // (img fade-in was triggered earlier at t=0.72; nothing more to do.)
     }
 
     function begin() {
