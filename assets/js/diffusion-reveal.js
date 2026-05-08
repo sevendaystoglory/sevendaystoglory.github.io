@@ -129,9 +129,9 @@
 
     // Final "video crossfade" — start ramping the actual <video> in over
     // the last N frames so the photo lands continuously instead of flipping.
-    const FADE_FRAMES = 12;
+    const FADE_FRAMES = 20;
     const FADE_FPS    = 16;
-    const fadeWindowMs = (FADE_FRAMES * 1000) / FADE_FPS;   // 750 ms
+    const fadeWindowMs = (FADE_FRAMES * 1000) / FADE_FPS;   // 1250 ms
 
     function frame(now) {
       const elapsed = now - t0;
