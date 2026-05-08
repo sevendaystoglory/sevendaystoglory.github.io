@@ -7,10 +7,16 @@ title: Home
   <h2 class="intro-greeting">Hi, I'm Nishant.</h2>
   <p class="intro-lede">
     I'm currently working on <strong>visual information retrieval</strong> with
-    Dr. Abhinav Srivastava at his company. I've worked on building
-    <strong>trustworthy ML systems</strong> via data attribution and on
-    <strong>test-time alignment</strong> of LLMs. I'm also interested in the
-    geometry of deep learning.
+    <a href="https://abhinavsh.info/">Dr. Abhinav Shrivastava</a>. Previously
+    I worked on building <strong>trustworthy ML systems</strong> via data
+    attribution with
+    <a href="https://sites.google.com/view/prathosh/home">Dr. Prathosh A.P.</a>
+    at IISc Bangalore, and on <strong>test-time alignment</strong> of LLMs at
+    Purdue with <a href="https://beerkay.github.io/">Dr. Berkay Celik</a>.
+    Earlier, I worked with
+    <a href="https://pengtaoxie.github.io/">Dr. Pengtao Xie</a> at UCSD to
+    predict histone signatures of non-coding RNAs. I'm also interested in
+    the geometry of deep learning.
   </p>
   <p class="intro-body">
     Previously, I founded
