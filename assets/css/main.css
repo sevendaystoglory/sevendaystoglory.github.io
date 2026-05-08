@@ -507,7 +507,7 @@ h1 {
     letter-spacing: 0.04em;
     text-transform: uppercase;
 }
-.news-link, .til-link {
+.news-link, .til-link, .news-text {
     font-family: var(--serif);
     font-size: 1rem;
     font-weight: 500;
