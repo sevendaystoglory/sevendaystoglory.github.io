@@ -74,15 +74,32 @@
     let t0 = 0;
     let duration = 2780;
     let lastCellSize = -1;
+    let lastVidOpacity = -1;
 
     const SAT    = 1.30;   // chroma scale around per-cell luminance
     const BRIGHT = 1.06;   // overall brightness multiplier
     const PI8    = Math.PI / 8;
     const PI4    = Math.PI / 4;
 
+    // Final "video crossfade" — start ramping the actual <video> in over
+    // the last N frames so the photo lands continuously instead of flipping.
+    const FADE_FRAMES = 12;
+    const FADE_FPS    = 16;
+    const fadeWindowMs = (FADE_FRAMES * 1000) / FADE_FPS;   // 750 ms
+
     function frame(now) {
       const elapsed = now - t0;
       const t = Math.min(elapsed / duration, 1);
+
+      // Linear ramp of the live <video> from opacity 0 → 1 across the
+      // final 12 frames of the timeline.  Canvas keeps drawing underneath
+      // so the chars and the actual frame visually cross-blend.
+      const fadeStartMs = duration - fadeWindowMs;
+      let vOp = elapsed > fadeStartMs ? Math.min(1, (elapsed - fadeStartMs) / fadeWindowMs) : 0;
+      if (vOp !== lastVidOpacity) {
+        video.style.opacity = vOp;
+        lastVidOpacity = vOp;
+      }
 
       // Cover-crop the current video frame onto the 144×144 sample buffer.
       const vw = video.videoWidth  || W;
@@ -187,9 +204,14 @@
         }
       }
 
-      if (t < 1) requestAnimationFrame(frame);
-      // Else: stop here. The canvas freezes on the last rendered ASCII
-      // frame, which is the final static state.
+      if (t < 1) {
+        requestAnimationFrame(frame);
+      } else {
+        // Pin the video at full opacity so the static last frame is the
+        // final state, regardless of any rAF rounding.
+        video.style.opacity = 1;
+        lastVidOpacity = 1;
+      }
     }
 
     function begin() {
