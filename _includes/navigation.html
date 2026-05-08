@@ -1,7 +1,10 @@
 <aside class="sidebar">
     <div class="sidebar-inner">
         <a href="{{ site.baseurl }}/" class="sidebar-photo-link">
-            <img src="{{ '/assets/images/profile.jpg' | relative_url }}" alt="Nishant Sharma" class="sidebar-photo">
+            <span class="sidebar-photo-wrap">
+                <canvas class="sidebar-photo-canvas" aria-hidden="true"></canvas>
+                <img src="{{ '/assets/images/profile.jpg' | relative_url }}" alt="Nishant Sharma" class="sidebar-photo" crossorigin="anonymous">
+            </span>
         </a>
 
         <h1 class="sidebar-name">Nishant Sharma</h1>
