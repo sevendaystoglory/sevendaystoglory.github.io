@@ -96,6 +96,17 @@
     sample.height = H;
     const sCtx = sample.getContext('2d', { willReadFrequently: true });
 
+    // Match the canvas background to the wrap so chars look like they're
+    // drawn on the same paper as the surrounding sidebar (rather than a
+    // dark hole). Reading the computed bg picks up the --cream variable.
+    let canvasBg = '#f3f6fa';
+    try {
+      const wrapBg = getComputedStyle(canvas.parentElement).backgroundColor;
+      if (wrapBg && wrapBg !== 'rgba(0, 0, 0, 0)' && wrapBg !== 'transparent') {
+        canvasBg = wrapBg;
+      }
+    } catch (_) {}
+
     // Note: we do NOT hide the <img> upfront. Mobile browsers often reject
     // video.play() (autoplay restrictions even with muted+playsinline), and
     // we want the static photo to remain visible in that case rather than
@@ -177,7 +188,7 @@
       // contributes up to ±255, so 38·cs ≈ 15% relative gradient.
       const edgeThresh = 38 * cs;
 
-      ctx.fillStyle = '#0a0a0a';
+      ctx.fillStyle = canvasBg;
       ctx.fillRect(0, 0, W, H);
 
       if (cs !== lastCellSize) {

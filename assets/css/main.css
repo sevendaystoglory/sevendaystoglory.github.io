@@ -101,7 +101,7 @@ img { max-width: 100%; height: auto; display: block; }
     border-radius: 50%;
     overflow: hidden;
     border: 1px solid var(--border);
-    background: #0a0a0a;
+    background: var(--cream);
 }
 .sidebar-photo-video {
     position: absolute;
