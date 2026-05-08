@@ -22,6 +22,23 @@
 // fallback.
 
 (function () {
+  // Clicking the sidebar photo should always re-trigger the reveal: clear
+  // the session flag so the home page's next load animates, and force a
+  // reload if the user is already on the photo's destination (otherwise
+  // the browser treats a same-URL link click as a no-op).
+  const photoLink = document.querySelector('.sidebar-photo-link');
+  if (photoLink) {
+    photoLink.addEventListener('click', function (e) {
+      try { sessionStorage.removeItem('ascii-reveal-seen'); } catch (_) {}
+      if (window.location.pathname === this.pathname) {
+        e.preventDefault();
+        window.location.reload();
+      }
+      // Else: let the link navigate normally; the cleared flag re-enables
+      // the animation on the destination page.
+    });
+  }
+
   if (!window.requestAnimationFrame) return;
   if (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
 
