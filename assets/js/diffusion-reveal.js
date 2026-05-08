@@ -90,22 +90,21 @@
       const elapsed = now - t0;
       const t = Math.min(elapsed / duration, 1);
 
-      // Ease into the static photo: start the <img> crossfade well before
-      // the timeline ends, so it overlaps the cell-fill convergence below.
-      if (!imgFadeStarted && t >= 0.72) {
+      // Sequencing:
+      //   t ∈ [0.00, 0.55] — pure ASCII reveal (chars on near-black).
+      //   t ∈ [0.55, 0.85] — cells fill with their mean color and the
+      //                      sat/bright boost relaxes to identity, so
+      //                      the canvas converges to the photo's pixels.
+      //   t ∈ [0.85, 1.00] — <img> crossfades over the now-solid canvas.
+      // The img CSS transition (0.55s) lines up so img reaches full
+      // opacity right at t≈1 and never covers the live ASCII phase.
+      if (!imgFadeStarted && t >= 0.85) {
         imgFadeStarted = true;
         img.classList.remove('is-hidden');
       }
 
-      // Two ramps that drive the "ease into the static frame" phase:
-      //  - bgFill: 0→1 over [0.55, 1.0]. Each cell fills with its mean
-      //    color, dissolving the chars into a continuous low-res photo.
-      //  - colorEase: 0→1 over [0.55, 1.0]. The saturation/brightness
-      //    boost relaxes back to identity, so cell colors match the
-      //    actual photo's pixels by t=1 (and the crossfade has nothing
-      //    visible to slap onto).
-      const bgFill    = smoothstep(0.55, 1.0, t);
-      const colorEase = smoothstep(0.55, 1.0, t);
+      const bgFill    = smoothstep(0.55, 0.85, t);
+      const colorEase = smoothstep(0.55, 0.85, t);
       const SAT    = SAT_EARLY    + (SAT_END    - SAT_EARLY)    * colorEase;
       const BRIGHT = BRIGHT_EARLY + (BRIGHT_END - BRIGHT_EARLY) * colorEase;
 
