@@ -25,6 +25,17 @@
   if (!window.requestAnimationFrame) return;
   if (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
 
+  // Only animate on a fresh tab open or an explicit reload — not when the
+  // user navigates between pages in the same session (e.g. clicks a blog
+  // link and returns home).  sessionStorage clears when the tab closes,
+  // so the animation comes back on next open.
+  const navEntries = (performance.getEntriesByType && performance.getEntriesByType('navigation')) || [];
+  const isReload = navEntries.length && navEntries[0].type === 'reload';
+  try {
+    if (!isReload && sessionStorage.getItem('ascii-reveal-seen') === '1') return;
+    sessionStorage.setItem('ascii-reveal-seen', '1');
+  } catch (e) { /* private mode etc. — fall through and animate */ }
+
   const video  = document.querySelector('.sidebar-photo-video');
   const canvas = document.querySelector('.sidebar-photo-canvas');
   const img    = document.querySelector('.sidebar-photo');
