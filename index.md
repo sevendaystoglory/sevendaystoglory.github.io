@@ -3,26 +3,42 @@ layout: default
 title: Home
 ---
 
-<div class="profile-section">
-  <img src="/assets/images/profile.jpg" alt="Nishant Sharma" class="profile-image">
-  <div class="profile-text">
-    <div class="name-age">
-    <h1 style="display: flex; align-items: flex-end; height: 100%; line-height: 1;">I'm Nishant</h1>
-    <p style="display: flex; align-items: flex-end; font-size: 1.0em; color: #999; margin-left: 10px;">23</p>
-    </div>
-    <p style="display: flex; align-items: flex-end; font-size: 1.0em; color: #555; margin-top: -10px;">Contact me @ nishant.sharma.iitd@gmail.com</p>
-    <p>Currently working on LLMs with UCSD. I founded <a href="https://www.insituate.ai">Eigenfrequency Technologies</a> where we wrote AI agents for global banks and supreme courts. I've graduated in Physics from IITD'24, with a bachelor's thesis in computational neuroscience. I am interested in AI and ML - I built <a href="https://play.google.com/store/apps/details?id=com.insituate.nora">Nora</a>. I make art occasionally.</p>
-  </div>
-</div>
+<section class="intro">
+  <h2 class="intro-greeting">Hi, I'm Nishant.</h2>
+  <p class="intro-lede">
+    I'm currently working on LLMs with <strong>UC San Diego</strong>. Previously I founded
+    <a href="https://www.insituate.ai">Eigenfrequency Technologies</a>, where we built
+    AI agents for global banks and supreme courts.
+  </p>
+  <p class="intro-body">
+    I graduated in Physics from <strong>IIT Delhi (2024)</strong> with a bachelor's thesis in
+    computational neuroscience. I'm interested in AI and ML — I built
+    <a href="https://play.google.com/store/apps/details?id=com.insituate.nora">Nora</a>,
+    an on-device assistant. I make art occasionally.
+  </p>
+  <p class="intro-contact">
+    <span class="intro-label">Contact</span>
+    <a href="mailto:nishant.sharma.iitd@gmail.com">nishant.sharma.iitd@gmail.com</a>
+  </p>
+</section>
 
-## Projects
+<section class="section">
+  <h2 class="section-title">Selected Publications</h2>
+  <p class="section-note"><sup>*</sup> denotes equal contribution.</p>
+  {% include publications-list.html %}
+</section>
 
-{% include projects-list.html %}
+<section class="section">
+  <h2 class="section-title">Projects</h2>
+  {% include projects-list.html %}
+</section>
 
-## Recent Blogs
+<section class="section">
+  <h2 class="section-title">Recent Writing</h2>
+  {% include blog-list.html %}
+</section>
 
-{% include blog-list.html %}
-
-## Today I Learned
-
-{% include til-list.html %}
+<section class="section">
+  <h2 class="section-title">Today I Learned</h2>
+  {% include til-list.html %}
+</section>

@@ -1,0 +1,78 @@
+- title: "Enhancing Trustworthiness of Fine-Tuned LLMs via Regularized Subset Selection"
+  authors:
+    - { name: "Kumar Shubham", equal: true }
+    - { name: "Nishant Sharma", equal: true, me: true }
+    - { name: "Karn Tiwari" }
+    - { name: "Prathosh A.P." }
+  venue: "ICLR"
+  year: 2026
+  type: "Conference"
+  links:
+    - { label: "PDF", url: "https://openreview.net/pdf?id=cXo4vQudaa" }
+    - { label: "OpenReview", url: "https://openreview.net/forum?id=cXo4vQudaa" }
+    - { label: "Code", url: "https://github.com/kyrs/tracing-llm-trust" }
+  abstract: >-
+    A two-stage, compute-efficient repair of post-SFT LLMs that improves trustworthiness
+    while preserving downstream performance. We identify failing samples on truthfulness,
+    bias, and machine-ethics metrics, select a diverse subset via a determinantal point
+    process, and repair the model with a Proximal Bregman Response Function update —
+    yielding up to 21% improvement in trustworthiness with ≤1% perplexity impact.
+
+- title: "Decoding Histone Modification Signatures of Non-Coding RNAs via Foundation Models"
+  authors:
+    - { name: "Nishant Sharma", me: true }
+    - { name: "Mohammad Atif Quamar" }
+    - { name: "Pengtao Xie" }
+  venue: "NeurIPS Workshop on Multi-modal Foundation Models and LLMs for Life Sciences"
+  year: 2025
+  type: "Workshop"
+  links:
+    - { label: "PDF", url: "https://openreview.net/pdf/804266022c8fca9d4f2a673f77524275298187a1.pdf" }
+  abstract: >-
+    A simple, data-efficient sequence-only baseline for predicting histone–ncRNA
+    regulation. We train a single marker-conditioned classifier over 50 histone marks
+    using either spliced transcript RNA or genomic context (gene body + 30kb upstream),
+    and the context-based model attains a micro-AUROC of 0.95 on a curated Ensembl
+    benchmark — without cell-type-specific tracks.
+
+- title: "Adaptive Blockwise Search: Inference-Time Alignment for Large Language Models"
+  authors:
+    - { name: "Mohammad Atif Quamar" }
+    - { name: "Mohammad Areeb" }
+    - { name: "Nishant Sharma", me: true }
+    - { name: "Ananth Shreekumar" }
+    - { name: "Jonathan Rosenthal" }
+    - { name: "Muslum Ozgur Ozmen" }
+    - { name: "Mikhail Kuznetsov" }
+    - { name: "Z. Berkay Celik" }
+  venue: "Preprint"
+  year: 2025
+  type: "Preprint"
+  links:
+    - { label: "arXiv", url: "https://arxiv.org/abs/2510.23334" }
+    - { label: "HTML", url: "https://arxiv.org/html/2510.23334v1" }
+  abstract: >-
+    AdaSearch is an inference-time alignment method that strategically allocates
+    sampling budget across response blocks via a decaying schedule, reflecting that
+    early tokens disproportionately shape alignment outcomes. Across eight LLMs and
+    tasks spanning harmlessness, sentiment control, and math reasoning, AdaSearch
+    outperforms Best-of-N sampling and fine-tuning baselines at matched compute.
+
+- title: "Trust, But Attribute: Tracing Impact of Data on Trustworthiness in Supervised LLM Fine-Tuning"
+  authors:
+    - { name: "Kumar Shubham", equal: true }
+    - { name: "Nishant Sharma", equal: true, me: true }
+    - { name: "Karn Tiwari" }
+    - { name: "Prathosh A.P." }
+  venue: "NeurIPS Workshop on Reliable ML from Unreliable Data"
+  year: 2025
+  type: "Workshop"
+  links:
+    - { label: "PDF", url: "https://openreview.net/pdf?id=AQBm6kSiAs" }
+    - { label: "OpenReview", url: "https://openreview.net/forum?id=AQBm6kSiAs" }
+  abstract: >-
+    Workshop precursor to our ICLR work — a two-stage repair for SFT-degraded LLMs
+    that attributes trust failures back to training data, selects a diverse problem
+    subset via DPPs, and applies a Proximal Bregman ascent to recover trustworthiness
+    in seconds rather than hours of retraining (up to 19% improvement, ≤1% perplexity
+    cost).

@@ -1,19 +1,10 @@
-<div class="til-list">
+<ul class="til-list">
   {% for post in site.posts %}
     {% if post.category == 'til' %}
-      <a href="{{ post.url | relative_url }}" class="post-link til-link">
-        <div class="post-item til-item">
-          <div class="post-content">
-            <h4>{{ post.title }}</h4>
-            <span class="post-date">{{ post.date | date: "%B %d, %Y" }}</span>
-          </div>
-          {% if post.image %}
-            <div class="post-thumbnail-container">
-              <img src="{{ post.image | relative_url }}" alt="{{ post.title }}" class="post-thumbnail">
-            </div>
-          {% endif %}
-        </div>
-      </a>
+      <li class="til-item">
+        <span class="til-date">{{ post.date | date: "%b %d, %Y" }}</span>
+        <a href="{{ post.url | relative_url }}" class="til-link">{{ post.title }}</a>
+      </li>
     {% endif %}
   {% endfor %}
-</div>
+</ul>
