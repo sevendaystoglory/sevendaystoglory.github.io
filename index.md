@@ -35,7 +35,7 @@ title: Home
 
 <section class="section">
   <h2 class="section-title">Selected Publications</h2>
-  <p class="section-note"><sup>*</sup> denotes equal contribution.</p>
+  <p class="section-note">Authors who equally contributed to a publication are marked with a † (dagger).</p>
   {% include publications-list.html %}
 </section>
 

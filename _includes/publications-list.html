@@ -1,13 +1,12 @@
 <div class="pub-list">
   {% for pub in site.data.publications %}
     <article class="pub-item">
-      <h3 class="pub-title">{{ pub.title }}</h3>
       <p class="pub-authors">
-        {% for a in pub.authors %}{% if a.me %}<strong class="pub-me">{{ a.name }}</strong>{% else %}{{ a.name }}{% endif %}{% if a.equal %}<sup>*</sup>{% endif %}{% unless forloop.last %}, {% endunless %}{% endfor %}
+        {% for a in pub.authors %}{% if a.me %}<strong class="pub-me">{{ a.name }}</strong>{% else %}{{ a.name }}{% endif %}{% if a.equal %}<sup>†</sup>{% endif %}{% unless forloop.last %}, {% endunless %}{% endfor %}
       </p>
+      <h3 class="pub-title">{{ pub.title }}</h3>
       <p class="pub-venue">
         <em>{{ pub.venue }}</em>{% if pub.year %}, {{ pub.year }}{% endif %}
-        {% if pub.type %}<span class="pub-type pub-type-{{ pub.type | downcase }}">{{ pub.type }}</span>{% endif %}
       </p>
       {% if pub.links %}
         <p class="pub-links">
