@@ -11,15 +11,15 @@
     --ink-faint: rgba(0, 0, 0, 0.45);
 
     --paper: #ffffff;
-    --cream: #f7f7f3;
-    --cream-2: #f1f1ea;
+    --cream: #f3f6fa;       /* snow — was warm #f7f7f3 */
+    --cream-2: #e8edf3;     /* snow-2 — was warm #f1f1ea */
 
     --accent: #1b4f9a;
     --accent-deep: #0b3b75;
     --accent-soft: #e7ecf2;
 
     --border: rgba(0, 0, 0, 0.08);
-    --border-soft: #ececea;
+    --border-soft: #e6ebf1;
 
     --footer-bg: #1f2328;
     --footer-fg: #f8f9fb;
