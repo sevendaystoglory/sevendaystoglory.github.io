@@ -96,9 +96,14 @@
     sample.height = H;
     const sCtx = sample.getContext('2d', { willReadFrequently: true });
 
-    img.classList.add('is-hidden');
+    // Note: we do NOT hide the <img> upfront. Mobile browsers often reject
+    // video.play() (autoplay restrictions even with muted+playsinline), and
+    // we want the static photo to remain visible in that case rather than
+    // staring at a black canvas. The <img> is hidden only once play() has
+    // actually resolved successfully.
 
     let started = false;
+    let aborted = false;
     let t0 = 0;
     let duration = 2780;
     let lastCellSize = -1;
@@ -242,26 +247,46 @@
       }
     }
 
-    function begin() {
-      if (started) return;
+    function abort() {
+      // Autoplay was blocked or the video never became playable.
+      // Hide the canvas so the underlying <img> (which we never hid) shows.
+      if (started || aborted) return;
+      aborted = true;
+      canvas.style.display = 'none';
+    }
+
+    function startAnimation() {
+      if (started || aborted) return;
       started = true;
       duration = (video.duration && isFinite(video.duration)) ? video.duration * 1000 : 2780;
+      img.classList.add('is-hidden');           // canvas takes over from here
       t0 = performance.now();
-      const playPromise = video.play();
-      if (playPromise && typeof playPromise.catch === 'function') {
-        // Autoplay blocked: undo the hide so the static <img> shows.
-        playPromise.catch(function () { img.classList.remove('is-hidden'); });
-      }
       requestAnimationFrame(frame);
     }
 
+    function attempt() {
+      const playPromise = video.play();
+      if (playPromise && typeof playPromise.then === 'function') {
+        playPromise.then(startAnimation, abort);
+      } else {
+        // Older browsers without a play() promise — assume it started.
+        startAnimation();
+      }
+    }
+
     if (video.readyState >= 2) {
-      begin();
+      attempt();
     } else {
-      video.addEventListener('loadeddata', begin, { once: true });
-      video.addEventListener('canplay',   begin, { once: true });
-      // Safety net: if the video never becomes playable, keep the static photo visible.
-      setTimeout(function () { if (!started) img.classList.remove('is-hidden'); }, 6000);
+      const onReady = function () {
+        video.removeEventListener('loadeddata', onReady);
+        video.removeEventListener('canplay',   onReady);
+        attempt();
+      };
+      video.addEventListener('loadeddata', onReady);
+      video.addEventListener('canplay',   onReady);
+      // Bail out if the video never becomes playable (slow network,
+      // disabled media, etc.) — show the static photo instead of a black hole.
+      setTimeout(abort, 4000);
     }
   }
 
