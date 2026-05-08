@@ -5,8 +5,8 @@
     - { name: "Karn Tiwari" }
     - { name: "Prathosh A.P." }
   venue: "ICLR"
+  short: "ICLR"
   year: 2026
-  type: "Conference"
   links:
     - { label: "PDF", url: "https://openreview.net/pdf?id=cXo4vQudaa" }
     - { label: "OpenReview", url: "https://openreview.net/forum?id=cXo4vQudaa" }
@@ -24,8 +24,8 @@
     - { name: "Mohammad Atif Quamar" }
     - { name: "Pengtao Xie" }
   venue: "NeurIPS Workshop on Multi-modal Foundation Models and LLMs for Life Sciences"
+  short: "NeurIPS--W"
   year: 2025
-  type: "Workshop"
   links:
     - { label: "PDF", url: "https://openreview.net/pdf/804266022c8fca9d4f2a673f77524275298187a1.pdf" }
   abstract: >-
@@ -46,8 +46,8 @@
     - { name: "Mikhail Kuznetsov" }
     - { name: "Z. Berkay Celik" }
   venue: "Preprint"
+  short: "arXiv"
   year: 2025
-  type: "Preprint"
   links:
     - { label: "arXiv", url: "https://arxiv.org/abs/2510.23334" }
     - { label: "HTML", url: "https://arxiv.org/html/2510.23334v1" }
@@ -65,8 +65,8 @@
     - { name: "Karn Tiwari" }
     - { name: "Prathosh A.P." }
   venue: "NeurIPS Workshop on Reliable ML from Unreliable Data"
+  short: "NeurIPS--W"
   year: 2025
-  type: "Workshop"
   links:
     - { label: "PDF", url: "https://openreview.net/pdf?id=AQBm6kSiAs" }
     - { label: "OpenReview", url: "https://openreview.net/forum?id=AQBm6kSiAs" }

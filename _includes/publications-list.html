@@ -1,18 +1,6 @@
-<div class="pub-list">
-  {% for pub in site.data.publications %}
-    <article class="pub-item">
-      <p class="pub-authors">
-        {% for a in pub.authors %}{% if a.me %}<strong class="pub-me">{{ a.name }}</strong>{% else %}{{ a.name }}{% endif %}{% if a.equal %}<sup>†</sup>{% endif %}{% unless forloop.last %}, {% endunless %}{% endfor %}
-      </p>
-      <h3 class="pub-title">{{ pub.title }}</h3>
-      <p class="pub-venue">
-        <em>{{ pub.venue }}</em>{% if pub.year %}, {{ pub.year }}{% endif %}
-      </p>
-      {% if pub.links %}
-        <p class="pub-links">
-          {% for l in pub.links %}<a class="pub-link" href="{{ l.url }}" target="_blank" rel="noopener">{{ l.label }}</a>{% endfor %}
-        </p>
-      {% endif %}
-    </article>
-  {% endfor %}
-</div>
+<ol class="pub-list">
+{%- for pub in site.data.publications -%}
+{%- assign short = pub.short | default: pub.venue -%}
+<li class="pub-entry">{% for a in pub.authors %}{% if a.me %}<span class="pub-me">{{ a.name }}</span>{% else %}{{ a.name }}{% endif %}{% if a.equal %}<sup>†</sup>{% endif %}{% unless forloop.last %}, {% endunless %}{% endfor %}. <strong class="pub-title">&ldquo;{{ pub.title }}.&rdquo;</strong> {{ pub.venue }}{% if pub.year %} ({{ pub.year }}){% endif %}. <img class="pub-shield" src="https://img.shields.io/badge/{{ short }}-{{ pub.year }}-c1272d?style=flat-square&labelColor=2a2a2a" alt="{{ pub.short | default: pub.venue }} {{ pub.year }}" loading="lazy">{% for l in pub.links %}<a class="pub-shield-link" href="{{ l.url }}" target="_blank" rel="noopener">{% case l.label %}{% when 'PDF' %}<img class="pub-shield" src="https://img.shields.io/badge/PDF-Paper-c1272d?style=flat-square&logo=adobeacrobatreader&logoColor=white&labelColor=2a2a2a" alt="PDF" loading="lazy">{% when 'OpenReview' %}<img class="pub-shield" src="https://img.shields.io/badge/OpenReview-Forum-8c1515?style=flat-square&labelColor=2a2a2a" alt="OpenReview" loading="lazy">{% when 'arXiv' %}<img class="pub-shield" src="https://img.shields.io/badge/arXiv-Paper-b31b1b?style=flat-square&logo=arxiv&logoColor=white&labelColor=2a2a2a" alt="arXiv" loading="lazy">{% when 'HTML' %}<img class="pub-shield" src="https://img.shields.io/badge/HTML-View-1c4587?style=flat-square&labelColor=2a2a2a" alt="HTML" loading="lazy">{% when 'Code' %}<img class="pub-shield" src="https://img.shields.io/badge/Code-GitHub-2a2a2a?style=flat-square&logo=github&logoColor=white&labelColor=2a2a2a" alt="Code" loading="lazy">{% else %}<img class="pub-shield" src="https://img.shields.io/badge/{{ l.label }}-Link-1c4587?style=flat-square&labelColor=2a2a2a" alt="{{ l.label }}" loading="lazy">{% endcase %}</a>{% endfor %}</li>
+{%- endfor -%}
+</ol>
