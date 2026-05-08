@@ -4,7 +4,6 @@ title: Home
 ---
 
 <section class="intro">
-  <h2 class="intro-greeting">Hi, I'm Nishant.</h2>
   <p class="intro-lede">
     I'm currently working on <strong>visual information retrieval</strong> with
     <a href="https://abhinavsh.info/">Dr. Abhinav Shrivastava</a>. Previously
