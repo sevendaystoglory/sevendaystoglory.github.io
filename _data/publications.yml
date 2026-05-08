@@ -37,8 +37,8 @@
 
 - title: "Adaptive Blockwise Search: Inference-Time Alignment for Large Language Models"
   authors:
-    - { name: "Mohammad Atif Quamar" }
-    - { name: "Mohammad Areeb" }
+    - { name: "Mohammad Atif Quamar", equal: true }
+    - { name: "Mohammad Areeb", equal: true }
     - { name: "Nishant Sharma", me: true }
     - { name: "Ananth Shreekumar" }
     - { name: "Jonathan Rosenthal" }
