@@ -4,6 +4,11 @@
       <li class="news-item">
         <span class="news-date">{{ post.date | date: "%b %d, %Y" }}</span>
         <a href="{{ post.url | relative_url }}" class="news-link">{{ post.title }}</a>
+        {% if post.image %}
+          <span class="news-preview" aria-hidden="true">
+            <img src="{{ post.image | relative_url }}" alt="" loading="lazy">
+          </span>
+        {% endif %}
       </li>
     {% endif %}
   {% endfor %}
