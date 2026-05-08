@@ -1,18 +1,21 @@
-// Diffusion-style reveal of the profile photo.
+// Frequency-domain reveal of the profile photo.
 //
-// Math: at each animation frame we render the forward DDPM marginal
+// Idea: render the partial Fourier reconstruction
 //
-//   x_t = sqrt(α̅_t) · x_0  +  sqrt(1 − α̅_t) · ε,   ε ~ N(0, I)
+//   x(t) = F^{-1}{ X · H_t },     H_t(k) = exp( -‖k‖² / (2 σ(t)²) )
 //
-// with x_0 the photo's pixels mapped to [-1, 1], and α̅_t given by the
-// Nichol–Dhariwal cosine schedule:
+// where X = F{x_0} is the 2D DFT of the photo and σ(t) is a Gaussian
+// low-pass bandwidth that grows from a tiny value (only DC passes →
+// uniform blob) to a large one (all frequencies pass → original photo)
+// over ~3.5 s. The viewer sees coarse structure first (overall shape),
+// then mid frequencies (face/silhouette), then fine detail (eyes, glasses,
+// texture) — exactly because the Fourier basis orders detail by spatial
+// frequency. A Gaussian mask avoids Gibbs ringing.
 //
-//   α̅(u) = cos²((u + s) / (1 + s) · π/2) / cos²(s / (1 + s) · π/2),  s = 0.008
-//
-// We animate the diffusion timestep ratio u from 1 → 0 over ~3.5s.
-// At u=1, α̅≈0 → image is pure Gaussian noise.
-// At u=0, α̅≈1 → image equals x_0 (the original photo).
-// Then we crossfade to the crisp <img> for accessibility / sharpness.
+// We compute X once at init (one 2D FFT per channel), then each frame:
+//   1. multiply X by the current Gaussian mask H_t  (pointwise),
+//   2. apply 2D inverse FFT,
+//   3. paint the real part to the canvas.
 
 (function () {
   if (!window.requestAnimationFrame) return;
@@ -22,126 +25,165 @@
   const canvas = document.querySelector('.sidebar-photo-canvas');
   if (!img || !canvas) return;
 
-  function start() {
-    const w = img.clientWidth || 170;
-    const h = img.clientHeight || 170;
-    canvas.width = w;
-    canvas.height = h;
+  const N = 128;          // FFT side length — must be power of 2
+  const N2 = N * N;
+  const HALF = N >> 1;
 
-    const ctx = canvas.getContext('2d');
-    if (!ctx) return;
-
-    // Read x_0 from an offscreen canvas
-    const off = document.createElement('canvas');
-    off.width = w;
-    off.height = h;
-    const offCtx = off.getContext('2d');
-    try {
-      offCtx.drawImage(img, 0, 0, w, h);
-    } catch (e) {
-      return; // tainted canvas — skip animation
+  // -------- 1D in-place radix-2 Cooley–Tukey FFT --------------------
+  function fft1d(re, im, n, inverse) {
+    // bit-reversal permutation
+    for (let i = 1, j = 0; i < n; i++) {
+      let bit = n >> 1;
+      for (; j & bit; bit >>= 1) j ^= bit;
+      j ^= bit;
+      if (i < j) {
+        let t = re[i]; re[i] = re[j]; re[j] = t;
+        t = im[i]; im[i] = im[j]; im[j] = t;
+      }
     }
-    let x0;
+    const sign = inverse ? 1 : -1;
+    for (let len = 2; len <= n; len <<= 1) {
+      const half = len >> 1;
+      const ang = sign * 2 * Math.PI / len;
+      const wnRe = Math.cos(ang);
+      const wnIm = Math.sin(ang);
+      for (let i = 0; i < n; i += len) {
+        let wr = 1, wi = 0;
+        for (let k = 0; k < half; k++) {
+          const a = i + k;
+          const b = a + half;
+          const tRe = wr * re[b] - wi * im[b];
+          const tIm = wr * im[b] + wi * re[b];
+          re[b] = re[a] - tRe;
+          im[b] = im[a] - tIm;
+          re[a] += tRe;
+          im[a] += tIm;
+          const nwr = wr * wnRe - wi * wnIm;
+          wi = wr * wnIm + wi * wnRe;
+          wr = nwr;
+        }
+      }
+    }
+    if (inverse) {
+      const inv = 1 / n;
+      for (let i = 0; i < n; i++) { re[i] *= inv; im[i] *= inv; }
+    }
+  }
+
+  // -------- 2D FFT (separable: rows then columns) ------------------
+  function fft2d(re, im, w, h, inverse) {
+    const lineRe = new Float64Array(Math.max(w, h));
+    const lineIm = new Float64Array(Math.max(w, h));
+    // rows
+    for (let y = 0; y < h; y++) {
+      const off = y * w;
+      for (let x = 0; x < w; x++) { lineRe[x] = re[off + x]; lineIm[x] = im[off + x]; }
+      fft1d(lineRe, lineIm, w, inverse);
+      for (let x = 0; x < w; x++) { re[off + x] = lineRe[x]; im[off + x] = lineIm[x]; }
+    }
+    // columns
+    for (let x = 0; x < w; x++) {
+      for (let y = 0; y < h; y++) { lineRe[y] = re[y * w + x]; lineIm[y] = im[y * w + x]; }
+      fft1d(lineRe, lineIm, h, inverse);
+      for (let y = 0; y < h; y++) { re[y * w + x] = lineRe[y]; im[y * w + x] = lineIm[y]; }
+    }
+  }
+
+  function start() {
+    // Sample the photo into an N × N RGB grid (centered, cover-cropped via drawImage)
+    const off = document.createElement('canvas');
+    off.width = N;
+    off.height = N;
+    const offCtx = off.getContext('2d');
+
+    let imgData;
     try {
-      x0 = offCtx.getImageData(0, 0, w, h);
+      // Cover-crop: scale so the smaller dimension fits, center-crop the rest
+      const iw = img.naturalWidth || N;
+      const ih = img.naturalHeight || N;
+      const scale = Math.max(N / iw, N / ih);
+      const dw = iw * scale;
+      const dh = ih * scale;
+      offCtx.drawImage(img, (N - dw) / 2, (N - dh) / 2, dw, dh);
+      imgData = offCtx.getImageData(0, 0, N, N);
     } catch (e) {
       return;
     }
-    const x0Data = x0.data;
-    const N = w * h;
+    const px = imgData.data;
 
-    // Hide the <img>; let the canvas do the work
-    img.classList.add('is-hidden');
+    // Pre-compute FFT of each channel
+    const Xre = [new Float64Array(N2), new Float64Array(N2), new Float64Array(N2)];
+    const Xim = [new Float64Array(N2), new Float64Array(N2), new Float64Array(N2)];
+    for (let i = 0; i < N2; i++) {
+      Xre[0][i] = px[i * 4]     / 255;
+      Xre[1][i] = px[i * 4 + 1] / 255;
+      Xre[2][i] = px[i * 4 + 2] / 255;
+    }
+    for (let c = 0; c < 3; c++) fft2d(Xre[c], Xim[c], N, N, false);
 
-    // Output buffer reused every frame
-    const out = ctx.createImageData(w, h);
+    // Display canvas: render at N×N, CSS upscales to fill the 170px circle.
+    canvas.width = N;
+    canvas.height = N;
+    const ctx = canvas.getContext('2d');
+    const out = ctx.createImageData(N, N);
     const outData = out.data;
+    for (let i = 0; i < N2; i++) outData[i * 4 + 3] = 255;
 
-    // Cosine-schedule cumulative α̅(u), u = t/T ∈ [0,1]
-    const sShift = 0.008;
-    const f0 = Math.cos((sShift / (1 + sShift)) * Math.PI / 2);
-    const f0sq = f0 * f0;
-    function alphaBar(u) {
-      const c = Math.cos(((u + sShift) / (1 + sShift)) * Math.PI / 2);
-      return (c * c) / f0sq;
+    // Working buffers (reused every frame)
+    const wRe = new Float64Array(N2);
+    const wIm = new Float64Array(N2);
+    const mask = new Float64Array(N2);
+
+    // Pre-compute |k|² for every (kx, ky) in FFT-shifted coords (DC at index 0,
+    // negative frequencies wrap around). |kx| ∈ [0, N/2], |ky| ∈ [0, N/2].
+    const k2 = new Float64Array(N2);
+    for (let y = 0; y < N; y++) {
+      const fy = (y <= HALF) ? y : y - N;
+      for (let x = 0; x < N; x++) {
+        const fx = (x <= HALF) ? x : x - N;
+        k2[y * N + x] = fx * fx + fy * fy;
+      }
     }
 
-    // Smoothstep ease for the time progression — feels nicer than linear
-    function ease(p) { return p * p * (3 - 2 * p); }
+    // Hide the crisp <img>; the canvas takes over.
+    img.classList.add('is-hidden');
+
+    // σ(t) schedule — exponential growth from σ_min to σ_max (so each
+    // doubling of σ doubles the radius of frequencies that pass, matching
+    // the way detail "feels" like it's emerging exponentially).
+    const SIGMA_MIN = 0.6;
+    const SIGMA_MAX = 180;
+    const LOG_RATIO = Math.log(SIGMA_MAX / SIGMA_MIN);
 
     const duration = 3500;
     const t0 = performance.now();
 
     function frame(now) {
       const p = Math.min((now - t0) / duration, 1);
-      const u = 1 - ease(p); // diffusion time goes T → 0
-      const ab = alphaBar(u);
-      const a = Math.sqrt(ab);
-      const b = Math.sqrt(Math.max(0, 1 - ab));
+      const eased = p * p * (3 - 2 * p);                  // smoothstep
+      const sigma = SIGMA_MIN * Math.exp(LOG_RATIO * eased);
+      const denom = 2 * sigma * sigma;
 
-      // Box–Muller produces two N(0,1) samples per pair of uniforms.
-      // We sample fresh noise every frame so the image visibly "shimmers"
-      // toward the clean photo, matching the marginal distribution at each t.
-      let pending = 0, paired = 0;
+      // Build current Gaussian mask H_t once — shared across channels
+      for (let i = 0; i < N2; i++) {
+        mask[i] = Math.exp(-k2[i] / denom);
+      }
 
-      for (let i = 0; i < N; i++) {
-        const j = i << 2;
-
-        // Three independent N(0,1) per pixel (R,G,B)
-        let n0, n1, n2;
-        if (paired) {
-          n0 = pending; paired = 0;
-        } else {
-          let u1 = Math.random(); if (u1 < 1e-7) u1 = 1e-7;
-          const u2 = Math.random();
-          const mag = Math.sqrt(-2 * Math.log(u1));
-          const ang = 2 * Math.PI * u2;
-          n0 = mag * Math.cos(ang);
-          pending = mag * Math.sin(ang);
-          paired = 1;
+      for (let c = 0; c < 3; c++) {
+        // X · H_t
+        for (let i = 0; i < N2; i++) {
+          const m = mask[i];
+          wRe[i] = Xre[c][i] * m;
+          wIm[i] = Xim[c][i] * m;
         }
-        if (paired) {
-          n1 = pending; paired = 0;
-        } else {
-          let u1 = Math.random(); if (u1 < 1e-7) u1 = 1e-7;
-          const u2 = Math.random();
-          const mag = Math.sqrt(-2 * Math.log(u1));
-          const ang = 2 * Math.PI * u2;
-          n1 = mag * Math.cos(ang);
-          pending = mag * Math.sin(ang);
-          paired = 1;
+        // F^{-1}
+        fft2d(wRe, wIm, N, N, true);
+        // Real part to channel c (clip to [0,255])
+        for (let i = 0; i < N2; i++) {
+          let v = wRe[i] * 255;
+          if (v < 0) v = 0; else if (v > 255) v = 255;
+          outData[i * 4 + c] = v;
         }
-        if (paired) {
-          n2 = pending; paired = 0;
-        } else {
-          let u1 = Math.random(); if (u1 < 1e-7) u1 = 1e-7;
-          const u2 = Math.random();
-          const mag = Math.sqrt(-2 * Math.log(u1));
-          const ang = 2 * Math.PI * u2;
-          n2 = mag * Math.cos(ang);
-          pending = mag * Math.sin(ang);
-          paired = 1;
-        }
-
-        // x_0 in [-1, 1]
-        const r0 = x0Data[j]     / 127.5 - 1;
-        const g0 = x0Data[j + 1] / 127.5 - 1;
-        const bl = x0Data[j + 2] / 127.5 - 1;
-
-        // Forward marginal x_t
-        const rt = a * r0 + b * n0;
-        const gt = a * g0 + b * n1;
-        const bt = a * bl + b * n2;
-
-        // Map back to [0, 255] with clipping
-        let rv = (rt + 1) * 127.5;  if (rv < 0) rv = 0; else if (rv > 255) rv = 255;
-        let gv = (gt + 1) * 127.5;  if (gv < 0) gv = 0; else if (gv > 255) gv = 255;
-        let bv = (bt + 1) * 127.5;  if (bv < 0) bv = 0; else if (bv > 255) bv = 255;
-
-        outData[j]     = rv;
-        outData[j + 1] = gv;
-        outData[j + 2] = bv;
-        outData[j + 3] = 255;
       }
 
       ctx.putImageData(out, 0, 0);
@@ -149,7 +191,7 @@
       if (p < 1) {
         requestAnimationFrame(frame);
       } else {
-        // Crossfade to the original <img> for crisp final pixels
+        // Crossfade to the crisp <img> for pixel-accurate final state
         img.classList.remove('is-hidden');
       }
     }
