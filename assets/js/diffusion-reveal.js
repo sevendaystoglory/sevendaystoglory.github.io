@@ -127,25 +127,20 @@
     const PI8    = Math.PI / 8;
     const PI4    = Math.PI / 4;
 
-    // Final "video crossfade" — start ramping the actual <video> in over
-    // the last N frames so the photo lands continuously instead of flipping.
-    const FADE_FRAMES = 20;
-    const FADE_FPS    = 16;
-    const fadeWindowMs = (FADE_FRAMES * 1000) / FADE_FPS;   // 1250 ms
+    // Linear video crossfade across the entire timeline: opacity = t.
+    // The ASCII canvas remains underneath the whole time, so the chars
+    // are most prominent early and progressively wash out as the live
+    // photo bleeds through.
 
     function frame(now) {
       const elapsed = now - t0;
       const t = Math.min(elapsed / duration, 1);
 
       if (videoMode) {
-        // Linear ramp of the live <video> from opacity 0 → 1 across the
-        // final 12 frames of the timeline.  Canvas keeps drawing underneath
-        // so the chars and the actual frame visually cross-blend.
-        const fadeStartMs = duration - fadeWindowMs;
-        let vOp = elapsed > fadeStartMs ? Math.min(1, (elapsed - fadeStartMs) / fadeWindowMs) : 0;
-        if (vOp !== lastVidOpacity) {
-          video.style.opacity = vOp;
-          lastVidOpacity = vOp;
+        // Linear opacity 0 → 1 across the whole timeline.
+        if (t !== lastVidOpacity) {
+          video.style.opacity = t;
+          lastVidOpacity = t;
         }
       } else {
         // Fallback (mobile): the <img> sits underneath at z=0 and is the
