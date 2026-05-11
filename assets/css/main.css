@@ -131,6 +131,11 @@ img { max-width: 100%; height: auto; display: block; }
     display: block;
     z-index: 0;     /* back: only visible as the no-JS / failure fallback */
 }
+/* When JS is present we hide the static photo by default so it can't flash
+   in before the reveal script runs.  The script's early-return paths and
+   the mobile fallback add .is-shown back when the photo is the intended
+   state.  Without JS, the photo stays visible as a graceful fallback. */
+.js .sidebar-photo:not(.is-shown) { opacity: 0; visibility: hidden; }
 .sidebar-photo.is-hidden { opacity: 0; visibility: hidden; }
 
 .sidebar-name {

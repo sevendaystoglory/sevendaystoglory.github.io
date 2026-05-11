@@ -39,8 +39,19 @@
     });
   }
 
-  if (!window.requestAnimationFrame) return;
-  if (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+  // The static <img> is hidden by default once the inline <html class="js">
+  // script runs, so on every code path that does NOT play the reveal
+  // animation we must add .is-shown to bring the static photo back.
+  function showStatic() {
+    const photo = document.querySelector('.sidebar-photo');
+    if (photo) photo.classList.add('is-shown');
+  }
+
+  if (!window.requestAnimationFrame) { showStatic(); return; }
+  if (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+    showStatic();
+    return;
+  }
 
   // Only animate on a fresh tab open or an explicit reload — not when the
   // user navigates between pages in the same session (e.g. clicks a blog
@@ -49,14 +60,17 @@
   const navEntries = (performance.getEntriesByType && performance.getEntriesByType('navigation')) || [];
   const isReload = navEntries.length && navEntries[0].type === 'reload';
   try {
-    if (!isReload && sessionStorage.getItem('ascii-reveal-seen') === '1') return;
+    if (!isReload && sessionStorage.getItem('ascii-reveal-seen') === '1') {
+      showStatic();
+      return;
+    }
     sessionStorage.setItem('ascii-reveal-seen', '1');
   } catch (e) { /* private mode etc. — fall through and animate */ }
 
   const video  = document.querySelector('.sidebar-photo-video');
   const canvas = document.querySelector('.sidebar-photo-canvas');
   const img    = document.querySelector('.sidebar-photo');
-  if (!video || !canvas || !img) return;
+  if (!video || !canvas || !img) { showStatic(); return; }
 
   // 70-glyph luminance ramp, light → dense.
   const RAMP = " .'`^\",:;Il!i><~+_-?][}{1)(tfjrxnuvczXYUJCLQ0OZmwqpdbkhao*#MW&8%B@$";
@@ -297,10 +311,11 @@
       started = true;
       if (videoMode) {
         duration = (video.duration && isFinite(video.duration)) ? video.duration * 1000 : 2780;
-        img.classList.add('is-hidden');         // canvas takes over from here
+        // <img> is already hidden by `.js .sidebar-photo:not(.is-shown)`;
+        // canvas + video do the work.
       } else {
         duration = 3000;                         // fixed-length fallback reveal
-        // Leave <img> visible. The canvas overlay fades out at the end.
+        img.classList.add('is-shown');           // canvas overlays the static photo
       }
       t0 = performance.now();
       requestAnimationFrame(frame);
@@ -336,6 +351,6 @@
     start();
   } else {
     img.addEventListener('load', start, { once: true });
-    img.addEventListener('error', function () { img.classList.remove('is-hidden'); }, { once: true });
+    img.addEventListener('error', showStatic, { once: true });
   }
 })();
