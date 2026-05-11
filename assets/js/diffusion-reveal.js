@@ -151,11 +151,15 @@
       const t = Math.min(elapsed / duration, 1);
 
       if (videoMode) {
-        // Quartic ease-in opacity 0 → 1 across the whole timeline.
-        // Video stays nearly invisible early so the ASCII chars dominate,
-        // then accelerates hard into full reveal near the end.
-        const t2 = t * t;
-        const vOp = t2 * t2;
+        // Hard cutoff for the first 2 s (video stays at 0), then quartic
+        // ease-in 0 → 1 across the remainder of the timeline.
+        const cutoffMs = 2000;
+        let vOp = 0;
+        if (elapsed > cutoffMs && duration > cutoffMs) {
+          const tr = Math.min(1, (elapsed - cutoffMs) / (duration - cutoffMs));
+          const tr2 = tr * tr;
+          vOp = tr2 * tr2;
+        }
         if (vOp !== lastVidOpacity) {
           video.style.opacity = vOp;
           lastVidOpacity = vOp;
