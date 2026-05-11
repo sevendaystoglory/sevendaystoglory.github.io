@@ -151,10 +151,11 @@
       const t = Math.min(elapsed / duration, 1);
 
       if (videoMode) {
-        // Quadratic ease-in opacity 0 → 1 across the whole timeline.
-        // Slow accumulation at the start (so the chars dominate), then
-        // accelerating reveal of the real photo by the end.
-        const vOp = t * t;
+        // Quartic ease-in opacity 0 → 1 across the whole timeline.
+        // Video stays nearly invisible early so the ASCII chars dominate,
+        // then accelerates hard into full reveal near the end.
+        const t2 = t * t;
+        const vOp = t2 * t2;
         if (vOp !== lastVidOpacity) {
           video.style.opacity = vOp;
           lastVidOpacity = vOp;
