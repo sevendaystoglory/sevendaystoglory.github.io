@@ -151,9 +151,9 @@
       const t = Math.min(elapsed / duration, 1);
 
       if (videoMode) {
-        // Hard cutoff for the first 2 s (video stays at 0), then quartic
+        // Hard cutoff for the first 1.2 s (video stays at 0), then quartic
         // ease-in 0 → 1 across the remainder of the timeline.
-        const cutoffMs = 2000;
+        const cutoffMs = 1200;
         let vOp = 0;
         if (elapsed > cutoffMs && duration > cutoffMs) {
           const tr = Math.min(1, (elapsed - cutoffMs) / (duration - cutoffMs));
