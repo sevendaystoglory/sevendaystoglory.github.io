@@ -151,9 +151,10 @@
       const t = Math.min(elapsed / duration, 1);
 
       if (videoMode) {
-        // Linear opacity 0.4 → 1.0 across the whole timeline so the photo
-        // is already faintly visible at the start.
-        const vOp = 0.4 + 0.6 * t;
+        // Quadratic ease-in opacity 0 → 1 across the whole timeline.
+        // Slow accumulation at the start (so the chars dominate), then
+        // accelerating reveal of the real photo by the end.
+        const vOp = t * t;
         if (vOp !== lastVidOpacity) {
           video.style.opacity = vOp;
           lastVidOpacity = vOp;
