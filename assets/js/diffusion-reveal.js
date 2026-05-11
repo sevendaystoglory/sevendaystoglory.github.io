@@ -137,10 +137,12 @@
       const t = Math.min(elapsed / duration, 1);
 
       if (videoMode) {
-        // Linear opacity 0 → 1 across the whole timeline.
-        if (t !== lastVidOpacity) {
-          video.style.opacity = t;
-          lastVidOpacity = t;
+        // Linear opacity 0.4 → 1.0 across the whole timeline so the photo
+        // is already faintly visible at the start.
+        const vOp = 0.4 + 0.6 * t;
+        if (vOp !== lastVidOpacity) {
+          video.style.opacity = vOp;
+          lastVidOpacity = vOp;
         }
       } else {
         // Fallback (mobile): the <img> sits underneath at z=0 and is the
