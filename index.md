@@ -17,7 +17,7 @@ title: Home
     interests lie in the geometry of deep learning.
   </p>
   <p class="intro-body">
-    Previously, I founded Eigenfrequency Technologies, where we built AI
+    Previously, I'd co-founded Eigenfrequency Technologies, where we built AI
     agents for global banks and supreme courts. I graduated in Physics from
     <strong>IIT Delhi (2024)</strong> with a bachelor's thesis in computational
     neuroscience.
