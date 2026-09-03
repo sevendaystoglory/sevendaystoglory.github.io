@@ -5,10 +5,13 @@ title: Home
 
 <section class="intro">
   <p class="intro-lede">
-    I'm currently working on <strong>visual information retrieval</strong> with
-    <a href="https://abhinavsh.info/">Dr. Abhinav Shrivastava</a>. Previously, I
-    worked on building <strong>trustworthy LLMs</strong> via data attribution
-    with <a href="https://sites.google.com/view/prathosh/home">Dr. Prathosh A.P.</a>
+    I'm an MS student at <a href="https://mila.quebec/">Mila</a>, working on
+    <strong>continual learning</strong> and the <strong>optimization of deep
+    neural nets</strong> with <a href="https://sarathchandar.in/">Dr. Sarath
+    Chandar</a>. Previously, I worked on <strong>visual information
+    retrieval</strong> with <a href="https://abhinavsh.info/">Dr. Abhinav
+    Shrivastava</a>, on building <strong>trustworthy LLMs</strong> via data
+    attribution with <a href="https://sites.google.com/view/prathosh/home">Dr. Prathosh A.P.</a>
     at IISc Bangalore, and on <strong>test-time alignment</strong> of LLMs at
     Purdue with <a href="https://beerkay.github.io/">Dr. Berkay Celik</a>. I've
     also had a chance to work with
