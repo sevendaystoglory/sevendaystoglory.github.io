@@ -8,7 +8,7 @@ title: Home
     I'm an MS student at <a href="https://mila.quebec/">Mila</a>, working on
     <strong>continual learning</strong> and the <strong>optimization of deep
     neural nets</strong> with <a href="https://sarathchandar.in/">Dr. Sarath
-    Chandar</a>. Previously, I worked on <strong>visual information
+    Chandar</a>, co-supervised by <a href="https://scholar.google.ca/citations?hl=en&user=lqDGv9YAAAAJ">Dr. Amal Zouaq</a>. Previously, I worked on <strong>visual information
     retrieval</strong> with <a href="https://abhinavsh.info/">Dr. Abhinav
     Shrivastava</a>, on building <strong>trustworthy LLMs</strong> via data
     attribution with <a href="https://sites.google.com/view/prathosh/home">Dr. Prathosh A.P.</a>
