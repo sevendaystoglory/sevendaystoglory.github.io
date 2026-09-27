@@ -518,6 +518,15 @@ h1 {
 }
 .news-link:hover, .til-link:hover { color: var(--accent); }
 
+.news-logo {
+    display: inline-block !important;
+    width: 1.1em !important;
+    height: 1.1em !important;
+    margin: 0 0.35em 0 0 !important;
+    border-radius: 0 !important;
+    vertical-align: -0.18em;
+}
+
 .til-link { font-size: 0.95rem; }
 
 .news-tag {

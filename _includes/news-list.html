@@ -3,9 +3,9 @@
     <li class="news-item">
       <span class="news-date">{{ item.date }}</span>
       {% if item.url %}
-        <a href="{{ item.url }}" class="news-link">{{ item.text }}</a>
+        <a href="{{ item.url }}" class="news-link">{% if item.logo %}<img src="{{ item.logo | relative_url }}" alt="" class="news-logo">{% endif %}{{ item.text }}</a>
       {% else %}
-        <span class="news-text">{{ item.text }}</span>
+        <span class="news-text">{% if item.logo %}<img src="{{ item.logo | relative_url }}" alt="" class="news-logo">{% endif %}{{ item.text }}</span>
       {% endif %}
     </li>
   {% endfor %}

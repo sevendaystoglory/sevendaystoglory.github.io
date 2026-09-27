@@ -25,7 +25,7 @@ title: Home
   </p>
   <p class="intro-contact">
     <span class="intro-label">Contact</span>
-    <a href="mailto:nishant.sharma.iitd@gmail.com">nishant.sharma.iitd@gmail.com</a>
+    <a href="mailto:nishant.sharma@mila.quebec">nishant.sharma@mila.quebec</a>
   </p>
 </section>
 
