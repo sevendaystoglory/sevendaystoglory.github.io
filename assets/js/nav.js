@@ -15,11 +15,14 @@
   }
   async function go(url, push, scrollTo) {
     let html;
-    try { const r = await fetch(url, { headers: { 'X-Requested-With': 'nav' } }); if (!r.ok) throw 0; html = await r.text(); }
+    // revalidate with the server so a page cached before a deploy is never swapped in
+    try { const r = await fetch(url, { cache: 'no-cache', headers: { 'X-Requested-With': 'nav' } }); if (!r.ok) throw 0; html = await r.text(); }
     catch (_) { location.href = url; return; }
     const doc = new DOMParser().parseFromString(html, 'text/html');
     const next = doc.querySelector('.main-col');
-    if (!next) { location.href = url; return; }
+    // a page from a different build than this one needs its own assets: load it fully
+    const stamp = (d) => { const m = d.querySelector('meta[name="build"]'); return m ? m.content : ''; };
+    if (!next || stamp(doc) !== stamp(document)) { location.href = url; return; }
     document.dispatchEvent(new Event('ascii:page-leave'));
     document.querySelector('.main-col').replaceWith(next);
     document.title = doc.title;
