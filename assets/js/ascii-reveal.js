@@ -337,7 +337,17 @@
       }
     }
 
-    if (video.readyState >= 2) {
+    // On a phone, or on a slow or metered connection, the Live Photo video
+    // is not worth waiting for: run the reveal over the static photo at
+    // once. Elsewhere give the video a short moment to become playable,
+    // then do the same rather than leave the circle empty.
+    const conn = navigator.connection || {};
+    const coarse = window.matchMedia && window.matchMedia('(pointer: coarse)').matches;
+    const slow = conn.saveData || /2g|3g/.test(conn.effectiveType || '');
+    if (coarse || slow) {
+      try { video.removeAttribute('src'); video.load(); } catch (_) {}   // do not download it at all
+      abort();
+    } else if (video.readyState >= 2) {
       attempt();
     } else {
       const onReady = function () {
@@ -347,9 +357,7 @@
       };
       video.addEventListener('loadeddata', onReady);
       video.addEventListener('canplay',   onReady);
-      // Bail out if the video never becomes playable (slow network,
-      // disabled media, etc.) — show the static photo instead of a black hole.
-      setTimeout(abort, 4000);
+      setTimeout(abort, 1200);
     }
   }
 
