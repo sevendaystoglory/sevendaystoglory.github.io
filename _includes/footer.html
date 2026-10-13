@@ -1,6 +1,33 @@
 <footer class="site-footer">
+    <div class="footer-art" aria-hidden="true">
+        <canvas class="footer-canvas" id="ascii-hills"></canvas>
+    </div>
+    {% if page.url == "/" %}
+    <div class="footer-note">
+        <p>
+            I love image/video to ASCII components. It is surprisingly hard to make an ASCII picture that is
+            soothing to look at. I had a brilliant reference with a
+            <a href="https://x.com/lucashjin/status/2052047583757889812" target="_blank" rel="noopener">post by
+            Lucas Jin</a> showing a video-to-ASCII renderer that actually looks good. For the curious, in
+            short -- the picture is divided into a grid of cells, where each cell's brightness picks a
+            character from a ramp that runs from light (<code>.</code>) to dense (<code>@</code>). What really
+            sells it is that cells that sit on an edge get a stroke that follows the edge (<code>| / - \</code>)
+            instead, and each character takes the colour of the pixels underneath. Everything else that moves
+            on this page is basically the same idea. Show your Claude the post and the summary above and it
+            should be able to make beautiful ASCII components. Cheers!
+        </p>
+    </div>
+    {% endif %}
+    <div class="flux" id="flux">
+        <div class="flux-head">
+            <span class="flux-label">COSMIC RAY FLUX</span>
+            <span class="flux-count"><span id="flux-count">0</span> HITS THIS VISIT</span>
+        </div>
+        <pre class="flux-meter" id="flux-meter" role="slider" tabindex="0" aria-label="Cosmic ray flux" aria-valuemin="0" aria-valuemax="100" aria-valuenow="35"></pre>
+        <p class="flux-note" id="flux-note"></p>
+    </div>
     <div class="footer-inner">
-        <p class="footer-copy">&copy; {{ site.time | date: '%Y' }} {{ site.title }}</p>
-        <p class="footer-built">Built with Jekyll.</p>
+        <p class="footer-copy">&copy; {{ site.time | date: '%Y' }} Nishant Sharma</p>
+        <p class="footer-built">Built with Jekyll. The drawings are generated in your browser.</p>
     </div>
 </footer>

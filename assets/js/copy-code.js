@@ -1,5 +1,5 @@
-document.addEventListener('DOMContentLoaded', () => {
-    const codeBlocks = document.querySelectorAll('pre');
+function addCopyButtons() {
+    const codeBlocks = document.querySelectorAll('pre:not([data-copy])');
     
     codeBlocks.forEach(block => {
         // Create copy button
@@ -8,6 +8,7 @@ document.addEventListener('DOMContentLoaded', () => {
         copyButton.textContent = 'Copy';
         
         // Add button to code block
+        block.dataset.copy = '1';
         block.appendChild(copyButton);
         
         // Add click handler
@@ -25,4 +26,6 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         });
     });
-}); 
+}
+addCopyButtons();
+document.addEventListener('ascii:page-enter', addCopyButtons);

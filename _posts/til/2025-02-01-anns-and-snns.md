@@ -7,9 +7,6 @@ permalink: /til/anns-snns
 image: /assets/images/spikingneural.original.jpg
 ---
 
-# How are ANNs different from Biological Neurons
-<p class="post-date">Feb 1, 2025</p>
-
 I've been digging deep into the mechanics of neural computation lately, and one question keeps coming up: How do the artificial neurons in our models really compare to the biological neurons firing in our brains? Today, I’m cutting through the hype to give you a content-rich breakdown (I promise :) of the similarities and, more importantly, the differences between biological neurons, traditional artificial neural networks (ANNs), and spiking neural networks (SNNs).
 
 ---

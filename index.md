@@ -3,49 +3,77 @@ layout: default
 title: Home
 ---
 
-<section class="intro">
-  <p class="intro-lede">
-    I'm an MS student at <a href="https://mila.quebec/">Mila</a>, working on
-    <strong>continual learning</strong> and the <strong>optimization of deep
-    neural nets</strong> with <a href="https://sarathchandar.in/">Dr. Sarath
-    Chandar</a>, co-supervised by <a href="https://scholar.google.ca/citations?hl=en&user=lqDGv9YAAAAJ">Dr. Amal Zouaq</a>. Previously, I worked on <strong>visual information
-    retrieval</strong> with <a href="https://abhinavsh.info/">Dr. Abhinav
-    Shrivastava</a>, on building <strong>trustworthy LLMs</strong> via data
-    attribution with <a href="https://sites.google.com/view/prathosh/home">Dr. Prathosh A.P.</a>
-    at IISc Bangalore, and on <strong>test-time alignment</strong> of LLMs at
-    Purdue with <a href="https://beerkay.github.io/">Dr. Berkay Celik</a>. I've
-    also had a chance to work with
-    <a href="https://pengtaoxie.github.io/">Dr. Pengtao Xie</a> at UCSD to
-    predict histone signatures of non-coding RNAs. Overall, my current
-    interests lie in the geometry of deep learning.
-  </p>
-  <p class="intro-body">
-    I graduated in Physics from <strong>IIT Delhi (2024)</strong> with a
-    bachelor's thesis in computational neuroscience.
-  </p>
-  <p class="intro-contact">
-    <span class="intro-label">Contact</span>
-    <a href="mailto:nishant.sharma@mila.quebec">nishant.sharma@mila.quebec</a>
-  </p>
+<section class="intro-card" id="hero">
+  <div class="intro-text">
+    <p class="bio">
+      I'm an MS student at <a href="https://mila.quebec/">Mila</a>, advised by
+      <a href="https://sarathchandar.in/">Dr.&nbsp;Sarath Chandar</a> and co-supervised by
+      <a href="https://scholar.google.ca/citations?hl=en&user=lqDGv9YAAAAJ">Dr.&nbsp;Amal Zouaq</a>.
+      I work on <strong>continual learning</strong>, <strong>AI alignment</strong> and the
+      <strong>optimization of deep neural nets</strong>.
+    </p>
+    <p class="bio">
+      Much of my perspective on these topics has come through the <strong>geometry of deep
+      learning</strong>, i.e. what the optimizer and the loss landscape govern about what gets
+      learned, how a network can keep learning (loss of information plasticity), and how to make
+      LLMs trustworthy through data attribution.
+    </p>
+    <p class="bio">
+      Previously, I worked on building AI-native video infra and specifically visual information
+      retrieval with <a href="https://abhinavsh.info/">Dr.&nbsp;Abhinav Shrivastava</a>, on
+      trustworthy LLMs via data attribution with
+      <a href="https://sites.google.com/view/prathosh/home">Dr.&nbsp;Prathosh A.P.</a> at IISc
+      Bangalore, and on test-time alignment at Purdue with
+      <a href="https://beerkay.github.io/">Dr.&nbsp;Berkay Celik</a>; I also worked with
+      <a href="https://pengtaoxie.github.io/">Dr.&nbsp;Pengtao Xie</a> at UCSD on predicting histone
+      signatures of non-coding RNAs. I graduated in Physics from IIT Delhi (2024)
+      with a bachelor's thesis in computational neuroscience.
+    </p>
+    <div class="bio-note">Looking for a research internship in summer 2027.</div>
+  </div>
+  <div class="intro-art">
+    <div class="card-art card-art-ascii">
+      <canvas class="ascii-canvas" id="ascii-landscape" aria-label="An animated loss landscape"></canvas>
+    </div>
+    <p class="card-art-hint">Move over the landscape to reshape it; click to drop a point.</p>
+  </div>
 </section>
 
-<section class="section">
-  <h2 class="section-title">News</h2>
-  {% include news-list.html %}
-</section>
-
-<section class="section">
-  <h2 class="section-title">Selected Publications</h2>
-  <p class="section-note">Authors who equally contributed to a publication are marked with a † (dagger).</p>
+<section class="lower" id="publications">
+  <div class="section-head">
+    <h2 class="section-title">Selected Publications and Preprints</h2>
+    {% include rule.html small=true %}
+  </div>
   {% include publications-list.html %}
 </section>
 
-<section class="section">
-  <h2 class="section-title">Projects</h2>
-  {% include projects-list.html %}
+<div class="latest-layout">
+<div class="latest-main">
+<section class="news-sec" id="news" aria-label="News">
+  <div class="section-head">
+    <h2 class="section-title">News</h2>
+    {% include rule.html small=true %}
+  </div>
+  {% include news-list.html %}
 </section>
 
-<section class="section">
-  <h2 class="section-title">Writing / TIL</h2>
+<section class="lower" id="writing">
+  <div class="section-head">
+    <h2 class="section-title">Writing / TIL</h2>
+    {% include rule.html small=true %}
+  </div>
   {% include writing-list.html %}
+</section>
+</div>
+<div class="cloud-art" aria-hidden="true">
+  <canvas id="ascii-clouds"></canvas>
+</div>
+</div>
+
+<section class="lower" id="projects">
+  <div class="section-head">
+    <h2 class="section-title">Projects</h2>
+    {% include rule.html small=true %}
+  </div>
+  {% include projects-list.html %}
 </section>

@@ -7,9 +7,6 @@ permalink: /blogs/the-unwritten-half-of-scientific-research/
 image: /assets/images/stories.jpg
 ---
 
-# The Unwritten Half of Scientific Research
-<p class="post-date">Dec 15, 2025</p>
-
 Modern ML papers are looking more polished than ever, yet feel hard to read and harder to build upon. This blog is about the unwritten half of scientific research: the tacit decisions and details that never make it into the PDF. At the end, I also point to what a better publishable artifact could look like.
 
 

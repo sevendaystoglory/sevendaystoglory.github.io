@@ -3,12 +3,10 @@ layout: post
 title: "AI Cognition. And Emotions.❤️"
 date: 2025/01/17 
 category: projects
+description: "An attempt at an emotionally autonomous AI companion: from reading notes to an ACE-style architecture for mood."
 image: /assets/images/mindmender.png
 permalink: /project/ai-cognition/
 ---
-
-# AI Cognition. And Emotions.❤️
-<p class="post-date">Jul 20, 2023</p>
 
 This is what I tweeted on January 4.
 

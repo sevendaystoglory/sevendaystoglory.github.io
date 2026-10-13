@@ -1,20 +1,18 @@
-<div class="project-grid">
-  {% for post in site.posts %}
-    {% if post.category == 'projects' %}
-      <a href="{{ post.url | relative_url }}" class="project-card">
-        {% if post.image %}
-          <div class="project-card-img">
-            <img src="{{ post.image | relative_url }}" alt="{{ post.title }}">
-          </div>
-        {% endif %}
-        <div class="project-card-body">
-          <h3 class="project-card-title">{{ post.title }}</h3>
-          <p class="project-card-date">{{ post.date | date: "%B %Y" }}</p>
-          {% if post.content %}
-            <p class="project-card-desc">{{ post.content | strip_html | truncatewords: 26 }}</p>
-          {% endif %}
-        </div>
-      </a>
-    {% endif %}
-  {% endfor %}
+{%- assign i = 0 -%}
+<div class="feat-grid">
+{%- for post in site.posts -%}
+{%- if post.category == 'projects' -%}
+  {%- assign ci = i | modulo: 3 -%}
+  {%- case ci %}{% when 0 %}{% assign col = "blue" %}{% when 1 %}{% assign col = "terra" %}{% else %}{% assign col = "sage" %}{% endcase -%}
+  <a class="feat-card feat-card-link sw-{{ col }}-fg" href="{{ post.url | relative_url }}">
+    <div class="feat-venue">{{ post.date | date: "%B %Y" }}</div>
+    <h3 class="feat-title">{{ post.title }}</h3>
+    {%- if post.description -%}<p class="feat-desc">{{ post.description }}</p>{%- endif -%}
+    {%- if post.image -%}
+    <div class="feat-thumb"><img src="{{ post.image | relative_url }}" alt="" loading="lazy"><canvas class="thumb-ascii" aria-hidden="true"></canvas></div>
+    {%- endif -%}
+  </a>
+  {%- assign i = i | plus: 1 -%}
+{%- endif -%}
+{%- endfor -%}
 </div>

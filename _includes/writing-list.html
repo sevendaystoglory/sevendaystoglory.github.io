@@ -1,17 +1,13 @@
-<ul class="news-list">
-  {% for post in site.posts %}
-    {% if post.category == 'blogs' or post.category == 'til' %}
-      <li class="news-item">
-        <span class="news-date">{{ post.date | date: "%b %d, %Y" }}</span>
-        <a href="{{ post.url | relative_url }}" class="news-link">
-          {{ post.title }}{% if post.category == 'til' %}<span class="news-tag">TIL</span>{% endif %}
-        </a>
-        {% if post.image and post.category == 'blogs' %}
-          <span class="news-preview" aria-hidden="true">
-            <img src="{{ post.image | relative_url }}" alt="" loading="lazy">
-          </span>
-        {% endif %}
-      </li>
-    {% endif %}
-  {% endfor %}
-</ul>
+<div class="compact-grid">
+{%- for post in site.posts -%}
+{%- if post.category == 'blogs' or post.category == 'til' -%}
+  <a class="compact-card" href="{{ post.url | relative_url }}">
+    <div class="compact-body">
+      <div class="compact-title">{{ post.title }}</div>
+      <div class="compact-meta">{{ post.date | date: "%b %-d, %Y" }}{% if post.category == 'til' %} · <span class="tag">TIL</span>{% endif %}</div>
+    </div>
+    <span class="compact-link" aria-hidden="true">→</span>
+  </a>
+{%- endif -%}
+{%- endfor -%}
+</div>

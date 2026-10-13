@@ -7,9 +7,6 @@ image: /assets/images/caesar.webp
 permalink: /blogs/bending-perception/
 ---
 
-# Bending People's Perception to Your Will
-<p class="post-date">Mar 11, 2024</p>
-
 <img src="/assets/images/caesar.webp" alt="Caesar in Stone" width="600" style="max-width: 100%; height: auto;">
 
 That's right. It's a Twitter hashtag etched in ancient stone. It is a timeless reminder of Julius Caesar's fate. Sounds like a joke, right? But what if the history were laid out on the internet? Imagine the impact of radical ideas in unstable times from reach alone.

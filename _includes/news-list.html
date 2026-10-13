@@ -1,12 +1,9 @@
-<ul class="news-list">
-  {% for item in site.data.news %}
-    <li class="news-item">
-      <span class="news-date">{{ item.date }}</span>
-      {% if item.url %}
-        <a href="{{ item.url }}" class="news-link">{% if item.logo %}<img src="{{ item.logo | relative_url }}" alt="" class="news-logo">{% endif %}{{ item.text }}</a>
-      {% else %}
-        <span class="news-text">{% if item.logo %}<img src="{{ item.logo | relative_url }}" alt="" class="news-logo">{% endif %}{{ item.text }}</span>
-      {% endif %}
-    </li>
-  {% endfor %}
+<ul class="nw-list">
+{%- for item in site.data.news -%}
+  {%- assign ci = forloop.index0 | modulo: 4 -%}
+  <li style="--dot-c: var(--dot-{{ ci }})">
+    <span class="nw-d">{{ item.date }}</span>
+    <span class="nw-t">{% if item.logo %}<img src="{{ item.logo | relative_url }}" alt="" class="news-logo">{% endif %}{% if item.url %}<a href="{{ item.url }}">{{ item.text }}</a>{% else %}{{ item.text }}{% endif %}</span>
+  </li>
+{%- endfor -%}
 </ul>

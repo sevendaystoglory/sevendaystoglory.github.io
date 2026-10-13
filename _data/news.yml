@@ -1,6 +1,7 @@
 # Newest first.
 - date: "Aug 2026"
-  text: "🎓 Starting my MS at Mila with Dr. Sarath Chandar, working on continual learning and optimization of deep neural nets."
+  text: "Starting my MS at Mila with Dr. Sarath Chandar, working on continual learning and optimization of deep neural nets."
+  logo: "/assets/images/mila-logo.svg"
 
 - date: "Apr 2026"
   text: "🇧🇷 Visiting ICLR 2026 in Rio de Janeiro."

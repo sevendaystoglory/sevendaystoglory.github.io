@@ -26,7 +26,7 @@
   // the session flag so the home page's next load animates, and force a
   // reload if the user is already on the photo's destination (otherwise
   // the browser treats a same-URL link click as a no-op).
-  const photoLink = document.querySelector('.sidebar-photo-link');
+  const photoLink = document.querySelector('.ascii-photo-link');
   if (photoLink) {
     photoLink.addEventListener('click', function (e) {
       try { sessionStorage.removeItem('ascii-reveal-seen'); } catch (_) {}
@@ -43,7 +43,7 @@
   // script runs, so on every code path that does NOT play the reveal
   // animation we must add .is-shown to bring the static photo back.
   function showStatic() {
-    const photo = document.querySelector('.sidebar-photo');
+    const photo = document.querySelector('.ascii-photo');
     if (photo) photo.classList.add('is-shown');
   }
 
@@ -67,9 +67,9 @@
     sessionStorage.setItem('ascii-reveal-seen', '1');
   } catch (e) { /* private mode etc. — fall through and animate */ }
 
-  const video  = document.querySelector('.sidebar-photo-video');
-  const canvas = document.querySelector('.sidebar-photo-canvas');
-  const img    = document.querySelector('.sidebar-photo');
+  const video  = document.querySelector('.ascii-photo-video');
+  const canvas = document.querySelector('.ascii-photo-canvas');
+  const img    = document.querySelector('.ascii-photo');
   if (!video || !canvas || !img) { showStatic(); return; }
 
   // 70-glyph luminance ramp, light → dense.
@@ -113,7 +113,7 @@
     // Match the canvas background to the wrap so chars look like they're
     // drawn on the same paper as the surrounding sidebar (rather than a
     // dark hole). Reading the computed bg picks up the --cream variable.
-    let canvasBg = '#f3f6fa';
+    let canvasBg = '#1b2a41';
     try {
       const wrapBg = getComputedStyle(canvas.parentElement).backgroundColor;
       if (wrapBg && wrapBg !== 'rgba(0, 0, 0, 0)' && wrapBg !== 'transparent') {
@@ -317,7 +317,7 @@
       started = true;
       if (videoMode) {
         duration = (video.duration && isFinite(video.duration)) ? video.duration * 1000 : 2780;
-        // <img> is already hidden by `.js .sidebar-photo:not(.is-shown)`;
+        // <img> is already hidden by `.js .ascii-photo:not(.is-shown)`;
         // canvas + video do the work.
       } else {
         duration = 3000;                         // fixed-length fallback reveal
@@ -353,10 +353,13 @@
     }
   }
 
-  if (img.complete && img.naturalWidth > 0) {
-    start();
-  } else {
-    img.addEventListener('load', start, { once: true });
-    img.addEventListener('error', showStatic, { once: true });
+  function begin() {
+    if (img.complete && img.naturalWidth > 0) {
+      start();
+    } else {
+      img.addEventListener('load', start, { once: true });
+      img.addEventListener('error', showStatic, { once: true });
+    }
   }
+  begin();
 })();

@@ -6,9 +6,6 @@ category: til
 permalink: /til/company-valuation
 ---
 
-# How do you value a company?
-<p class="post-date">Nov 2, 2022</p>
-
 Valuing a company comes down to figuring out how much you’re willing to pay for it based on what it can earn in the future and what similar companies have sold for. Three common methods are:
 
 1. **Discounted Cash Flow (DCF) Analysis**  

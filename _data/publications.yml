@@ -1,3 +1,25 @@
+- title: "Understanding Stability of Outer Nesterov Momentum on Stochastic Pseudo-Gradients"
+  authors:
+    - { name: "Nishant Sharma", me: true }
+    - { name: "Laura Gomezjurado Gonzalez" }
+    - { name: "Ganesh Talluri" }
+    - { name: "Sarath Chandar" }
+    - { name: "Hiroki Naganuma" }
+  venue: "Preprint"
+  short: "arXiv"
+  year: 2026
+  links: []
+
+- title: "From Inner Randomness to Outer Stability"
+  authors:
+    - { name: "Nishant Sharma", me: true }
+    - { name: "Ganesh Talluri" }
+    - { name: "Hiroki Naganuma" }
+  venue: "OPT 2026: 18th Annual Workshop on Optimization for Machine Learning (NeurIPS Workshop)"
+  short: "OPT-ML"
+  year: 2026
+  links: []
+
 - title: "Enhancing Trustworthiness of Fine-Tuned LLMs via Regularized Subset Selection"
   authors:
     - { name: "Kumar Shubham", equal: true }

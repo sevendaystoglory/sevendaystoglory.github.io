@@ -3,12 +3,10 @@ layout: post
 title: "Orbital Distances Visualizer"
 date: 2025/01/17 
 category: projects
+description: "An open-source visualizer for getting an intuitive feel for how far orbits and other distances in space actually go."
 image: /assets/images/deep-impact.png
 permalink: /project/deep-impact/
 ---
-
-# Orbital Distances Visualizer
-<p class="post-date">Jan 17, 2025</p>
 
 So that's how it started. On a boring weekend..
 

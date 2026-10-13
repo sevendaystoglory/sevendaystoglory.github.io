@@ -4,30 +4,32 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <script>document.documentElement.classList.add('js');</script>
-    <title>{{ page.title }} | {{ site.title }}</title>
+    <title>{% if page.url == "/" %}{{ site.title }}{% else %}{{ page.title }} | {{ site.title }}{% endif %}</title>
     <link rel="icon" type="image/png" sizes="32x32" href="{{ '/assets/images/favicon-32.png' | relative_url }}">
     <link rel="icon" type="image/png" sizes="64x64" href="{{ '/assets/images/favicon-64.png' | relative_url }}">
     <link rel="apple-touch-icon" sizes="180x180" href="{{ '/assets/images/favicon-180.png' | relative_url }}">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Source+Sans+3:wght@400;500;600&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="{{ '/assets/css/main.css' | relative_url }}">
-    {% seo %}
+    <link href="https://fonts.googleapis.com/css2?family=Spectral:ital,wght@0,400;0,500;0,600;1,400;1,500&family=Source+Sans+3:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{{ '/assets/css/site.css' | relative_url }}?v={{ site.time | date: '%s' }}">
+    {% seo title=false %}
     {% feed_meta %}
 </head>
 <body>
-    <div class="page">
-        {% include navigation.html %}
-
-        <main class="main-col">
-            <div class="container">
+    <canvas class="bg-drift" id="bg-drift" aria-hidden="true"></canvas>
+    <div class="shell">
+        {% include sidebar.html %}
+        <div class="main-col">
+            <main class="page">
                 {{ content }}
-            </div>
+            </main>
             {% include footer.html %}
-        </main>
+        </div>
     </div>
 
-    <script src="/assets/js/copy-code.js"></script>
-    <script src="/assets/js/diffusion-reveal.js"></script>
+    <script src="{{ '/assets/js/ascii-fx.js' | relative_url }}?v={{ site.time | date: '%s' }}"></script>
+    <script src="{{ '/assets/js/copy-code.js' | relative_url }}?v={{ site.time | date: '%s' }}"></script>
+    <script src="{{ '/assets/js/nav.js' | relative_url }}?v={{ site.time | date: '%s' }}"></script>
+    <script src="{{ '/assets/js/ascii-reveal.js' | relative_url }}?v={{ site.time | date: '%s' }}"></script>
 </body>
 </html>
