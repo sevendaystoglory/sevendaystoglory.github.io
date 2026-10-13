@@ -4,7 +4,7 @@ title: "AI Cognition. And Emotions.❤️"
 date: 2025/01/17 
 category: projects
 description: "An attempt at an emotionally autonomous AI companion: from reading notes to an ACE-style architecture for mood."
-image: /assets/images/mindmender.png
+image: /assets/images/mindmender.webp
 permalink: /project/ai-cognition/
 ---
 
@@ -20,23 +20,23 @@ What started in sometime in July 2023 as a routine mental masturbation exercise(
 
 I had (then)recently watched the movie 'Her'. An Ai powered OS, huh? Sounds interesting! But it was not its ability to organize emails, or to write poetry that made it so fascinating. We had GPT-3.5 then. It was very useful for a lot of things (mostly writing code, and drafting content) but was is not something that <b>you could just talk to</b>. It still not is! It is the idea of companionship that drew me in.
 
-<img src="/assets/images/ai-cognition-notion.png" style="max-width : 80%; height : auto" href = "https://cake-action-ecf.notion.site/AI-cognition-and-Human-companion-eeb7677ef83b43ca817d1d31e1b7c322?pvs=74">
+<img loading="lazy" decoding="async" src="/assets/images/ai-cognition-notion.webp" style="max-width : 80%; height : auto" href = "https://cake-action-ecf.notion.site/AI-cognition-and-Human-companion-eeb7677ef83b43ca817d1d31e1b7c322?pvs=74">
 *<a href="https://cake-action-ecf.notion.site/AI-cognition-and-Human-companion-eeb7677ef83b43ca817d1d31e1b7c322?pvs=74">Here</a> is a documentation of things that I read.* 
 
 ## Chapter 2: The rise of a bully. Modelling a person's thought process.
 
 I wanted some way in to this to tackle this problem statement. I've past experience from my research in the field of neuroscience. It came naturally to model the companion's thought process as an <a href="https://arxiv.org/abs/2310.06775">ACE framework</a>, drawing inspiration from the OSI model. 
 
-<img src="/assets/images/ace-model.png" style="max-width : 80%; height : auto">
+<img loading="lazy" decoding="async" src="/assets/images/ace-model.webp" style="max-width : 80%; height : auto">
 
 ### A sneak peak into my architecture
 
-<img src="/assets/images/ERC-model.png" style="max-width : 80%; height : auto">
+<img loading="lazy" decoding="async" src="/assets/images/ERC-model.webp" style="max-width : 80%; height : auto">
 
 ### How do you control the mood? A chatbot that just meekly reciprocates the mood is boring. Its like you talking to you.
 
 
-<img src="/assets/images/mindmender.png" style="max-width : 80%; height : auto">
+<img loading="lazy" decoding="async" src="/assets/images/mindmender.webp" style="max-width : 80%; height : auto">
 
 
 Words to self - The following should be checkmarked for the AI companion to come out as <strong>Reliable, Consistent, Intelligent, Empathetic, Intuitive, Proactive.</strong>
@@ -45,7 +45,7 @@ Words to self - The following should be checkmarked for the AI companion to come
 
 All of my readings and implementations have produced very apparent differences in a legacy chatbot response and how an emotionally autonomus entity would respond.
 
-<img src="/assets/images/difference.jpg" style="max-width : 80%; height : auto">
+<img loading="lazy" decoding="async" src="/assets/images/difference.webp" style="max-width : 80%; height : auto">
 *An ERC response is the standard 'Emotion Recognition in Conversation' reply. The ERC 3.2 is the one with ACE framework implemented along with NTVs for mood.*
 
 ## Chapter 3: Building an AI buddy for mass market!

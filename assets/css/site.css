@@ -1042,7 +1042,7 @@ pre:hover .copy-button { opacity: 1; }
 .flux { position: relative; }
 .flux-meter {
     margin: 2px 0 6px;
-    padding: 6px 0;
+    padding: 12px 0;                 /* a comfortable touch target */
     font-size: 11px;
     line-height: 1.25;
     white-space: pre;
@@ -1115,6 +1115,9 @@ pre:hover .copy-button { opacity: 1; }
 }
 @media (max-width: 520px) {
     :root { --page-pad: 18px; }
+    .flux { padding: 14px 14px 12px; }
+    .flux-head { flex-direction: column; gap: 4px; }
+    .footer-art { height: 110px; }
     .feat-card {
         grid-template-columns: minmax(0, 1fr);
         grid-template-areas: "venue" "thumb" "title" "desc" "authors" "pills";

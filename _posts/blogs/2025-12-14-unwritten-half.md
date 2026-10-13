@@ -4,7 +4,7 @@ title: "The Unwritten Half of Scientific Research"
 date: 2025/12/15
 category: blogs
 permalink: /blogs/the-unwritten-half-of-scientific-research/
-image: /assets/images/stories.jpg
+image: /assets/images/stories.webp
 ---
 
 Modern ML papers are looking more polished than ever, yet feel hard to read and harder to build upon. This blog is about the unwritten half of scientific research: the tacit decisions and details that never make it into the PDF. At the end, I also point to what a better publishable artifact could look like.
@@ -13,7 +13,7 @@ Modern ML papers are looking more polished than ever, yet feel hard to read and 
 ### Scapegoat
 It was November 2025, and I was burnt out from the ICLR review cycle. I kept seeing the same patterns across X. Authors felt the reviews were low effort, and reviewers felt they were drowning in lousy submissions. I was quick to diagnose this issue as stemming from relentless LLM usage and ranted on X (which wasn't a particularly wise judgement looking back). 
 
-<img src="/assets/images/iclr_X.png" alt="image" style="max-width: 70%; height: auto;">
+<img loading="lazy" decoding="async" src="/assets/images/iclr_X.webp" alt="image" style="max-width: 70%; height: auto;">
 
 I frequently saw posts like this one. [This was my first ICLR submission ... and I must say that I'm not impressed. There may not be a second.](https://x.com/ry4335127356065/status/1994136778228592675?s=20)
 
@@ -43,7 +43,7 @@ Second, I will talk about this in a bit, is reproducibility. Even when you under
 
 These two problems connect. A lot of papers are not written to be self-sufficient. They assume the reader already knows the task setup, the assumptions, the data-cleaning choices, and the eval protocols. This is why I believe that stories are worth bringing up.
 
-<img src="/assets/images/stories.jpg" alt="stories" style="max-width: 100%; height: auto;">
+<img loading="lazy" decoding="async" src="/assets/images/stories.webp" alt="stories" style="max-width: 100%; height: auto;">
 
 *Before you judge my lineup, this is just my desk setup, and my bookshelves at home are better, I promise.*
 
@@ -63,12 +63,12 @@ I remember in my senior secondary, when I was preparing for my JEE exam, how wel
 
 You know what bothers me even more than unorganization? Unwarranted verbosity. People flexing a about the word count in their theses. Once again, as I'd like it to be known, the real problem is not just that papers have more content than necessary. It is that papers hide the information you need to trust them and build on them.
 
-<img src="/assets/images/wordcount.png" alt="wordcount" style="max-width: 60%; height: auto;">
+<img loading="lazy" decoding="async" src="/assets/images/wordcount.webp" alt="wordcount" style="max-width: 60%; height: auto;">
 *A random post I found on X. Representative of what I am trying to convey with the above para.*
 
 On the bright side, I expect we will see this writing crisis abate soon. There is a funny side effect to LLMs democratising access to polished text. Papers have been written lousily and low-effort, polished text — just that with LLMs, anything with an iota of generic sounding BS gets accused of as GPT generated. When it gets so easy for everyone to cook up a word salad, and the ability to make one is no longer an indicator of articulation prowess or intellect, people realise this and revert back to using their own style. I'd like to believe that papers would receive the same treatment and improve.
 
-![image](/assets/images/super.png)
+![image](/assets/images/super.webp){: loading="lazy" decoding="async"}
 
 We are, however, reaching another mountain which is more strenuous. Even the most powerful chatbots won't be able to help if they cannot see how a paper came about its results!
 
@@ -84,7 +84,7 @@ The hanging question is in figuring out how to publish that missing half. Follow
 
 ### NeuroLibre
 
-![image](/assets/images/neurolibre.png)
+![image](/assets/images/neurolibre.webp){: loading="lazy" decoding="async"}
 
 What you see in this image is a living preprint. It looks like a paper, but it behaves like a runnable project. If you’re learning, you can it like a guided lab with jupyter books. If you’re reviewing, you can check claims easily without becoming tech support, because the publishing process has these checks built-in. If you're building on top, you have all the resources you need here.
 
@@ -94,7 +94,7 @@ A useful way to frame the real value of this platform is provenance. Instead of 
 
 NeuroLibre’s review process is primarily technical. Its mainly concerned on whether the resource builds and runs, and whether the reproducibility assets are present and usable, not on judging scientific novelty. NeuroLibre automates the build and reproducibility checks, but humans moderate submissions and run a technical screening process before anything is published. 
 
-![image](/assets/images/pipeline.png)
+![image](/assets/images/pipeline.webp){: loading="lazy" decoding="async"}
 *Illustration of the whole process of putting your article on the platform.*
 
 “If only research outputs were more machine interpretable, searchable and discoverable then research could be incrementally automated and progress would go through the roof.” This is one of my favorite lines from the article [The Business of Extracting Knowledge from Academic Publications](https://www.neurolibre.org/blog/2025/06/26/the-business-of-extracting-knowledge-from-academic-publications/). The spirit of NeuroLibre is an embodiment of this idea. If we can make publishing on an open platform like fully frictionless for authors, we get much closer to truly complete papers.

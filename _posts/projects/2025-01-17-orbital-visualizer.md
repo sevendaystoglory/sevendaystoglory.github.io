@@ -4,7 +4,7 @@ title: "Orbital Distances Visualizer"
 date: 2025/01/17 
 category: projects
 description: "An open-source visualizer for getting an intuitive feel for how far orbits and other distances in space actually go."
-image: /assets/images/deep-impact.png
+image: /assets/images/deep-impact.webp
 permalink: /project/deep-impact/
 ---
 
@@ -15,9 +15,9 @@ This is an open-source tool born out of my obsession with memorizing distances i
 
 Try it out <a href="https://sevendaystoglory.github.io/deep-impact">here!</a>
 
-<video width="800" controls autoplay muted loop style="max-width: 100%; height: auto;">
+<video width="800" controls autoplay muted loop playsinline preload="metadata" style="max-width: 100%; height: auto;">
   <source src="/assets/videos/orbital-demo.mp4" type="video/mp4">
-  <img src="/assets/images/deep-impact.png" alt="Orbital Distances Visualizer Demo" style="max-width: 100%; height: auto;">
+  <img loading="lazy" decoding="async" src="/assets/images/deep-impact.webp" alt="Orbital Distances Visualizer Demo" style="max-width: 100%; height: auto;">
 </video>
 
 

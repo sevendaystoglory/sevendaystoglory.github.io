@@ -3,7 +3,7 @@ layout: post
 title: "The War between Creators and Proclaimers"
 date: 2024/02/16 
 category: blogs
-image: /assets/images/jayce-viktor.png
+image: /assets/images/jayce-viktor.webp
 permalink: /blogs/the-war-between-creators-and-proclaimers/
 ---
 
@@ -11,7 +11,7 @@ permalink: /blogs/the-war-between-creators-and-proclaimers/
 > 
 > *~Thucydides*
 
-<img src="/assets/images/jayce-viktor.png" alt="Viktor and Jayce from Arcane" width="600" style="max-width: 100%; height: auto;">
+<img loading="lazy" decoding="async" src="/assets/images/jayce-viktor.webp" alt="Viktor and Jayce from Arcane" width="600" style="max-width: 100%; height: auto;">
 
 *Viktor (left) and Jayce (right) from the series Arcane*
 

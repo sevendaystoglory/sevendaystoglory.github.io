@@ -1733,7 +1733,15 @@
     if (!meter) return;
     let v = 0.35;
     try { const sv = localStorage.getItem('ray-flux'); if (sv != null) v = clamp01(parseFloat(sv)); } catch (_) {}
-    const COLS = 64;
+    let COLS = 64;
+    // size the bar to the box: as many columns as fit beside "[", "] 100%"
+    function fitCols() {
+      const probe = document.createElement('span');
+      probe.textContent = '='.repeat(10); probe.style.cssText = 'position:absolute;visibility:hidden;white-space:pre;font:inherit';
+      meter.appendChild(probe); const chW = probe.getBoundingClientRect().width / 10; meter.removeChild(probe);
+      const avail = meter.clientWidth / Math.max(1, chW) - 8;              // "[" + bar + "] 100%"
+      COLS = Math.max(16, Math.min(64, Math.floor(avail)));
+    }
     function describe(x) {
       const mean = 60 * Math.pow(0.01, x);
       const lo = mean * 0.5, hi = mean * 1.5;
@@ -1755,7 +1763,9 @@
       const r0 = rg.getBoundingClientRect();
       rg.setStart(tn, 1); rg.setEnd(tn, Math.min(tn.length, COLS + 1));
       const r1 = rg.getBoundingClientRect();
-      barLeft = r1.left - meter.getBoundingClientRect().left; barWidth = Math.max(1, r1.width);
+      const mr = meter.getBoundingClientRect();
+      if (r1.width > 4) { barLeft = r1.left - mr.left; barWidth = r1.width; }
+      else { barLeft = r0.width || 7; barWidth = Math.max(1, mr.width - barLeft * 9); }
     }
     function render(t) {
       const x = v, filled = Math.round(x * COLS), tick = Math.floor(t * 8);
@@ -1776,7 +1786,11 @@
       render(performance.now() / 1000);
     }
     let dragging = false;
-    meter.addEventListener('pointerdown', (e) => { e.preventDefault(); e.stopPropagation(); dragging = true; meter.setPointerCapture(e.pointerId); measure(); setFrom(e.clientX); });
+    meter.addEventListener('pointerdown', (e) => {
+      e.preventDefault(); e.stopPropagation(); dragging = true;
+      try { meter.setPointerCapture(e.pointerId); } catch (_) {}
+      measure(); setFrom(e.clientX);
+    });
     meter.addEventListener('pointermove', (e) => { if (dragging) setFrom(e.clientX); });
     meter.addEventListener('pointerup', (e) => { dragging = false; e.stopPropagation(); });
     meter.addEventListener('pointercancel', () => { dragging = false; });
@@ -1787,7 +1801,9 @@
       document.dispatchEvent(new CustomEvent('ascii:flux', { detail: v })); render(performance.now() / 1000);
     });
     pageOn(document, 'ascii:ray', (e) => { if (count) count.textContent = e.detail; });
+    fitCols();
     render(0);
+    pageOn(window, 'resize', () => { fitCols(); render(performance.now() / 1000); });
     if (!reduced) pageTimers.push(setInterval(() => render(performance.now() / 1000), 125));
   }
 

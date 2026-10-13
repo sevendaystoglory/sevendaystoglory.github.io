@@ -28,7 +28,7 @@ Biological neurons are FAR more than simple binary switches. They are complex el
 This intricate interplay of structure, chemistry, and timing is what allows biological systems not only to process vast amounts of information but also to adapt and learn from their environment in a highly dynamic way.
 
 
-<img src ="/assets/images/anns.png" style = "max-width: 60%; height: auto">
+<img loading="lazy" decoding="async" src ="/assets/images/anns.webp" style = "max-width: 60%; height: auto">
 
 ## How Do Artificial Neural Networks (ANNs) Work. And Learn?
 
@@ -54,7 +54,7 @@ Although ANNs have driven breakthroughs in fields ranging from computer vision t
 
 ## A Better Emulation: Spiking Neural Networks (SNNs)
 
-<img src ="/assets/images/spikingneural.original.jpg" style = "max-width: 60%; height: auto">
+<img loading="lazy" decoding="async" src ="/assets/images/spikingneural.original.jpg" style = "max-width: 60%; height: auto">
 
 Spiking Neural Networks attempt to bridge the gap between the highly abstracted world of ANNs and the messy, yet efficient, operations of biological brains.
 
