@@ -792,6 +792,13 @@ a.badge:hover { transform: translateY(-1px); box-shadow: 0 3px 8px -2px rgba(27,
     .latest-main .compact-grid { grid-template-columns: minmax(0, 1fr); column-gap: 0; }
 }
 
+.pub-service {
+    margin-top: 10px;
+    font-style: normal;
+    font-size: 15.5px;
+    color: var(--ink);
+}
+
 /* ------------------------------------------------------------------
    Compact cards (writing list)
 ------------------------------------------------------------------ */

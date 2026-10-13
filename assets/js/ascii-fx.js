@@ -791,7 +791,7 @@
         x, y, isGlyph, vx: 0, vy: 0, flash: 0, boost: 0, lastHit: -9, launched: false,
         ch: SCRAMBLE[(Math.random() * SCRAMBLE.length) | 0],
         size: isGlyph ? 10 + Math.random() * 5 : 1 + Math.random() * 1.4,
-        base: isGlyph ? 0.16 + Math.random() * 0.16 : 0.18 + Math.random() * 0.2,
+        base: (isGlyph ? 0.16 + Math.random() * 0.16 : 0.18 + Math.random() * 0.2) * 0.8,
         phase: Math.random() * Math.PI * 2,
         col: Math.random() < 0.75 ? C.navy : [C.clay, C.midblue, C.sage, C.amber][(Math.random() * 4) | 0]
       };

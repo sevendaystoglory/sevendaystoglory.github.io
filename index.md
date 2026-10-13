@@ -44,7 +44,7 @@ title: Home
     <h2 class="section-title">Selected Publications and Preprints</h2>
     {% include rule.html small=true %}
   </div>
-  {% include publications-list.html %}
+  {% include publications-list.html service=true %}
 </section>
 
 <div class="latest-layout">

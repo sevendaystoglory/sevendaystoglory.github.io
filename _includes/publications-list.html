@@ -18,3 +18,8 @@
 {%- endfor -%}
 </ol>
 <p class="pub-note"><span class="dag">†</span> equal co-authorship</p>
+{%- if include.service -%}
+{%- assign n = site.data.service | size -%}
+{%- assign penult = n | minus: 1 -%}
+<p class="pub-note pub-service">Peer reviewer for {% for v in site.data.service %}{{ v }}{% if forloop.index == penult %} and {% elsif forloop.last == false %}, {% endif %}{% endfor %}.</p>
+{%- endif -%}
