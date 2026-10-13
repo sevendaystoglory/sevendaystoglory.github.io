@@ -35,7 +35,7 @@ title: Home
     <div class="card-art card-art-ascii">
       <canvas class="ascii-canvas" id="ascii-landscape" aria-label="An animated loss landscape"></canvas>
     </div>
-    <p class="card-art-hint">Move over the landscape to reshape it; click to drop a point.</p>
+    <p class="card-art-hint art-caption">a loss basin with points actively running gradient descent on it. move across to shape it and click to drop another point.</p>
   </div>
 </section>
 

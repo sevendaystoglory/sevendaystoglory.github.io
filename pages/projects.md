@@ -11,7 +11,8 @@ permalink: /pages/projects/
     <p class="bio">Side projects and tools.</p>
   </div>
   <div class="page-hero-art">
-    <canvas class="scene-canvas" data-scene="orrery" aria-hidden="true"></canvas>
+    <div class="scene-box"><canvas class="scene-canvas" data-scene="flock" aria-hidden="true"></canvas></div>
+    <p class="art-caption">a murmuration following real boid rules.</p>
   </div>
 </section>
 

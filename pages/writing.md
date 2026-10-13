@@ -11,7 +11,8 @@ permalink: /pages/writing/
     <p class="bio">Essays, and short notes on things I learned.</p>
   </div>
   <div class="page-hero-art">
-    <canvas class="scene-canvas" data-scene="storm-small" aria-hidden="true"></canvas>
+    <div class="scene-box"><canvas class="scene-canvas" data-scene="storm-small" aria-hidden="true"></canvas></div>
+    <p class="art-caption">a storm.</p>
   </div>
 </section>
 
