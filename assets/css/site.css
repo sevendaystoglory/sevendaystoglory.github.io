@@ -4,9 +4,9 @@
    sage accents. The drawings are ASCII scenes made by assets/js/ascii-fx.js.
 ------------------------------------------------------------------ */
 :root {
-    --bg: #FAF8F3;
-    --bg-card: #FDFCF9;
-    --bg-side: #F3EFE6;
+    --bg: #FCFBF8;
+    --bg-card: #FFFEFB;
+    --bg-side: #F6F3EC;
     --rule: #E3DED2;
     --rule-strong: #CFC8B8;
 
@@ -114,7 +114,7 @@ strong { font-weight: 600; color: var(--ink); }
     top: 0; left: 0; bottom: 0;
     overflow-y: auto;
     padding: 3.2rem 2rem 1.5rem;
-    background: rgba(240, 235, 224, 0.9);
+    background: rgba(244, 240, 231, 0.9);
     border-right: 1px solid var(--rule-strong);
     z-index: 30;
 }
