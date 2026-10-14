@@ -4,15 +4,15 @@ title: Writing / TIL
 permalink: /pages/writing/
 ---
 
-<section class="page-hero">
+<section class="page-hero page-hero-wide">
   <div class="hero-text">
     <h1 class="display-name">Writing / TIL</h1>
     {% include rule.html %}
     <p class="bio">Essays, and short notes on things I learned.</p>
   </div>
   <div class="page-hero-art">
-    <div class="scene-box"><canvas class="scene-canvas" data-scene="storm-small" aria-hidden="true"></canvas></div>
-    <p class="art-caption">a storm.</p>
+    <div class="scene-box"><canvas class="scene-canvas" data-scene="flock" aria-hidden="true"></canvas></div>
+    <p class="art-caption">a murmuration following real <a href="https://en.wikipedia.org/wiki/Boids" target="_blank" rel="noopener">boid rules</a>.</p>
   </div>
 </section>
 
