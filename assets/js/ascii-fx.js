@@ -2275,7 +2275,7 @@
     // the same tracks. Each photo gets a canvas of
     // its own, drawn in negative like the rays, so a track sits on the photo
     // wherever it scrolls; tracks fade out over TRACK_LIFE seconds.
-    const TRACK_LIFE = 6;
+    const TRACK_LIFE = 3.5;
     let burst = null;
     const trackHosts = new Map();            // photo element -> { cv, g, tracks }
     let lastTrackPaint = 0, tracksDirty = false;
@@ -2322,44 +2322,59 @@
         if (!ok || t1 - t0 < 1e-3) continue;
         const u0 = (ax + dx * t0 - tg.x0) / tg.w, v0 = (ay + dy * t0 - tg.y0) / tg.h;
         const u1 = (ax + dx * t1 - tg.x0) / tg.w, v1 = (ay + dy * t1 - tg.y0) / tg.h;
+        // the track is a polyline, one point per frame, so a curving particle
+        // leaves a curve; a gap (it left the photo and came back) starts a new run
         let tr = r.track.get(tg.el);
         if (!tr) {
-          tr = { u0, v0, u1, v1, born: t, seed: Math.random() * 1000, hot: r.hot, curl: Math.random() < 0.5 ? 1 : -1 };
+          tr = { pts: [u0, v0, u1, v1], born: t, seed: Math.random() * 1000, hot: r.hot, curl: Math.random() < 0.5 ? 1 : -1 };
           r.track.set(tg.el, tr);
           trackHost(tg.el).tracks.push(tr);
-        } else { tr.u1 = u1; tr.v1 = v1; }
+        } else {
+          const n = tr.pts.length;
+          if (Math.abs(tr.pts[n - 2] - u0) > 0.004 || Math.abs(tr.pts[n - 1] - v0) > 0.004) tr.pts.push(NaN, NaN, u0, v0);
+          tr.pts.push(u1, v1);
+        }
         tracksDirty = true;
       }
     }
     function drawTrack(g, tr, W, H, a) {
-      const x0 = tr.u0 * W, y0 = tr.v0 * H, x1 = tr.u1 * W, y1 = tr.v1 * H, L = Math.hypot(x1 - x0, y1 - y0);
-      if (L < 1) return;
-      const ux = (x1 - x0) / L, uy = (y1 - y0) / L, s = tr.seed;
+      const s = tr.seed, P = tr.pts;
       g.lineCap = 'round';
-      for (let k = 0; k < L; k += 2) {
-        const x = x0 + ux * k, y = y0 + uy * k, k2 = Math.min(L, k + 2);
-        // the hairline, brighter and dimmer in runs of a few px, with gaps
-        if (hash(k >> 1, s, 2) > 0.1) {
-          g.strokeStyle = rgba([255, 255, 255], a * (0.3 + 0.7 * hash(k >> 3, s, 1)));
-          g.lineWidth = 1.2;
-          g.beginPath(); g.moveTo(x, y); g.lineTo(x0 + ux * k2, y0 + uy * k2); g.stroke();
+      let k = 0;                                                 // distance along the whole track, so the pattern runs through the joins
+      for (let i = 2; i < P.length; i += 2) {
+        if (P[i] !== P[i] || P[i - 2] !== P[i - 2]) continue;   // a gap
+        const x0 = P[i - 2] * W, y0 = P[i - 1] * H, x1 = P[i] * W, y1 = P[i + 1] * H, L = Math.hypot(x1 - x0, y1 - y0);
+        if (L < 0.5) continue;
+        const ux = (x1 - x0) / L, uy = (y1 - y0) / L, kEnd = k + L;
+        for (; k < kEnd; k += 2) {
+          const d = k - (kEnd - L), x = x0 + ux * d, y = y0 + uy * d, d2 = Math.min(L, d + 2);
+          drawBit(g, tr, s, k, x, y, x0 + ux * d2, y0 + uy * d2, ux, uy, a);
         }
-        // a knot of ionisation
-        if (hash(k, s, 3) < (tr.hot ? 0.09 : 0.06)) {
-          g.fillStyle = rgba([255, 255, 255], a * 0.9);
-          g.beginPath(); g.arc(x, y, 1.2 + hash(k, s, 4) * 1.2, 0, 2 * Math.PI); g.fill();
-        }
-        // a knocked-on electron: a short spiral off to one side, tightening as it slows
-        if (hash(k, s, 5) < (tr.hot ? 0.02 : 0.012)) {
-          let ang = Math.atan2(uy, ux) + (hash(k, s, 6) < 0.5 ? 1 : -1) * (0.6 + 0.8 * hash(k, s, 7)), cx = x, cy = y;
-          const n = 8 + ((hash(k, s, 8) * 14) | 0);
-          g.lineWidth = 1.05;
-          for (let j = 0; j < n; j++) {
-            const nx = cx + Math.cos(ang) * 1.6, ny = cy + Math.sin(ang) * 1.6;
-            g.strokeStyle = rgba([255, 255, 255], a * 0.75 * (1 - j / n));
-            g.beginPath(); g.moveTo(cx, cy); g.lineTo(nx, ny); g.stroke();
-            cx = nx; cy = ny; ang += tr.curl * (0.1 + 0.035 * j);
-          }
+      }
+    }
+    // one two-pixel bit of a track at distance k along it
+    function drawBit(g, tr, s, k, x, y, x2, y2, ux, uy, a) {
+      // the hairline, brighter and dimmer in runs of a few px, with gaps
+      if (hash(k >> 1, s, 2) > 0.1) {
+        g.strokeStyle = rgba([255, 255, 255], a * (0.3 + 0.7 * hash(k >> 3, s, 1)));
+        g.lineWidth = 1.2;
+        g.beginPath(); g.moveTo(x, y); g.lineTo(x2, y2); g.stroke();
+      }
+      // a knot of ionisation
+      if (hash(k, s, 3) < (tr.hot ? 0.09 : 0.06)) {
+        g.fillStyle = rgba([255, 255, 255], a * 0.9);
+        g.beginPath(); g.arc(x, y, 1.2 + hash(k, s, 4) * 1.2, 0, 2 * Math.PI); g.fill();
+      }
+      // a knocked-on electron: a short spiral off to one side, tightening as it slows
+      if (hash(k, s, 5) < (tr.hot ? 0.02 : 0.012)) {
+        let ang = Math.atan2(uy, ux) + (hash(k, s, 6) < 0.5 ? 1 : -1) * (0.6 + 0.8 * hash(k, s, 7)), cx = x, cy = y;
+        const n = 8 + ((hash(k, s, 8) * 14) | 0);
+        g.lineWidth = 1.05;
+        for (let j = 0; j < n; j++) {
+          const nx = cx + Math.cos(ang) * 1.6, ny = cy + Math.sin(ang) * 1.6;
+          g.strokeStyle = rgba([255, 255, 255], a * 0.75 * (1 - j / n));
+          g.beginPath(); g.moveTo(cx, cy); g.lineTo(nx, ny); g.stroke();
+          cx = nx; cy = ny; ang += tr.curl * (0.1 + 0.035 * j);
         }
       }
     }
@@ -2384,8 +2399,8 @@
         g.clearRect(0, 0, W, H);
         for (const tr of th.tracks) {
           const age = t - tr.born;
-          // a moment's flash as it is struck, then faint, then gone over the last three seconds
-          drawTrack(g, tr, W, H, 0.5 * clamp01((TRACK_LIFE - age) / 3) * (1 + 0.8 * clamp01(1 - age / 0.6)));
+          // a moment's flash as it is struck, then faint, then gone over the last two seconds
+          drawTrack(g, tr, W, H, 0.5 * clamp01((TRACK_LIFE - age) / 2) * (1 + 0.8 * clamp01(1 - age / 0.6)));
         }
       }
     }
