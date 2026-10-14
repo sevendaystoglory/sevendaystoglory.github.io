@@ -149,12 +149,11 @@ strong { font-weight: 600; color: var(--ink); }
     margin: 1.3rem 0 0;
     font-family: var(--sans);
     font-size: 0.86rem;
-    color: var(--link);
+    color: var(--ink-soft);
     white-space: nowrap;
-    border-bottom: 1px solid rgba(79, 111, 163, 0.45);
-    padding-bottom: 1px;
+    transition: color 0.15s;
 }
-.sidebar-email:hover { color: var(--link-hov); border-color: currentColor; }
+.sidebar-email:hover, .sidebar-email:focus-visible { color: var(--link); }
 .sidebar-social {
     list-style: none;
     padding: 0;
@@ -301,7 +300,7 @@ strong { font-weight: 600; color: var(--ink); }
     width: 230px;
     aspect-ratio: 1;
     display: block;
-    border-radius: 50%;
+    border-radius: 3px;
     filter: sepia(0.3) saturate(1.05) contrast(1.02) brightness(1.03);
 }
 .ascii-photo-wrap {
@@ -309,7 +308,7 @@ strong { font-weight: 600; color: var(--ink); }
     display: block;
     width: 100%;
     height: 100%;
-    border-radius: 50%;
+    border-radius: 3px;
     overflow: hidden;
     background: var(--navy);
     box-shadow: 0 0 0 1px rgba(27, 42, 65, 0.12);

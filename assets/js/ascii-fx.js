@@ -1308,7 +1308,7 @@
         photoCanvas = document.createElement('canvas');
         photoCanvas.className = 'ascii-photo-ripple';
         photoCanvas.width = photoCanvas.height = PC;
-        link.appendChild(photoCanvas);              // outside the circle's clip, so the rim can be bent
+        link.appendChild(photoCanvas);              // outside the photo's clip, so the edge can be bent
         const off = document.createElement('canvas');
         off.width = off.height = PN;
         const o = off.getContext('2d', { willReadFrequently: true });
@@ -1495,7 +1495,7 @@
       pc.font = '700 ' + (cell + 1) + 'px ' + MONO;
       const amp = (3 + 9 * rp.k) * scale * a;
       const warm = C.amber, cool = C.midblue;
-      const cx = PC / 2, cy = PC / 2, rim = PN / 2;           // the photo's circle
+      const cx = PC / 2, cy = PC / 2, rim = PN / 2;           // the photo's square: half its side
       const Rmax = R * scale * 1.1 + Tp * 2.8, Rmin = R * scale * 0.9 - Tp * 2.8;   // the band and its falloff
       for (let r = r0; r < r1; r++) for (let c = c0; c < c1; c++) {
         const x = (c + 0.5) * cell, y = (r + 0.5) * cell;
@@ -1511,7 +1511,7 @@
         const bump = Math.sin(ph * Math.PI);
         const disp = amp * Math.sin(ph * Math.PI * 2);           // out then in: a lens
         // where the band crosses the rim, the rim bends: out with the lens, plus a ragged tear
-        const ex = x - cx, ey = y - cy, er = Math.hypot(ex, ey);
+        const ex = x - cx, ey = y - cy, er = Math.max(Math.abs(ex), Math.abs(ey));
         const tear = (hash(Math.round(Math.atan2(ey, ex) * 6), 43, tick) - 0.5) * 10 * a;
         const rimHere = rim + bump * (disp * 1.2 + tear) * (0.5 + rp.k);
         if (er > rimHere) continue;                              // outside the bent rim: nothing
@@ -1547,7 +1547,7 @@
       // and where the rim is bitten inward, paper covers the photo's edge
       for (let r = r0; r < r1; r++) for (let c = c0; c < c1; c++) {
         const x = (c + 0.5) * cell, y = (r + 0.5) * cell;
-        const ex = x - cx, ey = y - cy, er = Math.hypot(ex, ey);
+        const ex = x - cx, ey = y - cy, er = Math.max(Math.abs(ex), Math.abs(ey));
         if (er > rim || er < rim - 14) continue;
         const dx = x - ox, dy = y - oy, d = Math.hypot(dx, dy) || 1;
         if (d > R * scale * 1.1 || d < R * scale * 0.9 - Tp) continue;
@@ -1569,7 +1569,7 @@
       const cx = PC / 2, cy = PC / 2, rim = PN / 2;
       for (let r = Math.floor((py - rad) / cell); r <= Math.ceil((py + rad) / cell); r++) for (let c = Math.floor((px - rad) / cell); c <= Math.ceil((px + rad) / cell); c++) {
         const x = (c + 0.5) * cell, y = (r + 0.5) * cell;
-        if (Math.hypot(x - cx, y - cy) > rim + 4 || Math.hypot(x - px, y - py) > rad) continue;
+        if (Math.max(Math.abs(x - cx), Math.abs(y - cy)) > rim + 4 || Math.hypot(x - px, y - py) > rad) continue;
         const sx = Math.max(0, Math.min(PN - 1, Math.round(x - o))), sy = Math.max(0, Math.min(PN - 1, Math.round(y - o)));
         const si = (sy * PN + sx) * 4, pr = photoPix[si], pg = photoPix[si + 1], pb = photoPix[si + 2];
         const lum = (0.299 * pr + 0.587 * pg + 0.114 * pb) / 255;
@@ -1678,7 +1678,7 @@
         if (t > until) { rp.lingerCells.delete(key); continue; }
         const r = Math.floor(key / 1000), c = key % 1000;
         const x = (c + 0.5) * cell, y = (r + 0.5) * cell;
-        if (Math.hypot(x - cx, y - cy) > rim - 2) continue;      // never outside the circle
+        if (Math.max(Math.abs(x - cx), Math.abs(y - cy)) > rim - 2) continue;      // never outside the photo
         const sx = Math.max(0, Math.min(PN - 1, Math.round(x - o))), sy = Math.max(0, Math.min(PN - 1, Math.round(y - o)));
         const si = (sy * PN + sx) * 4, pr = photoPix[si], pg = photoPix[si + 1], pb = photoPix[si + 2];
         const lum = (0.299 * pr + 0.587 * pg + 0.114 * pb) / 255;
@@ -1704,7 +1704,7 @@
       const n = Math.ceil(PC / cell);
       for (let r = 0; r < n; r++) for (let c = 0; c < n; c++) {
         const x = (c + 0.5) * cell, y = (r + 0.5) * cell;
-        if (Math.hypot(x - cx, y - cy) > rim - 2) continue;
+        if (Math.max(Math.abs(x - cx), Math.abs(y - cy)) > rim - 2) continue;
         const key = r * 1000 + c;
         let hitAt = shatter.hit.get(key);
         if (hitAt == null) {
@@ -1859,7 +1859,7 @@
           }
           if (charge.photo) {
             const ph = charge.photo, cxp = ph.x + ph.size / 2, cyp = ph.y + ph.size / 2;
-            if (Math.hypot(charge.px - cxp, charge.py - cyp) < ph.size / 2 + R) photoPatch(charge.px, charge.py, R, hotOrb);
+            if (Math.max(Math.abs(charge.px - cxp), Math.abs(charge.py - cyp)) < ph.size / 2 + R) photoPatch(charge.px, charge.py, R, hotOrb);
           }
           for (const tg of charge.images) imagePatch(tg, charge.px, charge.py, R, hotOrb);
           thumbHit(charge.thumbs, charge.px, charge.py, t);
@@ -1891,7 +1891,7 @@
               }
               if (charge.photo) {
                 const ph = charge.photo, cxp = ph.x + ph.size / 2, cyp = ph.y + ph.size / 2;
-                if (Math.hypot(hx - cxp, hy - cyp) < ph.size / 2 + 8) photoPatch(hx, hy, 14, tr.hot);
+                if (Math.max(Math.abs(hx - cxp), Math.abs(hy - cyp)) < ph.size / 2 + 8) photoPatch(hx, hy, 14, tr.hot);
               }
               for (const tg of charge.images) imagePatch(tg, hx, hy, 16, tr.hot);
               thumbHit(charge.thumbs, hx, hy, t);
@@ -2131,7 +2131,7 @@
         // the photo
         if (r.photo) {
           const ph = r.photo, cxp = ph.x + ph.size / 2, cyp = ph.y + ph.size / 2;
-          if (Math.hypot(px - cxp, py - cyp) < ph.size / 2 + 8) {
+          if (Math.max(Math.abs(px - cxp), Math.abs(py - cyp)) < ph.size / 2 + 8) {
             const was = charge; charge = { photo: ph };      // photoPatch reads the photo from the charge
             photoPatch(px, py, 20, r.hot);
             charge = was;
