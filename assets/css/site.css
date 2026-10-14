@@ -83,10 +83,6 @@ strong { font-weight: 600; color: var(--ink); }
 ------------------------------------------------------------------ */
 /* cosmic rays: a layer over everything, blended in difference so the ray
    inverts what it crosses */
-/* the rays: a plain overlay for the hairline tails, and a tiny negative
-   (difference-blended) chip that rides on each head. Blending only the chip
-   keeps the compositor from re-rendering the whole viewport every frame of
-   a ray's flight. */
 .ray-layer {
     position: fixed;
     inset: 0;
@@ -94,17 +90,7 @@ strong { font-weight: 600; color: var(--ink); }
     height: 100%;
     z-index: 70;
     pointer-events: none;
-}
-.ray-head {
-    position: fixed;
-    left: 0;
-    top: 0;
-    width: 48px;
-    height: 48px;
-    z-index: 71;
-    pointer-events: none;
     mix-blend-mode: difference;
-    will-change: transform;
 }
 
 .bg-drift {

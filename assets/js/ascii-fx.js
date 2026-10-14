@@ -1655,16 +1655,6 @@
         vx: (fromLeft ? 1 : -1) * Math.cos(ang) * sp, vy: Math.sin(ang) * sp,
         born: now, trail: [], hot: Math.random() < 0.4, near: null, lastSpew: 0
       };
-      // the negative chip that rides on the head
-      const dpr = Math.min(window.devicePixelRatio || 1, 2);
-      ray.head = document.createElement('canvas');
-      ray.head.className = 'ray-head';
-      ray.head.width = ray.head.height = Math.round(48 * dpr);
-      ray.head.style.transform = 'translate(' + (ray.x - 24) + 'px,' + (ray.y - 24) + 'px)';
-      document.body.appendChild(ray.head);
-      ray.hctx = ray.head.getContext('2d');
-      ray.hctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-      ray.hctx.lineCap = 'round';
       if (!textNodes) collectText();
       ray.near = [];
       for (const wn of textNodes) {
@@ -1694,28 +1684,19 @@
         r.x += r.vx * dt; r.y += r.vy * dt;
         r.trail.push([r.x, r.y]); if (r.trail.length > 14) r.trail.shift();
         const gone = r.x < -160 || r.x > w + 160 || r.y < -160 || r.y > h + 160;
-        if (gone) { for (const e of r.near) healRun(e); clearImageSet(r.images); for (const card of r.thumbs) { card.classList.remove('ascii-on'); card._asciiUntil = 0; } r.head.remove(); rays.splice(i, 1); continue; }
-        // a hairline tail in ink on the plain overlay; the head and a short
-        // stub behind it are drawn in white on the negative chip, so what the
-        // head crosses flips for an instant. The damage is what you see.
+        if (gone) { for (const e of r.near) healRun(e); clearImageSet(r.images); for (const card of r.thumbs) { card.classList.remove('ascii-on'); card._asciiUntil = 0; } rays.splice(i, 1); continue; }
+        // the ray in negative: a tiny head and a hairline tail on the difference
+        // layer, so what it crosses flips for an instant; the damage is what you see
         const len = r.trail.length;
         rctx.lineCap = 'round';
         for (let j = 1; j < len; j++) {
           const [ax, ay] = r.trail[j - 1], [bx, by] = r.trail[j], k = j / len;
-          rctx.strokeStyle = 'rgba(27,42,65,' + (0.05 + 0.9 * k * k * k).toFixed(3) + ')';
+          rctx.strokeStyle = 'rgba(255,255,255,' + (0.05 + 0.9 * k * k * k).toFixed(3) + ')';
           rctx.lineWidth = 0.6 + 1.2 * k;
           rctx.beginPath(); rctx.moveTo(ax, ay); rctx.lineTo(bx, by); rctx.stroke();
         }
-        r.head.style.transform = 'translate(' + (r.x - 24) + 'px,' + (r.y - 24) + 'px)';
-        const hc = r.hctx;
-        hc.clearRect(0, 0, 48, 48);
-        if (len > 1) {
-          const [qx, qy] = r.trail[len - 2], dq = Math.hypot(r.x - qx, r.y - qy) || 1;
-          hc.strokeStyle = 'rgba(255,255,255,0.9)'; hc.lineWidth = 1.6;
-          hc.beginPath(); hc.moveTo(24, 24); hc.lineTo(24 + (qx - r.x) / dq * 22, 24 + (qy - r.y) / dq * 22); hc.stroke();
-        }
-        hc.fillStyle = 'rgba(255,255,255,1)';
-        hc.fillRect(22.5, 22.5, 3, 3);
+        rctx.fillStyle = 'rgba(255,255,255,1)';
+        rctx.fillRect(r.x - 1.5, r.y - 1.5, 3, 3);
         // knock the field aside, hard, and spew new glyphs from each hit
         const dirx = r.vx, diry = r.vy;
         let hits = 0;
