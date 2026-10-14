@@ -2274,8 +2274,9 @@
     // held, and the debris its burst throws for a few seconds after, leave
     // the same tracks. Each photo gets a canvas of
     // its own, drawn in negative like the rays, so a track sits on the photo
-    // wherever it scrolls; tracks fade out over TRACK_LIFE seconds.
-    const TRACK_LIFE = 3.5;
+    // wherever it scrolls. Each track has a life of its own, between one and
+    // TRACK_LIFE seconds, so a shower of them goes out one by one.
+    const TRACK_LIFE = 2.5;
     let burst = null;
     const trackHosts = new Map();            // photo element -> { cv, g, tracks }
     let lastTrackPaint = 0, tracksDirty = false;
@@ -2326,7 +2327,7 @@
         // leaves a curve; a gap (it left the photo and came back) starts a new run
         let tr = r.track.get(tg.el);
         if (!tr) {
-          tr = { pts: [u0, v0, u1, v1], born: t, seed: Math.random() * 1000, hot: r.hot, curl: Math.random() < 0.5 ? 1 : -1 };
+          tr = { pts: [u0, v0, u1, v1], born: t, life: 1 + Math.random() * (TRACK_LIFE - 1), seed: Math.random() * 1000, hot: r.hot, curl: Math.random() < 0.5 ? 1 : -1 };
           r.track.set(tg.el, tr);
           trackHost(tg.el).tracks.push(tr);
         } else {
@@ -2386,7 +2387,7 @@
       tracksDirty = false; lastTrackPaint = t;
       const dpr = Math.min(window.devicePixelRatio || 1, 2);
       for (const [el, th] of trackHosts) {
-        th.tracks = th.tracks.filter(tr => t - tr.born < TRACK_LIFE);
+        th.tracks = th.tracks.filter(tr => t - tr.born < tr.life);
         if (!el.isConnected || !th.tracks.length) { th.cv.remove(); trackHosts.delete(el); continue; }
         const W = el.offsetWidth, H = el.offsetHeight;
         if (el.tagName === 'IMG') {
@@ -2399,8 +2400,8 @@
         g.clearRect(0, 0, W, H);
         for (const tr of th.tracks) {
           const age = t - tr.born;
-          // a moment's flash as it is struck, then faint, then gone over the last two seconds
-          drawTrack(g, tr, W, H, 0.5 * clamp01((TRACK_LIFE - age) / 2) * (1 + 0.8 * clamp01(1 - age / 0.6)));
+          // a moment's flash as it is struck, then faint, then gone over the last half of its life
+          drawTrack(g, tr, W, H, 0.5 * clamp01((tr.life - age) / (tr.life * 0.5)) * (1 + 0.8 * clamp01(1 - age / 0.6)));
         }
       }
     }
