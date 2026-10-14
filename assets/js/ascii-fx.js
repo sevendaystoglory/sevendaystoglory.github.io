@@ -1488,6 +1488,7 @@
         startRipple(charge.px, charge.py, now + 0.28, k, true);
         document.dispatchEvent(new CustomEvent('ascii:thunder', { detail: { x: charge.px, y: charge.py } }));
         shatter = { start: now, px: charge.px, py: charge.py, hit: new Map() };
+        burst = { marks: trackTargets(), start: now, until: now + 3.5 };   // the debris it throws leaves tracks on photos
         // every thumbnail goes ASCII for a couple of seconds
         document.querySelectorAll('.feat-card-link').forEach(card => { card.dispatchEvent(new Event('mouseenter')); setTimeout(() => card.classList.remove('ascii-on'), 2200 + Math.random() * 800); });
       } else {
@@ -2265,10 +2266,12 @@
     // it, the way cosmic rays mark a long camera exposure: a broken hairline
     // with knots of ionisation along it, and now and then a short curl where
     // it knocked an electron loose (they all curl the same way, as in a
-    // cloud chamber's field). Each photo gets a canvas of its own, drawn in
-    // negative like the rays, so a track sits on the photo wherever it
-    // scrolls; tracks fade out over TRACK_LIFE seconds.
-    const TRACK_LIFE = 30;
+    // cloud chamber's field). The debris a super wave throws leaves the same
+    // tracks for a few seconds after the burst. Each photo gets a canvas of
+    // its own, drawn in negative like the rays, so a track sits on the photo
+    // wherever it scrolls; tracks fade out over TRACK_LIFE seconds.
+    const TRACK_LIFE = 12;
+    let burst = null;
     const trackHosts = new Map();            // photo element -> { cv, g, tracks }
     let lastTrackPaint = 0, tracksDirty = false;
     // the photos on screen now, with their boxes in page px
@@ -2294,10 +2297,13 @@
       return th;
     }
     // the part of this frame's flight (page px) that lies inside each photo,
-    // added to the ray's track on that photo (u, v run 0..1 across the photo)
+    // added to the mover's track on that photo (u, v run 0..1 across the
+    // photo). The mover is a ray or a piece of debris: it carries the photos
+    // it may cross (marks), its tracks so far, and its last position.
     function markTracks(r, px, py, t) {
       const ax = r.lpx == null ? px : r.lpx, ay = r.lpy == null ? py : r.lpy;
       r.lpx = px; r.lpy = py;
+      if (Math.abs(px - ax) > 300) return;                       // debris wrapping round the screen edge
       for (const tg of r.marks) {
         // clip the segment to the box (Liang-Barsky)
         const dx = px - ax, dy = py - ay;
@@ -2330,19 +2336,19 @@
         // the hairline, brighter and dimmer in runs of a few px, with gaps
         if (hash(k >> 1, s, 2) > 0.1) {
           g.strokeStyle = rgba([255, 255, 255], a * (0.3 + 0.7 * hash(k >> 3, s, 1)));
-          g.lineWidth = 0.8;
+          g.lineWidth = 1.2;
           g.beginPath(); g.moveTo(x, y); g.lineTo(x0 + ux * k2, y0 + uy * k2); g.stroke();
         }
         // a knot of ionisation
         if (hash(k, s, 3) < (tr.hot ? 0.09 : 0.06)) {
           g.fillStyle = rgba([255, 255, 255], a * 0.9);
-          g.beginPath(); g.arc(x, y, 0.8 + hash(k, s, 4) * 0.8, 0, 2 * Math.PI); g.fill();
+          g.beginPath(); g.arc(x, y, 1.2 + hash(k, s, 4) * 1.2, 0, 2 * Math.PI); g.fill();
         }
         // a knocked-on electron: a short spiral off to one side, tightening as it slows
         if (hash(k, s, 5) < (tr.hot ? 0.02 : 0.012)) {
           let ang = Math.atan2(uy, ux) + (hash(k, s, 6) < 0.5 ? 1 : -1) * (0.6 + 0.8 * hash(k, s, 7)), cx = x, cy = y;
           const n = 8 + ((hash(k, s, 8) * 14) | 0);
-          g.lineWidth = 0.7;
+          g.lineWidth = 1.05;
           for (let j = 0; j < n; j++) {
             const nx = cx + Math.cos(ang) * 1.6, ny = cy + Math.sin(ang) * 1.6;
             g.strokeStyle = rgba([255, 255, 255], a * 0.75 * (1 - j / n));
@@ -2373,8 +2379,8 @@
         g.clearRect(0, 0, W, H);
         for (const tr of th.tracks) {
           const age = t - tr.born;
-          // a moment's flash as it is struck, then faint, then gone over the last ten seconds
-          drawTrack(g, tr, W, H, 0.5 * clamp01((TRACK_LIFE - age) / 10) * (1 + 0.8 * clamp01(1 - age / 0.6)));
+          // a moment's flash as it is struck, then faint, then gone over the last six seconds
+          drawTrack(g, tr, W, H, 0.5 * clamp01((TRACK_LIFE - age) / 6) * (1 + 0.8 * clamp01(1 - age / 0.6)));
         }
       }
     }
@@ -2540,6 +2546,14 @@
         if (p.page) {
           // thrown debris keeps its place on the page and scrolls with it
           y = p.y - scrollY;
+          // debris from a super burst streaks the photos it crosses while it still flies
+          if (burst && p.launched && p.born >= burst.start - 0.05) {
+            if (t > burst.until) burst = null;
+            else if (Math.hypot(p.vx, p.vy) > 90) {
+              if (!p.track) { p.track = new Map(); p.marks = burst.marks; p.hot = p.col === C.clay || p.col === C.amber; }
+              markTracks(p, p.x + SX, p.y, t);
+            }
+          }
           if (p.y < -200 || p.y > pageH + 200) { p.dead = true; continue; }
           if (y < -40 || y > h + 40) continue;                        // off screen: skip the draw
         } else {
