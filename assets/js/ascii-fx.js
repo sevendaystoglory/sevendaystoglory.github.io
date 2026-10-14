@@ -804,10 +804,12 @@
       want = Math.floor((w * h) / 8000);
       while (parts.length < want) parts.push(spawn(Math.random() * w, Math.random() * h));
     }
+    const LIFE = 15;                      // seconds a thrown glyph, or a struck dot turned glyph, stays
     function spawn(x, y) {
       const isGlyph = Math.random() < 0.5;
       return {
         x, y, isGlyph, vx: 0, vy: 0, flash: 0, boost: 0, lastHit: -9, launched: false,
+        born: performance.now() / 1000, revertAt: 0,
         ch: SCRAMBLE[(Math.random() * SCRAMBLE.length) | 0],
         size: isGlyph ? 10 + Math.random() * 5 : 1 + Math.random() * 1.4,
         base: (isGlyph ? 0.16 + Math.random() * 0.16 : 0.18 + Math.random() * 0.2) * 0.8,
@@ -1710,7 +1712,7 @@
           if (d < 40 && t - pp.lastHit > 0.4) {
             pp.vx += dx / (d || 1) * 320 + r.vx * 0.12; pp.vy += dy / (d || 1) * 320 + r.vy * 0.12;
             pp.flash = 1; pp.lastHit = t;
-            if (!pp.isGlyph) { pp.isGlyph = true; pp.size = 10 + Math.random() * 3; pp.base = 0.25; }
+            if (!pp.isGlyph) { pp.isGlyph = true; pp.size = 10 + Math.random() * 3; pp.base = 0.25; pp.revertAt = t + LIFE; }
             pp.ch = SCRAMBLE[(Math.random() * SCRAMBLE.length) | 0];
             hits++;
           }
@@ -1755,7 +1757,7 @@
           m.vx *= 0.45; m.vy *= 0.45;
           o.flash = 1; m.flash = 0.6; o.lastHit = m.lastHit = t;
           if (o.isGlyph) o.ch = SCRAMBLE[(Math.random() * SCRAMBLE.length) | 0];
-          else if (Math.random() < 0.5) { o.isGlyph = true; o.ch = SCRAMBLE[(Math.random() * SCRAMBLE.length) | 0]; o.size = 10 + Math.random() * 3; o.base = 0.2; }
+          else if (Math.random() < 0.5) { o.isGlyph = true; o.ch = SCRAMBLE[(Math.random() * SCRAMBLE.length) | 0]; o.size = 10 + Math.random() * 3; o.base = 0.2; o.revertAt = t + LIFE; }
           break;
         }
       }
@@ -1774,6 +1776,19 @@
         p.x += (Math.cos(a) * 12 + p.vx) * dt; p.y += (Math.sin(a) * 12 + p.vy) * dt;
         p.vx *= keep; p.vy *= keep;
         p.flash *= Math.pow(0.05, dt); p.boost *= Math.pow(0.5, dt);
+        // debris has a life: thrown glyphs fade out over their last four seconds
+        // and are dropped from the field; a dot that was knocked into a glyph
+        // fades the same way and goes back to being a dot
+        let fade = 1;
+        if (p.launched) {
+          const left = LIFE - (t - p.born);
+          if (left <= 0) { p.dead = true; continue; }
+          fade = Math.min(1, left / 4);
+        } else if (p.revertAt) {
+          const left = p.revertAt - t;
+          if (left <= 0) { p.isGlyph = false; p.size = 1 + Math.random() * 1.4; p.base = (0.18 + Math.random() * 0.2) * 0.8; p.flash = 0; p.revertAt = 0; }
+          else fade = Math.min(1, left / 4);
+        }
         if (p.x < -10) p.x = w + 10; else if (p.x > w + 10) p.x = -10;
         let y;
         if (p.page) {
@@ -1786,7 +1801,7 @@
           y = ((p.y - sh) % (h + 20) + (h + 20)) % (h + 20) - 10;
         }
         if (p.isGlyph && Math.random() < 0.004) p.ch = SCRAMBLE[(Math.random() * SCRAMBLE.length) | 0];
-        const alpha = Math.min(1, p.base * (0.55 + 0.45 * Math.sin(t * 0.7 + p.phase)) + p.flash * 0.55 + p.boost * 0.35);
+        const alpha = Math.min(1, p.base * (0.55 + 0.45 * Math.sin(t * 0.7 + p.phase)) + p.flash * 0.55 + p.boost * 0.35) * fade;
         ctx.fillStyle = rgba(p.col, alpha);
         if (p.isGlyph) {
           ctx.font = '600 ' + (p.size * (1 + p.flash * 0.5)).toFixed(1) + 'px ' + MONO;
