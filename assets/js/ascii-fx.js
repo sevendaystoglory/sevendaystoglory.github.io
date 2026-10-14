@@ -364,7 +364,13 @@
       if (cols !== gc || rows !== gr) { gc = cols; gr = rows; cur = new Uint8Array(cols * rows); nxt = new Uint8Array(cols * rows); age = new Uint8Array(cols * rows); died = new Uint8Array(cols * rows); seed(); }
       if (lastT && t !== lastT) step();
       lastT = t;
-    }, (ctx) => { ctx.textAlign = 'left'; ctx.font = '600 10px ' + MONO; ctx.fillStyle = rgba(C.navy, 0.45); ctx.fillText('gen ' + gen, 10, 12); });
+    }, (ctx) => {
+      // the generation count, on a cleared patch so it never overprints live cells
+      ctx.textAlign = 'left'; ctx.font = '600 10px ' + MONO;
+      const label = 'gen ' + gen, w = ctx.measureText(label).width;
+      ctx.clearRect(4, 2, w + 12, 18);
+      ctx.fillStyle = rgba(C.navy, 0.45); ctx.fillText(label, 10, 12);
+    });
     grid.frame.__every = 1000 / 12;   // twelve generations a second
   }
 
