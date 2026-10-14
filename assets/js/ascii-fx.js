@@ -312,28 +312,71 @@
     });
   }
 
-  // ── footer: two hills rendered as glyph density, with a slow wave ─
-  function hills(canvas) {
-    const front = (x, t) => 0.55 * Math.exp(-Math.pow((x - 0.3 + 0.02 * Math.sin(t * 0.3)) / 0.33, 2)) + 0.38 * Math.exp(-Math.pow((x - 0.82) / 0.22, 2));
-    const back  = (x, t) => 0.72 * Math.exp(-Math.pow((x - 0.6 + 0.02 * Math.cos(t * 0.25)) / 0.3, 2));
-    let F = null, B = null;
-    makeGrid(canvas, 8, (u, v, t, c) => {
-      const y = 1 - v;
-      const f = F[c], b = B[c];
-      if (y < f) {
-        const depth = (f - y) / f;
-        const wave = 0.12 * Math.sin(u * 14 + t * 0.9 + y * 6);
-        return [0.25 + depth * 0.7 + wave, rgba(C.navy, 0.55 + depth * 0.4)];
+  // ── footer: a calm sea at night ──────────────────────────────────
+  // Swells roll in toward the viewer under a moon. Each water cell is a
+  // point on a surface of summed waves, compressed toward the horizon;
+  // where the surface slopes it gets a stroke that follows it (/ - \),
+  // where it is flat a dot, and nothing at all in the troughs. The moon's
+  // path shimmers down the water, a few birds cross the sky, and a
+  // thunderclap on the page makes the sea heave for a while.
+  function sea(canvas) {
+    let swellAt = -99;
+    pageOn(document, 'ascii:thunder', () => { swellAt = performance.now() / 1000; });
+    let gc = 0, gr = 0, rH = 0, S = null, moonC = 0, moonR = 3, tick = 0, swell = 1;
+    const sky = new Map();
+    const birds = [0, 1, 2].map(i => ({ off: i * 0.37, y: 0.14 + i * 0.06, sp: 5 + i * 1.5 }));
+    const surface = (x, d, t) => {
+      const sc = 1 / (0.25 + d * 1.3);                                   // waves compress toward the horizon
+      return 0.5 * Math.sin(x * 14 * sc - t * 0.7 + 1) + 0.3 * Math.sin(x * 25 * sc + t * 0.45 + 2.3 + d * 3) + 0.2 * Math.sin(x * 44 * sc - t * 1.1 + d * 5);
+    };
+    function prep(t, cols, rows) {
+      gc = cols; gr = rows; rH = Math.round(rows * 0.42); tick = Math.floor(t * 6);
+      if (!S || S.length !== (cols + 1) * rows) S = new Float32Array((cols + 1) * rows);
+      swell = 1 + 1.4 * Math.exp(-Math.max(0, t - swellAt) * 0.35);
+      for (let r = rH; r < rows; r++) {
+        const d = (r - rH + 0.5) / (rows - rH);
+        for (let c = 0; c <= cols; c++) S[r * (cols + 1) + c] = surface(c / cols, d, t) * swell;
       }
-      if (y < b) {
-        const depth = (b - y) / b;
-        return [0.1 + depth * 0.45, rgba(C.midblue, 0.25 + depth * 0.35)];
+      moonC = Math.round(cols * 0.74);
+      sky.clear();
+      for (const b of birds) {
+        const c = Math.round(((t * b.sp + b.off * cols * 8) % (cols * 8 + 40) - 20) / 8);
+        const r = Math.round(rows * (b.y + 0.03 * Math.sin(t * 0.4 + b.off * 9)));
+        sky.set(r * cols + c, Math.sin(t * 5 + b.off * 7) > 0 ? 'v' : '~');
       }
-      return null;
-    }, (t, cols) => {
-      if (!F || F.length !== cols) { F = new Float32Array(cols); B = new Float32Array(cols); }
-      for (let c = 0; c < cols; c++) { F[c] = front(c / cols, t); B[c] = back(c / cols, t); }
-    });
+    }
+    const MOON = mix(C.amber, [250, 240, 215], 0.6);
+    makeGrid(canvas, 8, (u, v, t, c, r) => {
+      if (r < rH) {
+        // the sky: a crescent moon, a few stars that breathe, the birds
+        const dc = (c - moonC) / 2.4, dr = (r - moonR) / 2.4, md = dc * dc + dr * dr;
+        const bc = (c - moonC - 2.1) / 2.1, br = (r - moonR + 0.7) / 2.1, bd = bc * bc + br * br;
+        if (md < 1 && bd > 1) return [1, rgba(MOON, 0.6 + 0.3 * (1 - md)), md < 0.5 ? '@' : 'O'];
+        const bird = sky.get(r * gc + c);
+        if (bird) return [1, rgba(C.navy, 0.55), bird];
+        if (hash(c, r, 5) < 0.03) return [1, rgba(C.midblue, 0.15 + 0.2 * Math.abs(Math.sin(t * 0.7 + hash(c, r, 6) * 9))), hash(c, r, 8) < 0.5 ? '.' : '·'];
+        return null;
+      }
+      if (r === rH) {
+        // the horizon, drawn where the far water catches the moon
+        const near = Math.abs(c - moonC) / 4;
+        return near < 1 ? [1, rgba(MOON, 0.25 * (1 - near)), '-'] : null;
+      }
+      const d = (r - rH + 0.5) / (gr - rH);
+      const s0 = S[r * (gc + 1) + c], ds = S[r * (gc + 1) + c + 1] - s0;
+      // the moon's path: a band widening toward the viewer, shimmering
+      const path = clamp01(1 - Math.abs(c - moonC) / (1.5 + 7 * d));
+      const lit = path > 0 && s0 > -0.2 ? path * (0.55 + 0.45 * hash(c, r, tick)) : 0;
+      const nd = ds * (0.25 + d * 1.3);                                   // slope per cell, undone of the compression
+      let ch;
+      if (nd > 0.1) ch = '/'; else if (nd < -0.1) ch = '\\';
+      else if (s0 > 0.4) ch = '-'; else if (s0 > 0.05) ch = '~'; else if (s0 > -0.35) ch = hash(c, r, 9) < 0.5 ? '.' : ':';
+      else return null;                                                   // the troughs are dark
+      if (s0 < 0.05 && hash(c, r, 7) > 0.5 + s0 * 0.8) return null;      // the flats breathe
+      const a = (0.22 + 0.45 * clamp01(s0 * 0.6 + 0.5)) * (0.35 + 0.65 * d) + lit * 0.6;
+      const col = mix(mix(C.pale, C.navy, 0.4 + 0.5 * d), C.amber, Math.min(1, lit * 1.2));
+      return [1, rgba(col, a), ch];
+    }, prep);
   }
 
   // ── value noise, shared by the cloudscape and the meadow ─────────
@@ -2304,7 +2347,7 @@
   // in-place page swap (nav.js replaces .main-col and fires ascii:page-enter)
   function initPage() {
     const l = document.getElementById('ascii-landscape'); if (l) landscape(l);
-    const h = document.getElementById('ascii-hills');     if (h) hills(h);
+    const h = document.getElementById('ascii-hills');     if (h) sea(h);
     const cl = document.getElementById('ascii-clouds');   if (cl) clouds(cl);
     const hs = document.getElementById('hero-scene');     if (hs) storm(hs, { cloud: 0.36, boltEvery: 9 });
     document.querySelectorAll('[data-scene="storm-small"]').forEach(c => storm(c, { cloud: 0.4, boltEvery: 12, rain: 2.2, salvo: 3 }));
