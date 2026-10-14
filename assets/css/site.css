@@ -393,7 +393,6 @@ strong { font-weight: 600; color: var(--ink); }
     margin-top: 4px;
     padding: 10px 14px;
     border-left: 3px solid var(--clay);
-    background: var(--bg-card);
     font-style: italic;
     font-size: var(--text);
     color: var(--ink);
