@@ -403,9 +403,12 @@
   // in it; its colour says which map put the last one there, so each colour
   // is a smaller copy of the whole. One point plays slowly in the open, its
   // jump drawn as a dotted line toward the fixed point of the map it drew.
-  // A click moves on to the next one (a quicker blend than the timed one),
-  // and a super wave scatters the points into noise, from which they fall
-  // back one generation at a time.
+  // The whole thing turns slowly about its upright axis like a sign on a
+  // turntable, with a little perspective and a gentle nod, while the game
+  // goes on in its own flat plane. It lingers while it faces the reader and
+  // swings quickly through edge-on. A click moves on to the next fractal (a
+  // quicker blend than the timed one), and a super wave scatters the points
+  // into noise, from which they fall back one generation at a time.
   function chaos(canvas) {
     const R3 = Math.sqrt(3) / 2, PR = (3 - Math.sqrt(5)) / 2;
     // a similarity: scale s, turn a, then shift (e, f); maps are [a, b, c, d, e, f]
@@ -453,9 +456,10 @@
     // the maps in canvas pixels for a W x H box: T(x) = s R x + t fits the
     // set's extent with a margin, and each map becomes T f T^-1
     function fit(W, H) {
+      DEPTH = 4.5 * W;
       for (const S of SETS) {
         const [x0, x1, y0, y1] = S.box, R = S.R;
-        const s = Math.min((W * 0.92) / (x1 - x0), (H * 0.84) / (y1 - y0));
+        const s = Math.min((W * 0.92) / (x1 - x0), (H * 0.8) / (y1 - y0));
         const tx = W / 2 - s * (x0 + x1) / 2, ty = H / 2 - s * (y0 + y1) / 2 + H * 0.03;
         for (let j = 0; j < K; j++) {
           const M = S.maps[S.src[j]], o = j * 6;
@@ -471,13 +475,22 @@
     }
 
     // ── the game in play ─────────────────────────────────────────────
-    const N = 4000, HOLD = 9, MORPH = 3.2, MORPH_CLICK = 1.4, GEN = 0.34, PLAY = 0.5;
+    const N = 4000, HOLD = 9, MORPH = 3.2, MORPH_CLICK = 1.4, GEN = 0.34, PLAY = 0.5, SPIN = 2 * Math.PI / 22;
     const ptx = new Float32Array(N), pty = new Float32Array(N), ptm = new Uint8Array(N);
     const M = new Float64Array(K * 6), CW = new Float64Array(K), FX = new Float64Array(K), FY = new Float64Array(K);
     const COL = [];
     let from = 0, to = 0, morphAt = 0, morphLen = MORPH, nextAt = 0, slowUntil = 0, nextGen = 0, opening = !reduced;
     let W = 0, H = 0, gc = 0, gr = 0, dens = null, last = null, level = 1, lastT = -1;
     const player = { x: 0, y: 0, ox: 0, oy: 0, j: 0, at: -1 };
+    let turn = 0, cosA = 1, sinA = 0, cosB = 1, sinB = 0, DEPTH = 1;
+    // the plane of the game seen turned by `turn` about the upright axis
+    // through the middle of the box and nodded about the level one, in
+    // perspective from 4.5 box widths away
+    function proj(x, y) {
+      const X = x - W / 2, Y = y - H / 2, Z = X * sinA;
+      const yy = Y * cosB - Z * sinB, k = DEPTH / (DEPTH + Y * sinB + Z * cosB);
+      return [W / 2 + X * cosA * k, H / 2 + yy * k];
+    }
     const ease = (m) => m * m * (3 - 2 * m);
     const pick = () => { const r = Math.random() * CW[K - 1]; let j = 0; while (j < K - 1 && CW[j] < r) j++; return j; };
     // the maps of this frame: the two sets blended, and each map's fixed point
@@ -502,10 +515,11 @@
     function scatter() { for (let i = 0; i < N; i++) { ptx[i] = Math.random() * W; pty[i] = Math.random() * H; ptm[i] = (Math.random() * K) | 0; } }
     // a cell's count decays each frame and gains every point that lands in it
     function deposit(decay) {
-      const cw = W / gc, rh = H / gr;
+      const cw = W / gc, rh = H / gr, cx = W / 2, cy = H / 2;
       for (let i = 0; i < dens.length; i++) dens[i] *= decay;
       for (let i = 0; i < N; i++) {
-        const c = Math.floor(ptx[i] / cw), r = Math.floor(pty[i] / rh);
+        const X = ptx[i] - cx, Y = pty[i] - cy, Z = X * sinA, k = DEPTH / (DEPTH + Y * sinB + Z * cosB);
+        const c = Math.floor((cx + X * cosA * k) / cw), r = Math.floor((cy + (Y * cosB - Z * sinB) * k) / rh);
         if (c < 0 || r < 0 || c >= gc || r >= gr) continue;
         dens[r * gc + c] += 1; last[r * gc + c] = ptm[i];
       }
@@ -526,7 +540,10 @@
         if (opening) { blend(0); scatter(); } else settle();
       }
       if (t === lastT) return true;
+      if (!reduced && lastT > 0 && t > lastT) turn += SPIN * (0.45 + 1.1 * sinA * sinA) * Math.min(0.1, t - lastT);
       lastT = t;
+      const nod = 0.2 * Math.sin(turn * 0.6);
+      cosA = Math.cos(turn); sinA = Math.sin(turn); cosB = Math.cos(nod); sinB = Math.sin(nod);
       // the first real frame starts the opening: noise falling onto the triangle
       if (opening && t > 0) { opening = false; shake(t); nextAt = t + GEN * 8 + HOLD; }
       if (!reduced && !opening && from === to && t >= nextAt) next(t, MORPH);
@@ -551,6 +568,7 @@
     // the slow point, its last jump and where it was headed, and the name
     function overlay(ctx, t, cols, rows, cell, rowH, font) {
       const put = (x, y, ch, color, scale) => {
+        [x, y] = proj(x, y);
         const c = Math.floor(x / cell), r = Math.floor(y / rowH);
         if (c < 0 || r < 0 || c >= cols || r >= rows) return;
         ctx.clearRect(c * cell, r * rowH, cell, rowH);
@@ -561,7 +579,7 @@
       };
       if (player.at >= 0 && t >= slowUntil) {
         const f = 1 - 0.6 * clamp01((t - player.at) / PLAY);
-        const dx = player.x - player.ox, dy = player.y - player.oy, n = Math.floor(Math.hypot(dx, dy) / (cell * 1.6));
+        const dx = player.x - player.ox, dy = player.y - player.oy, n = Math.floor(Math.hypot(dx * cosA, dy) / (cell * 1.6));
         for (let s = 1; s < n; s++) put(player.ox + dx * s / n, player.oy + dy * s / n, '·', rgba(C.clay, 0.75 * f), 0);
         put(FX[player.j], FY[player.j], '+', rgba(C.amber, 0.9 * f), 1.5);
         put(player.x, player.y, '@', rgba(C.clay, 1), 1.6);
