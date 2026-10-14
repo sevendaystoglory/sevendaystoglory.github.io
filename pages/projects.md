@@ -12,7 +12,7 @@ permalink: /pages/projects/
   </div>
   <div class="page-hero-art">
     <div class="scene-box"><canvas class="scene-canvas" data-scene="chaos" aria-hidden="true"></canvas></div>
-    <p class="art-caption">the chaos game. start with a dot, pick one of the three corners at random, and move the dot halfway towards it. do this thousands of times, mark every place the dot lands, and the sierpinski triangle appears. the orange @ is one dot playing, the + is the corner it picked, and each colour shows which corner a dot was heading for. other jump rules draw the other fractals. click for the next one, or hover over it to bend it.</p>
+    <p class="art-caption">the <a href="https://en.wikipedia.org/wiki/Chaos_game" target="_blank" rel="noopener">chaos game</a>. click for the next fractal, move across to bend it.</p>
   </div>
 </section>
 
