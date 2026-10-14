@@ -4,7 +4,7 @@ title: Projects
 permalink: /pages/projects/
 ---
 
-<section class="page-hero">
+<section class="page-hero page-hero-storm">
   <div class="hero-text">
     <h1 class="display-name">Projects</h1>
     {% include rule.html %}

@@ -355,78 +355,106 @@
     return 0.5 * noise(x, y, z) + 0.25 * noise(x * 2.1, y * 2.1, z) + 0.125 * noise(x * 4.3, y * 4.3, z) + 0.0625 * noise(x * 8.7, y * 8.7, z);
   }
 
-  // ── storm: ridges, rain in gusts, cloud, and lightning ───────────
-  // Three mountain ridges in ASCII with weather over them. Rain streaks
-  // lean with the wind, which comes in gusts. Every so often a bolt forks
-  // down out of the cloud: the scene flashes, the crests light up, and a
-  // burst of sparks is thrown out into the background field.
+  // ── storm: cloud, rain in gusts, ridges, and lightning ───────────
+  // A dark cloud mass billows out of the top of the box, lit from within
+  // now and then by sheet lightning. Rain falls out of it in streaks that
+  // lean with the gusts and dies on the front ridge with a splash. Three
+  // ridges stand back to front, the far ones hazed, the near one solid
+  // ink. Every so often a bolt forks down from the cloud base to a crest:
+  // it flickers, lights the cloud's underside and the crests amber, and
+  // throws a burst of sparks out into the page.
   function storm(canvas, opts) {
     opts = opts || {};
     const ctx = canvas.getContext('2d');
     const cellPx = 7;
     let W = 0, H = 0, cols = 0, rows = 0, lastT = 0;
-    let ridges = [];            // per layer: array of crest y (px) per column
-    let ridgeN = [];            // per layer: the thinning noise per cell, fixed for a size
-    let CF = null, cRows = 0, cPhase = -1;   // the cloud noise per cell, refreshed in rotation
-    const rainCol = mix(C.midblue, C.navy, 0.3);
-    const rain = [];
-    let bolt = null, flash = 0, nextBolt = 0;
-    let salvo = opts.salvo || 0;   // bolts still owed from the opening salvo
-    const cloudTop = 0, cloudBot = () => H * (opts.cloud || 0.36);
+    let ridges = [], tex = [];               // per layer: crest y (px) per column; a fixed texture per cell
+    let CF = null, cRows = 0, cPhase = -1;   // the cloud field per cell, refreshed in rotation
+    const rain = [], splashes = [];
+    let bolt = null, flash = 0, sheet = 0, nextBolt = 0, nextSheet = 0, frenzyUntil = 0;
+    let salvo = opts.salvo || 0;             // bolts still owed from the opening salvo
+    const cloudBot = () => H * (opts.cloud || 0.36);
+    const LAYERS = [[0.56, 0.42, 3, 0.16, 11], [0.72, 0.3, 4, 0.11, 23], [0.88, 0.2, 6, 0.08, 37]];   // base, height, peaks, width, seed
+    const FRONTG = ':;=+*#%@';               // the front ridge by density: symbols, never letters
+    // the ridges only change colour while a bolt lights them, so they are
+    // painted into a layer that is laid down each frame and repainted while lit
+    const ridgeLayer = document.createElement('canvas');
+    const rctx = ridgeLayer.getContext('2d');
+    let layerFlash = -1;
+    const wantRain = (w, frenzy) => Math.round(cols * (opts.rain == null ? 1.5 : opts.rain) * (0.7 + 0.5 * w) * (frenzy ? 2 : 1));
+    const CLOUDG = '.:;~=+*o%#@&';            // cloud glyphs by density: symbols, never letters
 
     function resize() {
       W = canvas.clientWidth; H = canvas.clientHeight;
       if (!W || !H) return;
       const dpr = Math.min(window.devicePixelRatio || 1, 2);
       canvas.width = Math.round(W * dpr); canvas.height = Math.round(H * dpr);
-      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-      ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+      ridgeLayer.width = canvas.width; ridgeLayer.height = canvas.height;
+      for (const c of [ctx, rctx]) { c.setTransform(dpr, 0, 0, dpr, 0, 0); c.textAlign = 'center'; c.textBaseline = 'middle'; }
       cols = Math.round(W / cellPx); rows = Math.round(H / cellPx);
-      // back ridge high and soft, front ridge low and sharp
-      const layers = [[0.5, 0.16, 1.6, 11], [0.64, 0.14, 2.6, 23], [0.8, 0.1, 3.4, 37]];
-      ridges = layers.map(([base, amp, freq, seed]) => {
+      // each ridge is a few peaks of fixed random height and width (the
+      // highest wins at every column, so the line is a range of sharp
+      // summits) with a little raggedness on top; the back ridge high and
+      // broad, the front low and busy
+      ridges = LAYERS.map(([base, amp, nPeaks, width, seed]) => {
+        const peaks = [];
+        for (let i = 0; i < nPeaks; i++) peaks.push([hash(i, seed, 1) * 1.1 - 0.05, 0.45 + hash(i, seed, 2) * 0.55, 0.05 + hash(i, seed, 3) * width]);
         const ys = [];
         for (let c = 0; c <= cols; c++) {
           const u = c / cols;
-          ys.push(H * (base - amp * (fbm(u * freq + seed, seed, 0) * 1.6 - 0.4)));
+          let h = 0;
+          for (const [pu, ph, pw] of peaks) h = Math.max(h, ph * Math.pow(Math.max(0, 1 - Math.abs(u - pu) / pw), 1.15));
+          h += (noise(u * 18 + seed, seed, 0) - 0.5) * 0.08;
+          ys.push(H * (base - amp * h));
         }
         return ys;
       });
-      ridgeN = [0, 1, 2].map(L => {
+      tex = [0, 1, 2].map(L => {
         const a = new Float32Array(cols * rows);
-        for (let r = 0; r < rows; r++) for (let c = 0; c < cols; c++) a[r * cols + c] = noise(c * 0.3, r * 0.3, L * 7);
+        for (let r = 0; r < rows; r++) for (let c = 0; c < cols; c++) a[r * cols + c] = noise(c * 0.45, r * 0.45, L * 7 + 3);
         return a;
       });
-      cRows = Math.ceil(cloudBot() / cellPx); CF = new Float32Array(cols * cRows); cPhase = -1;
-      const want = Math.round(cols * (opts.rain == null ? 1.6 : opts.rain));
+      cRows = Math.min(rows, Math.ceil(cloudBot() / cellPx) + 2);
+      CF = new Float32Array((cols + 1) * cRows); cPhase = -1;
+      const want = wantRain(0.6, false);
       while (rain.length < want) rain.push(newDrop(true));
       rain.length = want;
+      layerFlash = -1;
     }
     function newDrop(anywhere) {
-      return { x: Math.random() * W * 1.3 - W * 0.05, y: anywhere ? Math.random() * H : -10 - Math.random() * 60, s: 260 + Math.random() * 220, a: 0.25 + Math.random() * 0.5 };
+      const cb = cloudBot();
+      return {
+        x: Math.random() * W * 1.4 - W * 0.1,
+        y: anywhere ? cb * 0.6 + Math.random() * (H - cb * 0.6) : cb * (0.55 + Math.random() * 0.45),
+        s: 250 + Math.random() * 220, len: 3 + Math.floor(Math.random() * 3), a: 0.3 + Math.random() * 0.45
+      };
     }
     const wind = (t) => 0.35 + 0.65 * Math.pow(0.5 + 0.5 * Math.sin(t * 0.21), 2) + (noise(t * 0.5, 9, 0) - 0.5) * 0.6;
 
     function makeBolt(t) {
-      // strike on the right half, from the cloud base down to the front ridge
-      const x0 = W * (0.5 + Math.random() * 0.4);
+      // from the cloud base down to the front ridge, wandering one way then jagging the other
+      const x0 = W * (0.2 + Math.random() * 0.7);
       const c0 = Math.min(cols, Math.max(0, Math.round(x0 / cellPx)));
       const yEnd = ridges[2][c0];
       const main = [];
-      let x = x0, y = cloudBot() * 0.8;
+      const cb = cloudBot();
+      let x = x0, y = cb * (0.65 + Math.random() * 0.2), drift = (Math.random() - 0.5) * 0.6;
       while (y < yEnd) {
         main.push([x, y]);
-        x += (Math.random() - 0.5) * 26;
-        y += 8 + Math.random() * 12;
+        if (Math.random() < 0.2) drift = (Math.random() - 0.5) * 1.2;
+        x += drift * 9 + (Math.random() - 0.5) * 14;
+        y += 6 + Math.random() * 9;
       }
       main.push([x, yEnd]);
       const branches = [];
-      for (let b = 0; b < 1 + Math.floor(Math.random() * 3); b++) {
-        const from = main[Math.floor(Math.random() * main.length * 0.7)];
+      const nb = 1 + Math.floor(Math.random() * 3);
+      for (let b = 0; b < nb; b++) {
+        const from = main[Math.floor(Math.random() * main.length * 0.75)];
         const dir = Math.random() < 0.5 ? -1 : 1;
         let bx = from[0], by = from[1];
         const seg = [];
-        for (let k = 0; k < 4 + Math.random() * 7; k++) { seg.push([bx, by]); bx += dir * (4 + Math.random() * 14); by += 4 + Math.random() * 10; }
+        const n = 3 + Math.floor(Math.random() * 6);
+        for (let k = 0; k < n; k++) { seg.push([bx, by]); bx += dir * (3 + Math.random() * 12); by += 3 + Math.random() * 9; }
         branches.push(seg);
       }
       bolt = { main, branches, born: t, strike: [x, yEnd] };
@@ -445,103 +473,158 @@
       else nextBolt = t + (opts.boltEvery || 9) * (0.6 + Math.random() * 0.9);
     }
 
+    function paintRidges() {
+      rctx.clearRect(0, 0, W, H);
+      const cols3 = [mix(C.sage, C.pale, 0.5), mix(C.sage, C.navy, 0.45), mix(C.navy, [10, 16, 30], 0.3)];
+      const alpha3 = [0.5, 0.7, 0.92];
+      let font = '';
+      const setFont = (f) => { if (f !== font) rctx.font = font = f; };
+      for (let L = 0; L < 3; L++) {
+        const ys = ridges[L], tx = tex[L];
+        const body = mix(cols3[L], C.amber, flash * 0.45);
+        const edge = mix(mix(cols3[L], C.pale, 0.35), C.amber, flash * 0.9);
+        for (let c = 0; c < cols; c++) {
+          const crest = ys[c], limit = L < 2 ? ridges[L + 1][c] : H;   // hidden behind the next ridge forward
+          const slope = (ys[c + 1] - ys[c]) / cellPx;
+          const r0 = Math.ceil(crest / cellPx), r1 = Math.min(rows, Math.ceil(limit / cellPx));
+          for (let r = r0; r < r1; r++) {
+            const y = (r + 0.5) * cellPx, depth = r - r0;
+            if (depth === 0) {
+              // the crest: an edge lit by the sky, amber in a flash
+              setFont('700 9px ' + MONO);
+              rctx.fillStyle = rgba(edge, Math.min(1, alpha3[L] + 0.15));
+              rctx.fillText(slope > 0.3 ? '\\' : slope < -0.3 ? '/' : '^', (c + 0.5) * cellPx, y);
+              continue;
+            }
+            // the mass: hatching that fades with depth on the far ridges, a dark textured ink in front
+            const t0 = tx[r * cols + c];
+            const dens = clamp01(1 - depth / [7, 12, 9][L]) * (L === 2 ? 0.7 + t0 * 0.3 : 0.55 + t0 * 0.45);
+            if (dens < 0.12 || t0 > [0.25, 0.35, 0.2][L] + dens * 0.8) continue;   // gaps in the hatch
+            setFont('600 9px ' + MONO);
+            rctx.fillStyle = rgba(mix(body, C.amber, flash * 0.6 * clamp01(1 - depth / 6)), alpha3[L] * (0.45 + dens * 0.55));
+            rctx.fillText(L === 2 ? FRONTG[(dens * 7.99) | 0] : rampChar(0.06 + dens * 0.3), (c + 0.5) * cellPx, y);
+          }
+        }
+      }
+      layerFlash = flash;
+    }
+
     function frame(t) {
       if (!W) resize();
       const dt = lastT ? Math.min(t - lastT, 0.2) : 0; lastT = t;
       ctx.clearRect(0, 0, W, H);
-      // first bolt is scheduled from the first live frame (t = 0 is the still
-      // draw); a page opened with a salvo gets it right away, then settles
+      // the first bolt is scheduled from the first live frame (t = 0 is the
+      // still draw); a page opened with a salvo gets it right away, then settles
       if (!nextBolt && t > 0) nextBolt = t + (salvo > 0 ? 0.45 : 3 + Math.random() * 4);
+      if (!nextSheet && t > 0) nextSheet = t + 2 + Math.random() * 5;
       const frenzy = t < frenzyUntil;
       if (dt && t > nextBolt && !reduced) { makeBolt(t); if (frenzy) nextBolt = t + 0.5; }
-      flash *= Math.pow(0.02, dt);
+      if (dt && t > nextSheet && !reduced) { sheet = 0.6 + Math.random() * 0.4; nextSheet = t + 4 + Math.random() * 9; }
+      flash *= Math.pow(0.02, dt); sheet *= Math.pow(0.004, dt);
       const w = frenzy ? 1.3 : wind(t);
-      const wantRain = Math.round(cols * (opts.rain == null ? 1.6 : opts.rain) * (frenzy ? 2.2 : 1));
-      while (rain.length < wantRain) rain.push(newDrop(false));
-      if (!frenzy && rain.length > wantRain) rain.length = wantRain;
+      const lean = w * 0.9;
       const cb = cloudBot();
 
-      // storm cloud across the top, lit from below when the bolt fires
-      const all = cPhase < 0; cPhase = (cPhase + 1) & 3;
+      // the cloud: a dense navy base billowing out of a lighter top; sheet
+      // lightning lights it from within, a strike from below
+      const all = cPhase < 0; cPhase = (cPhase + 1) & 1;
+      const top = mix(C.midblue, C.pale, 0.45);
+      const stride = cols + 1;
       ctx.font = '600 8px ' + MONO;
       for (let r = 0; r < cRows; r++) {
-        const v = (r * cellPx) / cb;
-        if (all || (r & 3) === cPhase) for (let c = 0; c < cols; c++) CF[r * cols + c] = fbm((c / cols) * 2.6 + t * 0.04, v * 2.2, t * 0.03);
-        const col = mix(C.navy, C.amber, flash * 0.8 * (1 - v)), lift = clamp01(1.5 - v * 1.3);
+        const v = r / (cRows - 1);
+        if (all || (r & 1) === cPhase) for (let c = 0; c <= cols; c++) CF[r * stride + c] = fbm((c / cols) * 2.8 + t * 0.045, v * 2.4 + 0.5, t * 0.03);
+        let col = mix(top, C.navy, clamp01(v * 1.5 - 0.1));
+        col = mix(col, C.amber, Math.min(1, flash * (0.35 + 0.65 * v) + sheet * 0.5));
         for (let c = 0; c < cols; c++) {
-          const u = c / cols;
-          const gate = 0.55 + 0.45 * clamp01((u - 0.1) * 2);            // heavier toward the right
-          const d = clamp01((CF[r * cols + c] - 0.5 + (1 - v) * 0.18) / 0.22) * gate;
-          if (d < 0.08) continue;
-          ctx.fillStyle = rgba(col, (0.12 + d * 0.5) * lift);
-          ctx.fillText(rampChar(0.1 + d * 0.75), (c + 0.5) * cellPx, (r + 0.5) * cellPx);
+          const n = CF[r * stride + c], t0 = tex[0][r * cols + c];
+          const d = clamp01((n - 0.5 + (1 - v) * 0.18) / 0.22);
+          if (d < 0.08 || t0 > 0.3 + d * 0.5) continue;                      // holes, fewer where the mass is dense
+          const up = CF[(r > 0 ? r - 1 : 0) * stride + (c > 0 ? c - 1 : 0)];
+          const lit = clamp01(0.5 + (n - up) * 5);                          // a billow facing the light is a lighter glyph
+          ctx.fillStyle = rgba(mix(col, top, lit * 0.35 * (1 - v)), 0.18 + d * 0.5);
+          ctx.fillText(CLOUDG[(clamp01(d + (t0 - 0.5) * 0.2) * 11.99) | 0], (c + 0.5) * cellPx, (r + 0.5) * cellPx);
         }
       }
 
-      // ridges, back to front: a bright crest line, thinning into the mass below
-      const cols3 = [mix(C.sage, C.pale, 0.55), mix(C.sage, C.navy, 0.4), C.navy];
-      const alpha3 = [0.45, 0.6, 0.8];
-      for (let L = 0; L < 3; L++) {
-        const ys = ridges[L];
-        const front = L === 2 ? ys : null;
-        for (let c = 0; c < cols; c++) {
-          const crest = ys[c];
-          const limit = L < 2 ? ridges[L + 1][c] : H;   // hidden behind the next ridge forward
-          const slope = (ys[c + 1] - ys[c]) / cellPx;
-          const rowStart = Math.ceil(crest / cellPx);
-          for (let r = rowStart; r < Math.min(rows, Math.ceil(limit / cellPx)); r++) {
-            const y = (r + 0.5) * cellPx;
-            const edge = r === rowStart;
-            const depth = (y - crest) / (H * 0.1);
-            const dens = Math.exp(-depth * 1.1) * (0.95 - L * 0.2) + 0.1;
-            // the mass thins in clumps, never on the crest itself
-            if (!edge && depth > 0.3 && ridgeN[L][r * cols + c] > dens) continue;   // solid just under the crest
-            const ch = edge ? (slope > 0.3 ? '\\' : slope < -0.3 ? '/' : '^') : rampChar(dens * 0.75);
-            const col = edge ? mix(cols3[L], C.amber, flash * 0.9) : cols3[L];
-            ctx.fillStyle = rgba(col, edge ? Math.min(1, alpha3[L] + 0.2) : alpha3[L] * (0.35 + dens * 0.65));
-            ctx.font = '600 ' + (edge ? 9 : 8) + 'px ' + MONO;
-            ctx.fillText(ch, (c + 0.5) * cellPx, y);
-          }
-        }
+      // the ridges, from the layer; repainted while a flash is changing their colour
+      if (layerFlash < 0 || Math.abs(flash - layerFlash) > 0.015) paintRidges();
+      ctx.drawImage(ridgeLayer, 0, 0, W, H);
+
+      // the glow of a strike on the paper and the slopes
+      if (bolt && t - bolt.born < 0.55) {
+        const a = clamp01(1 - (t - bolt.born) / 0.5);
+        const [gx, gy] = bolt.strike;
+        const g = ctx.createRadialGradient(gx, gy, 0, gx, gy, 90);
+        g.addColorStop(0, rgba(C.amber, 0.35 * a)); g.addColorStop(1, rgba(C.amber, 0));
+        ctx.fillStyle = g; ctx.fillRect(gx - 90, gy - 90, 180, 180);
       }
 
-      // rain, leaning with the gusts
-      ctx.font = '600 9px ' + MONO;
-      const lean = w * 0.9;
+      // rain: streaks that lean with the gusts, dying on the front ridge, some with a splash
+      const want = wantRain(w, frenzy);
+      while (rain.length < want) rain.push(newDrop(false));
+      if (!frenzy && rain.length > want + 10) rain.length = want;
+      const ux = -lean * 0.5, un = Math.hypot(ux, 1);
+      const ch = lean > 0.55 ? '/' : '|';
+      const rainCol = mix(mix(C.midblue, C.navy, 0.35), C.amber, flash * 0.6);
+      ctx.font = '600 10px ' + MONO;
       for (const d of rain) {
-        d.y += d.s * dt; d.x -= d.s * lean * 0.5 * dt;
+        d.y += d.s * dt; d.x += d.s * ux * dt;
         const c = Math.min(cols, Math.max(0, Math.round(d.x / cellPx)));
-        if (d.y > ridges[2][c] + 6 || d.y > H || d.x < -20) Object.assign(d, newDrop(false));
-        if (d.x < 0 || d.x > W) continue;
-        ctx.fillStyle = rgba(rainCol, d.a * (0.35 + w * 0.65));
-        ctx.fillText(lean > 0.7 ? '/' : lean > 0.4 ? '/' : '|', d.x, d.y);
+        const floor = ridges[2][c];
+        if (d.y > floor + 3 || d.y > H || d.x < -30) {
+          if (d.y > floor && d.x > 0 && d.x < W && Math.random() < 0.35) splashes.push({ x: d.x, y: floor - 3, born: t });
+          Object.assign(d, newDrop(false)); continue;
+        }
+        if (d.x < -10 || d.x > W + 10) continue;
+        for (let k = 0; k < d.len; k++) {
+          const x = d.x - ux / un * k * 6, y = d.y - k * 6 / un;
+          if (y < cb * 0.5) break;
+          ctx.fillStyle = rgba(rainCol, d.a * (0.4 + w * 0.6) * (1 - k / (d.len + 1)));
+          ctx.fillText(ch, x, y);
+        }
+      }
+      ctx.font = '600 8px ' + MONO;
+      for (let i = splashes.length - 1; i >= 0; i--) {
+        const s = splashes[i], age = t - s.born;
+        if (age > 0.18) { splashes.splice(i, 1); continue; }
+        ctx.fillStyle = rgba(rainCol, 0.6 * (1 - age / 0.18));
+        ctx.fillText(age < 0.09 ? "'" : '.', s.x, s.y - age * 30);
       }
 
-      // lightning: the bolt lingers for a third of a second after the flash
+      // lightning: a halo along the channel, then the channel in glyphs, flickering as it fades
       if (bolt) {
         const age = t - bolt.born;
-        if (age < 0.5) {
-          const a = age < 0.08 ? 1 : clamp01(1 - (age - 0.08) / 0.4);
-          const drawSeg = (seg, w) => {
+        if (age < 0.55) {
+          const a = (age < 0.07 ? 1 : clamp01(1 - (age - 0.07) / 0.45)) * (0.6 + 0.4 * Math.abs(Math.sin(age * 45)));
+          const path = (seg) => { ctx.beginPath(); ctx.moveTo(seg[0][0], seg[0][1]); for (let i = 1; i < seg.length; i++) ctx.lineTo(seg[i][0], seg[i][1]); ctx.stroke(); };
+          ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+          ctx.strokeStyle = rgba(C.amber, 0.3 * a);
+          ctx.lineWidth = 14; path(bolt.main);
+          ctx.lineWidth = 9; bolt.branches.forEach(path);
+          ctx.strokeStyle = rgba(C.clay, 0.85 * a);
+          ctx.lineWidth = 2.2; path(bolt.main);
+          ctx.lineWidth = 1.5; bolt.branches.forEach(path);
+          const drawSeg = (seg, size) => {
+            ctx.font = '700 ' + size + 'px ' + MONO;
+            ctx.fillStyle = rgba(C.clay, a);
             for (let i = 0; i < seg.length; i++) {
               const [x, y] = seg[i];
               const nx = seg[i + 1] ? seg[i + 1][0] - x : 0;
-              ctx.font = '700 ' + w + 'px ' + MONO;
-              ctx.fillStyle = rgba(mix(C.amber, [250, 240, 210], 0.5), a);
               ctx.fillText(nx > 3 ? '\\' : nx < -3 ? '/' : '|', x, y);
             }
           };
-          drawSeg(bolt.main, 12);
-          bolt.branches.forEach(b => drawSeg(b, 9));
+          drawSeg(bolt.main, 15);
+          bolt.branches.forEach(b => drawSeg(b, 12));
         } else bolt = null;
       }
     }
 
-    let frenzyUntil = 0;
-    pageOn(document, 'ascii:thunder', () => { nextBolt = 0; frenzyUntil = performance.now() / 1000 + 2.5; });
+    pageOn(document, 'ascii:thunder', () => { nextBolt = performance.now() / 1000; frenzyUntil = performance.now() / 1000 + 2.5; });
     resize();
     frame(0);
     canvas._frame = frame; frame.__canvas = canvas;
+    frame.__every = 1000 / 30;   // rain reads as streaks at 30 fps and as hops at 15
     canvas._onScreen = true;
     if (!reduced) seen.observe(canvas);
     pageCanvases.push(canvas);
@@ -2224,7 +2307,7 @@
     const h = document.getElementById('ascii-hills');     if (h) hills(h);
     const cl = document.getElementById('ascii-clouds');   if (cl) clouds(cl);
     const hs = document.getElementById('hero-scene');     if (hs) storm(hs, { cloud: 0.36, boltEvery: 9 });
-    document.querySelectorAll('[data-scene="storm-small"]').forEach(c => storm(c, { cloud: 0.3, boltEvery: 14, rain: 1.2, salvo: 3 }));
+    document.querySelectorAll('[data-scene="storm-small"]').forEach(c => storm(c, { cloud: 0.4, boltEvery: 12, rain: 2.2, salvo: 3 }));
     document.querySelectorAll('[data-scene="attractor"]').forEach(c => attractor(c));
     document.querySelectorAll('[data-scene="flock"]').forEach(c => flock(c));
     document.querySelectorAll('.feat-card-link').forEach(hoverAscii);
