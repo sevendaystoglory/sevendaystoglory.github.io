@@ -1221,6 +1221,28 @@
         pc.fillText(rampChar(lum), x, y);
       }
     }
+    // what the orb and its particles can hit: letters within reach, the photo,
+    // images and project thumbnails. Called every frame; it only does work the
+    // first time and again after the orb has been dragged a long way.
+    function armNear() {
+      if (!textNodes) collectText();
+      if (!charge.near) {
+        charge.near = [];
+        charge.photo = photoTarget();
+        charge.images = imageTargets();
+        charge.thumbs = Array.from(document.querySelectorAll('.feat-card-link'));
+      } else if (Math.hypot(charge.px - charge.nearX, charge.py - charge.nearY) < 500) return;
+      charge.nearX = charge.px; charge.nearY = charge.py;
+      const have = new Set(charge.near.map(en => en.w));
+      for (const w of textNodes) {
+        if (have.has(w) || !w.node.parentNode) continue;
+        const pos = charPositions(w);
+        if (!pos) continue;
+        let close = false;
+        for (const [x, y] of pos) if (Math.hypot(x - charge.px, y - charge.py) < 1200) { close = true; break; }
+        if (close) charge.near.push({ w, pos, hitUntil: new Float64Array(pos.length), hot: new Uint8Array(pos.length), hit: false });
+      }
+    }
     // letters hit by a particle flip for a moment (the charge's own glitch runs)
     function glitchHits(e, t) {
       const span = e.w.span || (e.w.span = document.createElement('span'));
@@ -1430,70 +1452,77 @@
             });
             charge.nextTrack += 0.05 + Math.random() * 0.07;
           }
-          // what the particles can hit: nearby letters, the photo, the field
-          if (!charge.near) {
-            if (!textNodes) collectText();
-            charge.near = [];
-            for (const w of textNodes) {
-              if (!w.node.parentNode) continue;
-              const pos = charPositions(w);
-              if (!pos) continue;
-              let close = false;
-              for (const [x, y] of pos) if (Math.hypot(x - charge.px, y - charge.py) < 1200) { close = true; break; }
-              if (close) charge.near.push({ w, pos, hitUntil: new Float64Array(pos.length), hot: new Uint8Array(pos.length), hit: false });
-            }
-            charge.photo = photoTarget();
-            charge.images = imageTargets();
-            charge.thumbs = Array.from(document.querySelectorAll('.feat-card-link'));
-          }
+        }
+        // The orb touches things too: dragged across letters, the photo, an
+        // image or a thumbnail it disturbs whatever sits under it, lightly
+        // while energising and hard once it is dark. The set of nearby text
+        // follows the orb as it is dragged.
+        if (dark > 0 || charge.tx != null) {
+          armNear();
           clearPhoto();
           clearImageSet(charge.images);
-          ctx.font = '700 11px ' + MONO;
-          for (let i = charge.tracks.length - 1; i >= 0; i--) {
-            const tr = charge.tracks[i], age = t - tr.born;
-            if (age > (tr.loop ? 0.9 : 1.1)) { charge.tracks.splice(i, 1); continue; }
-            const dist = age * tr.speed;
-            // where a track is after running `d` along it: nearly straight tracks bend
-            // gently with distance; looping ones go round a circle tangent to the ball
-            const at = (d) => {
-              if (tr.loop) {
-                const Rc = 70 + 30 * Math.abs(tr.curve - 2.6), th = (d / Rc) * Math.sign(tr.curve);
-                const ccx = Math.cos(tr.ang + Math.PI / 2 * Math.sign(tr.curve)) * Rc, ccy = Math.sin(tr.ang + Math.PI / 2 * Math.sign(tr.curve)) * Rc;
-                const sa = tr.ang - Math.PI / 2 * Math.sign(tr.curve);
-                return [ccx + Math.cos(sa + th) * Rc, ccy + Math.sin(sa + th) * Rc];
-              }
-              const a = tr.ang + tr.curve * (d / 400);
-              return [Math.cos(a) * (rad + d), Math.sin(a) * (rad + d)];
-            };
-            const [hox, hoy] = at(dist);
-            const hx = charge.px + hox, hy = charge.py + hoy;
-            const ha = Math.atan2(hoy - at(Math.max(0, dist - 8))[1], hox - at(Math.max(0, dist - 8))[0]);
-            for (const e of charge.near) {
-              for (let q = 0; q < e.pos.length; q++) {
-                if (Math.abs(e.pos[q][0] - hx) < 10 && Math.abs(e.pos[q][1] - hy) < 10) { e.hitUntil[q] = t + 0.35; e.hot[q] = tr.hot ? 1 : 0; }
-              }
-            }
-            if (charge.photo) {
-              const ph = charge.photo, cxp = ph.x + ph.size / 2, cyp = ph.y + ph.size / 2;
-              if (Math.hypot(hx - cxp, hy - cyp) < ph.size / 2 + 8) photoPatch(hx, hy, 14, tr.hot);
-            }
-            for (const tg of charge.images) imagePatch(tg, hx, hy, 16, tr.hot);
-            thumbHit(charge.thumbs, hx, hy, t);
-            for (const pp of parts) {
-              if (Math.abs(pp.x - (hx - window.scrollX)) < 12 && Math.abs(screenY(pp) - (hy - window.scrollY)) < 12 && t - pp.lastHit > 0.3) {
-                pp.vx += Math.cos(ha) * 220; pp.vy += Math.sin(ha) * 220; pp.flash = 0.8; pp.lastHit = t;
-              }
-            }
-            for (let j = 0; j < 7; j++) {
-              const d = dist - j * 14;
-              if (d < 0) break;
-              const [ox2, oy2] = at(d);
-              if (tr.loop && d > 40 && Math.hypot(ox2, oy2) < rad * 0.8) break;   // back inside the ball
-              ctx.fillStyle = rgba(tr.hot ? C.clay : INK, (1 - j / 7) * 0.9 * (1 - age / (tr.loop ? 0.9 : 1.1)));
-              ctx.fillText(j === 0 ? tr.ch : (j < 3 ? '·' : '.'), vx + ox2, vy + oy2);
+          const R = rad + 12, slot = Math.floor(t * 8), hotOrb = dark > 0 && slot % 3 === 0;
+          for (const en of charge.near) {
+            for (let q = 0; q < en.pos.length; q++) {
+              const x = en.pos[q][0], y = en.pos[q][1];
+              if (Math.abs(x - charge.px) > R || Math.abs(y - charge.py) > R || Math.hypot(x - charge.px, y - charge.py) > R) continue;
+              if (hash(q, 71, slot) < 0.3 + 0.7 * e) { en.hitUntil[q] = t + 0.25 + 0.3 * e; en.hot[q] = hash(q, 73, slot) < 0.3 ? 1 : 0; }
             }
           }
-          for (const e of charge.near) glitchHits(e, t);
+          if (charge.photo) {
+            const ph = charge.photo, cxp = ph.x + ph.size / 2, cyp = ph.y + ph.size / 2;
+            if (Math.hypot(charge.px - cxp, charge.py - cyp) < ph.size / 2 + R) photoPatch(charge.px, charge.py, R, hotOrb);
+          }
+          for (const tg of charge.images) imagePatch(tg, charge.px, charge.py, R, hotOrb);
+          thumbHit(charge.thumbs, charge.px, charge.py, t);
+          if (dark > 0) {
+            ctx.font = '700 11px ' + MONO;
+            for (let i = charge.tracks.length - 1; i >= 0; i--) {
+              const tr = charge.tracks[i], age = t - tr.born;
+              if (age > (tr.loop ? 0.9 : 1.1)) { charge.tracks.splice(i, 1); continue; }
+              const dist = age * tr.speed;
+              // where a track is after running `d` along it: nearly straight tracks bend
+              // gently with distance; looping ones go round a circle tangent to the ball
+              const at = (d) => {
+                if (tr.loop) {
+                  const Rc = 70 + 30 * Math.abs(tr.curve - 2.6), th = (d / Rc) * Math.sign(tr.curve);
+                  const ccx = Math.cos(tr.ang + Math.PI / 2 * Math.sign(tr.curve)) * Rc, ccy = Math.sin(tr.ang + Math.PI / 2 * Math.sign(tr.curve)) * Rc;
+                  const sa = tr.ang - Math.PI / 2 * Math.sign(tr.curve);
+                  return [ccx + Math.cos(sa + th) * Rc, ccy + Math.sin(sa + th) * Rc];
+                }
+                const a = tr.ang + tr.curve * (d / 400);
+                return [Math.cos(a) * (rad + d), Math.sin(a) * (rad + d)];
+              };
+              const [hox, hoy] = at(dist);
+              const hx = charge.px + hox, hy = charge.py + hoy;
+              const ha = Math.atan2(hoy - at(Math.max(0, dist - 8))[1], hox - at(Math.max(0, dist - 8))[0]);
+              for (const e of charge.near) {
+                for (let q = 0; q < e.pos.length; q++) {
+                  if (Math.abs(e.pos[q][0] - hx) < 10 && Math.abs(e.pos[q][1] - hy) < 10) { e.hitUntil[q] = t + 0.35; e.hot[q] = tr.hot ? 1 : 0; }
+                }
+              }
+              if (charge.photo) {
+                const ph = charge.photo, cxp = ph.x + ph.size / 2, cyp = ph.y + ph.size / 2;
+                if (Math.hypot(hx - cxp, hy - cyp) < ph.size / 2 + 8) photoPatch(hx, hy, 14, tr.hot);
+              }
+              for (const tg of charge.images) imagePatch(tg, hx, hy, 16, tr.hot);
+              thumbHit(charge.thumbs, hx, hy, t);
+              for (const pp of parts) {
+                if (Math.abs(pp.x - (hx - window.scrollX)) < 12 && Math.abs(screenY(pp) - (hy - window.scrollY)) < 12 && t - pp.lastHit > 0.3) {
+                  pp.vx += Math.cos(ha) * 220; pp.vy += Math.sin(ha) * 220; pp.flash = 0.8; pp.lastHit = t;
+                }
+              }
+              for (let j = 0; j < 7; j++) {
+                const d = dist - j * 14;
+                if (d < 0) break;
+                const [ox2, oy2] = at(d);
+                if (tr.loop && d > 40 && Math.hypot(ox2, oy2) < rad * 0.8) break;   // back inside the ball
+                ctx.fillStyle = rgba(tr.hot ? C.clay : INK, (1 - j / 7) * 0.9 * (1 - age / (tr.loop ? 0.9 : 1.1)));
+                ctx.fillText(j === 0 ? tr.ch : (j < 3 ? '·' : '.'), vx + ox2, vy + oy2);
+              }
+            }
+          }
+          for (const en of charge.near) glitchHits(en, t);
           thumbCool(charge.thumbs, t);
         }
       }
@@ -1860,7 +1889,7 @@
         out += /\s/.test(chars[i]) || chars[i].length > 1 ? chars[i] : SCRAMBLE[(Math.random() * SCRAMBLE.length) | 0];
       }
       el.textContent = out;
-      if (p < 1) requestAnimationFrame(frame); else el.classList.remove('decoding');
+      if (p < 1) requestAnimationFrame(frame); else { el.classList.remove('decoding'); document.dispatchEvent(new Event('ascii:textchanged')); }
     }
     requestAnimationFrame(frame);
   }
