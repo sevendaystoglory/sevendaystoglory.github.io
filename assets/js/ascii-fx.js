@@ -819,7 +819,7 @@
     const q = new URLSearchParams(location.search);
     let name = q.get('footer');
     try { if (!name) name = localStorage.getItem('footer-scene'); } catch (_) {}
-    if (!FOOTER[name]) name = 'sea';
+    if (!FOOTER[name]) name = 'life';
     const old = art.querySelector('canvas');
     const canvas = document.createElement('canvas');
     canvas.className = 'footer-canvas'; canvas.id = 'ascii-hills';
