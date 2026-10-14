@@ -479,7 +479,7 @@
       canvas.width = Math.round(W * dpr); canvas.height = Math.round(H * dpr);
       ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
       ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-      for (const b of birds) if (!b.x) { b.x = W * (0.25 + Math.random() * 0.5); b.y = H * (0.25 + Math.random() * 0.5); }
+      for (const b of birds) if (!b.x) { b.x = W * (0.5 + Math.random() * 0.4); b.y = H * (0.25 + Math.random() * 0.5); }
     }
     function step(t, dt) {
       for (const b of birds) {
@@ -495,8 +495,12 @@
         if (na) { fx += (ax / na - b.vx) * 2.2; fy += (ay / na - b.vy) * 2.2; }
         if (nc) { fx += (cx / nc - b.x) * 1.6; fy += (cy / nc - b.y) * 1.6; }
         // stay in frame, around an anchor that roams the width so the flock cruises
-        const tx = W * (0.5 + 0.3 * Math.sin(t * 0.09)), ty = H * (0.5 + 0.14 * Math.sin(t * 0.13 + 1.7));
+        // the anchor favours the right side and now and then sweeps across the left
+        const tx = W * (0.62 + 0.3 * Math.sin(t * 0.09)), ty = H * (0.5 + 0.16 * Math.sin(t * 0.13 + 1.7));
         fx += (tx - b.x) * 0.35; fy += (ty - b.y) * 0.5;
+        // soft walls: turn back before leaving the region
+        if (b.x < 40) fx += (40 - b.x) * 8; else if (b.x > W - 40) fx -= (b.x - W + 40) * 8;
+        if (b.y < 30) fy += (30 - b.y) * 8; else if (b.y > H - 30) fy -= (b.y - H + 30) * 8;
         fx += (noise(b.x * 0.01, b.y * 0.01, t * 0.5 + b.phase) - 0.5) * 260;      // wander
         fy += (noise(b.y * 0.01 + 7, b.x * 0.01, t * 0.5 + b.phase) - 0.5) * 260;
         // a wave front passing through scatters them

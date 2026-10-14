@@ -869,9 +869,12 @@ a.badge:hover { transform: translateY(-1px); box-shadow: 0 3px 8px -2px rgba(27,
 .page-hero .bio { margin-bottom: 20px; color: var(--ink-soft); font-style: italic; }
 .page-hero-art { display: flex; flex-direction: column; }
 .scene-box { position: relative; aspect-ratio: 420 / 340; }
-/* the murmuration gets a wider stage than the other scenes */
-.page-hero-wide { grid-template-columns: minmax(300px, 1fr) minmax(360px, 47%); }
-.page-hero-wide .scene-box { aspect-ratio: 500 / 340; }
+/* the murmuration has no box: its canvas covers the whole hero and the
+   flock roams the region behind the title, with the caption at the corner */
+.page-hero-wide { grid-template-columns: minmax(300px, 1fr) minmax(360px, 47%); position: relative; min-height: 360px; }
+.page-hero-wide .hero-text, .page-hero-wide .art-caption { position: relative; z-index: 1; }
+.page-hero-wide .page-hero-art { align-self: end; position: static; }
+.page-hero-wide .scene-box { position: absolute; inset: 0 0 8px 0; aspect-ratio: auto; z-index: 0; pointer-events: none; }
 /* a line under each figure saying what it is */
 .art-caption {
     margin: 8px 0 0 0;
@@ -1131,7 +1134,9 @@ pre:hover .copy-button { opacity: 1; }
     .latest-main .compact-grid { grid-template-columns: minmax(0, 1fr); column-gap: 0; }
 }
 @media (max-width: 600px) {
-    .page-hero-wide .scene-box { aspect-ratio: 460 / 340; }
+    .page-hero-wide { min-height: 0; }
+    .page-hero-wide .scene-box { position: relative; inset: auto; aspect-ratio: 460 / 340; pointer-events: auto; }
+    .page-hero-wide .page-hero-art { align-self: auto; }
     .nw-list { padding-left: 20px; }
     .nw-list li { grid-template-columns: minmax(0, 1fr); padding: 8px 0; }
     .nw-list li::before { left: -24px; top: 12px; }
