@@ -114,8 +114,8 @@ strong { font-weight: 600; color: var(--ink); }
     top: 0; left: 0; bottom: 0;
     overflow-y: auto;
     padding: 3.2rem 2rem 1.5rem;
-    background: rgba(248, 245, 238, 0.9);
-    border-right: 1px solid var(--rule-strong);
+    background: rgba(245, 245, 243, 0.92);
+    border-right: 1px solid rgba(27, 42, 65, 0.12);
     z-index: 30;
 }
 .sidebar-inner {

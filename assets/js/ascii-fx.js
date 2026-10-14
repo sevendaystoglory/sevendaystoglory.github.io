@@ -944,7 +944,7 @@
     const PN = 256, PAD = 0.14;                 // photo grid size; the ripple canvas overhangs the photo by PAD
     const PC = Math.round(PN * (1 + 2 * PAD));   // ripple canvas size
     let photoPix = null, photoCanvas = null, shatter = null;
-    const PAPER = [249, 246, 240];
+    const PAPER = [246, 246, 244];
     function photoTarget() {
       const link = document.querySelector('.ascii-photo-link');
       const wrap = link && link.querySelector('.ascii-photo-wrap');
