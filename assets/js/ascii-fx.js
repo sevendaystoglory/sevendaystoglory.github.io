@@ -2261,6 +2261,123 @@
       }
       trimDebris(want + 200);
     }
+    // ── tracks: a ray that passes through a photo leaves a faint streak on
+    // it, the way cosmic rays mark a long camera exposure: a broken hairline
+    // with knots of ionisation along it, and now and then a short curl where
+    // it knocked an electron loose (they all curl the same way, as in a
+    // cloud chamber's field). Each photo gets a canvas of its own, drawn in
+    // negative like the rays, so a track sits on the photo wherever it
+    // scrolls; tracks fade out over TRACK_LIFE seconds.
+    const TRACK_LIFE = 30;
+    const trackHosts = new Map();            // photo element -> { cv, g, tracks }
+    let lastTrackPaint = 0, tracksDirty = false;
+    // the photos on screen now, with their boxes in page px
+    function trackTargets() {
+      const sx = window.scrollX, sy = window.scrollY, list = [];
+      document.querySelectorAll('.ascii-photo-wrap, .feat-thumb, .post-body img').forEach(el => {
+        const r = el.getBoundingClientRect();
+        if (r.width < 8 || r.height < 8 || r.bottom < 0 || r.top > h) return;
+        list.push({ el, x0: r.left + sx, y0: r.top + sy, w: r.width, h: r.height });
+      });
+      return list;
+    }
+    function trackHost(el) {
+      let th = trackHosts.get(el);
+      if (th) return th;
+      const cv = document.createElement('canvas');
+      cv.className = 'ray-tracks';
+      cv.setAttribute('aria-hidden', 'true');
+      // a post image has no box of its own to hold the canvas, so it sits in the post body over the image
+      (el.tagName === 'IMG' ? el.closest('.post-body') : el).appendChild(cv);
+      th = { cv, g: cv.getContext('2d'), tracks: [] };
+      trackHosts.set(el, th);
+      return th;
+    }
+    // the part of this frame's flight (page px) that lies inside each photo,
+    // added to the ray's track on that photo (u, v run 0..1 across the photo)
+    function markTracks(r, px, py, t) {
+      const ax = r.lpx == null ? px : r.lpx, ay = r.lpy == null ? py : r.lpy;
+      r.lpx = px; r.lpy = py;
+      for (const tg of r.marks) {
+        // clip the segment to the box (Liang-Barsky)
+        const dx = px - ax, dy = py - ay;
+        let t0 = 0, t1 = 1, ok = true;
+        for (const [p, q] of [[-dx, ax - tg.x0], [dx, tg.x0 + tg.w - ax], [-dy, ay - tg.y0], [dy, tg.y0 + tg.h - ay]]) {
+          if (p === 0) { if (q < 0) { ok = false; break; } continue; }
+          const s = q / p;
+          if (p < 0) { if (s > t1) { ok = false; break; } if (s > t0) t0 = s; }
+          else { if (s < t0) { ok = false; break; } if (s < t1) t1 = s; }
+        }
+        if (!ok || t1 - t0 < 1e-3) continue;
+        const u0 = (ax + dx * t0 - tg.x0) / tg.w, v0 = (ay + dy * t0 - tg.y0) / tg.h;
+        const u1 = (ax + dx * t1 - tg.x0) / tg.w, v1 = (ay + dy * t1 - tg.y0) / tg.h;
+        let tr = r.track.get(tg.el);
+        if (!tr) {
+          tr = { u0, v0, u1, v1, born: t, seed: Math.random() * 1000, hot: r.hot, curl: Math.random() < 0.5 ? 1 : -1 };
+          r.track.set(tg.el, tr);
+          trackHost(tg.el).tracks.push(tr);
+        } else { tr.u1 = u1; tr.v1 = v1; }
+        tracksDirty = true;
+      }
+    }
+    function drawTrack(g, tr, W, H, a) {
+      const x0 = tr.u0 * W, y0 = tr.v0 * H, x1 = tr.u1 * W, y1 = tr.v1 * H, L = Math.hypot(x1 - x0, y1 - y0);
+      if (L < 1) return;
+      const ux = (x1 - x0) / L, uy = (y1 - y0) / L, s = tr.seed;
+      g.lineCap = 'round';
+      for (let k = 0; k < L; k += 2) {
+        const x = x0 + ux * k, y = y0 + uy * k, k2 = Math.min(L, k + 2);
+        // the hairline, brighter and dimmer in runs of a few px, with gaps
+        if (hash(k >> 1, s, 2) > 0.1) {
+          g.strokeStyle = rgba([255, 255, 255], a * (0.3 + 0.7 * hash(k >> 3, s, 1)));
+          g.lineWidth = 0.8;
+          g.beginPath(); g.moveTo(x, y); g.lineTo(x0 + ux * k2, y0 + uy * k2); g.stroke();
+        }
+        // a knot of ionisation
+        if (hash(k, s, 3) < (tr.hot ? 0.09 : 0.06)) {
+          g.fillStyle = rgba([255, 255, 255], a * 0.9);
+          g.beginPath(); g.arc(x, y, 0.8 + hash(k, s, 4) * 0.8, 0, 2 * Math.PI); g.fill();
+        }
+        // a knocked-on electron: a short spiral off to one side, tightening as it slows
+        if (hash(k, s, 5) < (tr.hot ? 0.02 : 0.012)) {
+          let ang = Math.atan2(uy, ux) + (hash(k, s, 6) < 0.5 ? 1 : -1) * (0.6 + 0.8 * hash(k, s, 7)), cx = x, cy = y;
+          const n = 8 + ((hash(k, s, 8) * 14) | 0);
+          g.lineWidth = 0.7;
+          for (let j = 0; j < n; j++) {
+            const nx = cx + Math.cos(ang) * 1.6, ny = cy + Math.sin(ang) * 1.6;
+            g.strokeStyle = rgba([255, 255, 255], a * 0.75 * (1 - j / n));
+            g.beginPath(); g.moveTo(cx, cy); g.lineTo(nx, ny); g.stroke();
+            cx = nx; cy = ny; ang += tr.curl * (0.1 + 0.035 * j);
+          }
+        }
+      }
+    }
+    // repaint the photos that carry tracks: every frame while a ray is
+    // laying one down and four times a second while they fade; a photo's
+    // canvas goes once its last track has faded (or the photo has left the page)
+    function paintTracks(t) {
+      if (!trackHosts.size || (!tracksDirty && t - lastTrackPaint < 0.25)) return;
+      tracksDirty = false; lastTrackPaint = t;
+      const dpr = Math.min(window.devicePixelRatio || 1, 2);
+      for (const [el, th] of trackHosts) {
+        th.tracks = th.tracks.filter(tr => t - tr.born < TRACK_LIFE);
+        if (!el.isConnected || !th.tracks.length) { th.cv.remove(); trackHosts.delete(el); continue; }
+        const W = el.offsetWidth, H = el.offsetHeight;
+        if (el.tagName === 'IMG') {
+          const st = th.cv.style;
+          st.left = el.offsetLeft + 'px'; st.top = el.offsetTop + 'px'; st.width = W + 'px'; st.height = H + 'px';
+        }
+        if (th.cv.width !== Math.round(W * dpr) || th.cv.height !== Math.round(H * dpr)) { th.cv.width = Math.round(W * dpr); th.cv.height = Math.round(H * dpr); }
+        const g = th.g;
+        g.setTransform(dpr, 0, 0, dpr, 0, 0);
+        g.clearRect(0, 0, W, H);
+        for (const tr of th.tracks) {
+          const age = t - tr.born;
+          // a moment's flash as it is struck, then faint, then gone over the last ten seconds
+          drawTrack(g, tr, W, H, 0.5 * clamp01((TRACK_LIFE - age) / 10) * (1 + 0.8 * clamp01(1 - age / 0.6)));
+        }
+      }
+    }
     function launchRay(now) {
       const fromLeft = Math.random() < 0.5;
       const ang = (Math.random() < 0.5 ? 1 : -1) * (0.12 + Math.random() * 0.4);   // shallow diagonal
@@ -2289,6 +2406,7 @@
       ray.photo = photoTarget();
       ray.images = imageTargets();
       ray.thumbs = thumbTargets();
+      ray.marks = trackTargets(); ray.track = new Map();
       rays.push(ray);
     }
     function drawRays(t, dt) {
@@ -2342,6 +2460,7 @@
         // letters under the head glitch, and spit out glyphs
         // the head in page px: the ray layer is fixed to the viewport, unshifted
         const px = r.x + SX, py = r.y + SY;
+        markTracks(r, px, py, t);
         for (const e of r.near) {
           let any = false;
           for (let q = 0; q < e.pos.length; q++) {
@@ -2395,6 +2514,7 @@
       if (dt) collide(t);
       drawRipples(t);
       drawRays(t, dt);
+      paintTracks(t);
       const scrollY = SY, pageH = document.documentElement.scrollHeight;
       let curFont = '';
       for (const p of parts) {
