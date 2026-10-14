@@ -288,6 +288,7 @@
     let ridges = [];            // per layer: array of crest y (px) per column
     const rain = [];
     let bolt = null, flash = 0, nextBolt = 0;
+    let salvo = opts.salvo || 0;   // bolts still owed from the opening salvo
     const cloudTop = 0, cloudBot = () => H * (opts.cloud || 0.36);
 
     function resize() {
@@ -351,14 +352,17 @@
           ch: '*+x^'[Math.floor(Math.random() * 4)], color: Math.random() < 0.6 ? '#DE934D' : '#C8623A'
         }}));
       }
-      nextBolt = t + (opts.boltEvery || 9) * (0.6 + Math.random() * 0.9);
+      if (salvo > 0 && --salvo > 0) nextBolt = t + 0.55 + Math.random() * 0.6;
+      else nextBolt = t + (opts.boltEvery || 9) * (0.6 + Math.random() * 0.9);
     }
 
     function frame(t) {
       if (!W) resize();
       const dt = lastT ? Math.min(t - lastT, 0.2) : 0; lastT = t;
       ctx.clearRect(0, 0, W, H);
-      if (!nextBolt) nextBolt = t + 3 + Math.random() * 4;
+      // first bolt is scheduled from the first live frame (t = 0 is the still
+      // draw); a page opened with a salvo gets it right away, then settles
+      if (!nextBolt && t > 0) nextBolt = t + (salvo > 0 ? 0.45 : 3 + Math.random() * 4);
       const frenzy = t < frenzyUntil;
       if (dt && t > nextBolt && !reduced) { makeBolt(t); if (frenzy) nextBolt = t + 0.5; }
       flash *= Math.pow(0.02, dt);
@@ -1839,7 +1843,7 @@
     const h = document.getElementById('ascii-hills');     if (h) hills(h);
     const cl = document.getElementById('ascii-clouds');   if (cl) clouds(cl);
     const hs = document.getElementById('hero-scene');     if (hs) storm(hs, { cloud: 0.36, boltEvery: 9 });
-    document.querySelectorAll('[data-scene="storm-small"]').forEach(c => storm(c, { cloud: 0.3, boltEvery: 14, rain: 1.2 }));
+    document.querySelectorAll('[data-scene="storm-small"]').forEach(c => storm(c, { cloud: 0.3, boltEvery: 14, rain: 1.2, salvo: 3 }));
     document.querySelectorAll('[data-scene="attractor"]').forEach(c => attractor(c));
     document.querySelectorAll('[data-scene="flock"]').forEach(c => flock(c));
     document.querySelectorAll('.feat-card-link').forEach(hoverAscii);

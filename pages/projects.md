@@ -12,7 +12,7 @@ permalink: /pages/projects/
   </div>
   <div class="page-hero-art">
     <div class="scene-box"><canvas class="scene-canvas" data-scene="flock" aria-hidden="true"></canvas></div>
-    <p class="art-caption">a murmuration following real boid rules.</p>
+    <p class="art-caption">a murmuration following real <a href="https://en.wikipedia.org/wiki/Boids" target="_blank" rel="noopener">boid rules</a>.</p>
   </div>
 </section>
 

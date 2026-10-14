@@ -876,6 +876,14 @@ a.badge:hover { transform: translateY(-1px); box-shadow: 0 3px 8px -2px rgba(27,
     color: var(--ink-dim);
     text-align: right;
 }
+.art-caption a {
+    color: inherit;
+    text-decoration: underline;
+    text-decoration-thickness: 1px;
+    text-underline-offset: 2px;
+    text-decoration-color: rgba(126, 130, 144, 0.7);
+}
+.art-caption a:hover { color: var(--ink); text-decoration-color: currentColor; }
 @media (max-width: 900px) { .art-caption { text-align: left; } }
 .page-hero-plain { grid-template-columns: minmax(0, 1fr); padding-bottom: 24px; }
 .page-hero-plain .bio { margin-bottom: 8px; }
