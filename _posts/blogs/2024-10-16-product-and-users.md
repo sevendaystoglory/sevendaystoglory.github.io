@@ -7,15 +7,15 @@ image:
 permalink: /blogs/learning-from-users-and-product-features/
 ---
 
-This blog is not meant to be a lousy read for everyone. Nor is this a guide filled with expert tips or hard-and-fast rules. I just penned down the learnings that resonated with me about understanding the users and deciding what product features to ship. By way of background, I work as a startup founder of a B2B enterprise platform.
+This is not an expert guide, and there are no hard rules in it. I just wrote down the things I learned about understanding users and deciding which features to build. By way of background, I work as a startup founder of a B2B enterprise platform.
 
 Enjoy :)
 
 ## Why to talk to your users?
 
-Why would you want to understand the user? Because, contrary to the belief that good ideas are born on a lazy Sunday, the very best founders learn directly from their users throughout the life of their company. Users and customers will keep you honest.
+Why would you want to understand the user? A lot of people picture good ideas showing up on a lazy Sunday. In practice, the best founders keep learning from their users for as long as the company exists, and talking to users is what stops you from fooling yourself.
 
-Founders like Deepinder Goyal choose to become a delivery person for a day to figure out anything that might be bugging delivery partners that hasn't yet been addressed. Movies like The Social Network can be highly misleading in this regard; they never show the countless hours of product cycles born out of an obsession with users. Brian Chesky, who founded Airbnb, spent a week with Amal—the very first guest at Airbnb. He also spent time in 50 different Airbnb locations, forming relationships and understanding the hosts because they are the ones making his product successful.
+Founders like Deepinder Goyal choose to become a delivery person for a day to figure out anything that might be bugging delivery partners that hasn't yet been addressed. Movies like The Social Network get this wrong. They never show the hours and hours spent going back and forth with users to get the product right. Brian Chesky, who founded Airbnb, spent a week with Amal—the very first guest at Airbnb. He also spent time in 50 different Airbnb locations, forming relationships and understanding the hosts because they are the ones making his product successful.
 
 ## Whom to Talk To?
 
@@ -37,7 +37,7 @@ Better to start off talking to people you know—your coworkers from past compan
 
 ## What to talk about?
 
-Now, we want to make the product experience as good as possible for the users. This is the goal! So, do you ask the end user what feature they desire or give a list of features to them and have them choose which is the best one? No! This may sound contrarian, but <b>users generally have good problems and bad solutions</b>. It is not their job to decide what product features will solve their problem—that is your job as a founder! Tell me - what incentive does your user have in telling you that they dislike this upcoming feature?
+What we want is for the product to be as good as possible for the people using it. So, do you ask the end user what feature they desire or give a list of features to them and have them choose which is the best one? Neither. <b>Users generally have good problems and bad solutions</b>. It is not their job to decide what product features will solve their problem—that is your job as a founder! Tell me - what incentive does your user have in telling you that they dislike this upcoming feature?
 
 The customer will be best able to tell you about their problem and what they are currently doing to solve it. Some good questions that you can ask in the call are:
 
@@ -51,7 +51,7 @@ How often do you have to do X?
 
 How much does it cost you to do X?
 
-On the other hand, to truly learn the essence of drawing out valuable information from a call (and bear in mind that it has to be a call—no hiding behind emails!), you should avoid these things:
+There are also a few things to avoid if you want to actually learn something from a call. And it does need to be a call, not an email:
 
 Never, ever talk about your product or ask questions like, "How would a better product look to you?" This will bias the user.
 
@@ -59,7 +59,7 @@ Keep the interview (if I may call it so) about the user, not yourself. Many peop
 
 ## How to talk?
 
-This is very important and is the highlight of this blog. Read the book The Mom Test if you get the chance. I dedicate a great part of my learning from that book. They say you shouldn't ask your mom whether your business is a good idea, because she loves you and will lie to you. This is technically true, but it misses the point. 
+This is the most important part of the post. If you get the chance, read The Mom Test. A lot of what I know about talking to users came from that book. They say you shouldn't ask your mom whether your business is a good idea, because she loves you and will lie to you. This is technically true, but it misses the point. 
 
 <b>You shouldn't ask anyone if your business is a good idea. It's a bad question, and everyone will lie to you at least a little.</b>
 
@@ -73,4 +73,4 @@ Instead, The Mom Test suggests that you focus your questions on learning about y
 
 Always make a list of questions that you want answered by the end of the conversation. Ask ChatGPT if these questions comply with The Mom Test rules. Then go on the call. It may not always happen that everything is clarified, but your job is to make the maximum out of the call, and not in an interrogative manner. I usually do this with the help of a Google Form and keep it to 4-5 calls a day for 10 days. No more. 
 
-In closing, most of these lessons came back to me after rewatching YC's Startup School. They hit differently when you've experienced them firsthand.
+Most of these lessons came back to me when I rewatched YC's Startup School. They meant a lot more the second time, after I had made the mistakes myself.
