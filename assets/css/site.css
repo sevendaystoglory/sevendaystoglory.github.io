@@ -1033,7 +1033,7 @@ pre:hover .copy-button { opacity: 1; }
 }
 /* without the hills (sub-pages) the dial sits a little further from the content */
 .site-footer > .flux:first-child { margin-top: 24px; }
-.footer-art { position: relative; height: clamp(120px, 16vw, 220px); pointer-events: none; }
+.footer-art { position: relative; height: clamp(120px, 16vw, 220px); cursor: crosshair; }
 .footer-canvas { position: absolute; inset: 0; width: 100%; height: 100%; }
 .footer-note {
     margin: 0 0 36px 0;
