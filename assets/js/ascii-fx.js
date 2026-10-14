@@ -2276,7 +2276,7 @@
       // only the runs the ray's straight path comes near (a wide margin, since
       // the page may scroll a little while it flies)
       snapScroll();
-      const ox = ray.x + SX, oy = ray.y + SY - shift(), nv = Math.hypot(ray.vx, ray.vy);
+      const ox = ray.x + SX, oy = ray.y + SY, nv = Math.hypot(ray.vx, ray.vy);
       for (const wn of textNodes) {
         if (!wn.node.parentNode) continue;
         const pos = posOf(wn);
@@ -2340,7 +2340,8 @@
         }
         if (hits && t - r.lastSpew > 0.08) { spew(r.x, r.y, -dirx, -diry, Math.min(4, hits), r.hot); r.lastSpew = t; }
         // letters under the head glitch, and spit out glyphs
-        const px = r.x + SX, py = r.y + SY - shift();
+        // the head in page px: the ray layer is fixed to the viewport, unshifted
+        const px = r.x + SX, py = r.y + SY;
         for (const e of r.near) {
           let any = false;
           for (let q = 0; q < e.pos.length; q++) {
