@@ -26,17 +26,17 @@
     return m ? [+m[1], +m[2], +m[3]] : C.navy;
   };
 
-  // Shared ticker: every live canvas gets a frame at ~15 fps, and only while
-  // it is on screen and the tab is visible.
+  // Shared ticker: every live canvas gets a frame at ~15 fps (or its own
+  // rate, set as fn.__every in ms), and only while it is on screen and the
+  // tab is visible. The small tolerance lets a cadence land on whole display
+  // refreshes instead of alternating between four and five of them.
   const live = new Set();
   const FRAME_MS = 1000 / 15;
-  let last = 0;
   function tick(now) {
-    if (now - last >= FRAME_MS) {
-      last = now;
-      const t = now / 1000;
-      live.forEach(fn => fn(t));
-    }
+    const t = now / 1000;
+    live.forEach(fn => {
+      if (now - (fn.__last || 0) >= (fn.__every || FRAME_MS) - 2) { fn.__last = now; fn(t); }
+    });
     requestAnimationFrame(tick);
   }
   if (!reduced) requestAnimationFrame(tick);
@@ -481,7 +481,10 @@
       ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
       for (const b of birds) if (!b.x) { b.x = W * (0.5 + Math.random() * 0.4); b.y = H * (0.25 + Math.random() * 0.5); }
     }
+    let box = null;
+    const boxNow = () => box || (box = canvas.getBoundingClientRect());   // read the layout once per frame
     function step(t, dt) {
+      box = null;
       for (const b of birds) {
         let sx = 0, sy = 0, ax = 0, ay = 0, cx = 0, cy = 0, na = 0, nc = 0;
         for (const o of birds) {
@@ -506,7 +509,7 @@
         // a wave front passing through scatters them
         for (const rp of ripples) {
           const age = t - rp.born; if (age < 0 || age > rp.life) continue;
-          const box = canvas.getBoundingClientRect();
+          const box = boxNow();
           const dx = box.left + window.scrollX + b.x - rp.px, dy = box.top + window.scrollY + b.y - rp.py, d = Math.hypot(dx, dy) || 1;
           const Rt = frontR(rp, Math.atan2(dy, dx), age);
           if (Math.abs(d - Rt) < 60) { fx += dx / d * 900 * (0.5 + rp.k); fy += dy / d * 900 * (0.5 + rp.k); }
@@ -542,6 +545,7 @@
     resize();
     frame(0);
     canvas._frame = frame; frame.__canvas = canvas;
+    frame.__every = 1000 / 30;   // birds move fast enough that 15 fps reads as stutter
     canvas._onScreen = true;
     if (!reduced) seen.observe(canvas);
     pageCanvases.push(canvas);
