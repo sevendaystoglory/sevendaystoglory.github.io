@@ -145,16 +145,16 @@ strong { font-weight: 600; color: var(--ink); }
 .sidebar-nav a:hover { color: var(--ink); }
 .sidebar-nav a.active { color: var(--ink); font-weight: 500; }
 .sidebar-email {
-    display: block;
+    display: inline-block;
     margin: 1.3rem 0 0;
-    font-family: var(--mono);
-    font-size: 0.72rem;
-    letter-spacing: 0.12em;
-    text-transform: uppercase;
-    color: var(--ink-soft);
+    font-family: var(--sans);
+    font-size: 0.86rem;
+    color: var(--link);
     white-space: nowrap;
+    border-bottom: 1px solid rgba(79, 111, 163, 0.45);
+    padding-bottom: 1px;
 }
-.sidebar-email { user-select: all; }
+.sidebar-email:hover { color: var(--link-hov); border-color: currentColor; }
 .sidebar-social {
     list-style: none;
     padding: 0;
