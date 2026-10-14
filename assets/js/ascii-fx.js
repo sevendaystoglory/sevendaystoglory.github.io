@@ -483,6 +483,7 @@
     }
     let box = null;
     const boxNow = () => box || (box = canvas.getBoundingClientRect());   // read the layout once per frame
+    const QA = Math.PI / 12;                                              // heading step for drawing
     function step(t, dt) {
       box = null;
       for (const b of birds) {
@@ -535,8 +536,11 @@
         const wing = f > 0.4 ? 'v' : f > -0.4 ? '~' : '^';
         ctx.save();
         ctx.translate(b.x, b.y);
-        ctx.rotate(Math.atan2(b.vy, b.vx) + Math.PI / 2);
-        ctx.font = '700 ' + (7 + b.depth * 7).toFixed(1) + 'px ' + MONO;
+        // heading snapped to 15 degrees and size to whole pixels: every distinct
+        // rotation of a glyph is a new entry in the browser's glyph cache, and
+        // continuous angles at 30 fps filled it until it purged with a long hitch
+        ctx.rotate(Math.round((Math.atan2(b.vy, b.vx) + Math.PI / 2) / QA) * QA);
+        ctx.font = '700 ' + Math.round(7 + b.depth * 7) + 'px ' + MONO;
         ctx.fillStyle = rgba(b.hot ? C.clay : C.navy, 0.35 + b.depth * 0.6);
         ctx.fillText(wing, 0, 0);
         ctx.restore();
@@ -623,8 +627,9 @@
       const wings = f > 0.45 ? '}{' : f > -0.45 ? ')(' : '||';
       ctx.save();
       ctx.translate(m.x, m.y);
-      ctx.rotate(m.heading);
-      ctx.scale(0.72 + 0.28 * (f + 1) / 2, 1);
+      // heading and wing width stepped, so rotated glyphs repeat and stay cached
+      ctx.rotate(Math.round(m.heading / (Math.PI / 12)) * (Math.PI / 12));
+      ctx.scale(0.72 + 0.07 * Math.round(4 * (f + 1) / 2), 1);
       ctx.font = '700 11px ' + MONO;
       ctx.fillStyle = rgba(m.hot ? C.clay : C.navy, 0.9);
       ctx.fillText(wings, 0, 0);
