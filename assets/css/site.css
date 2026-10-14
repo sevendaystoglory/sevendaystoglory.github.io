@@ -866,6 +866,9 @@ a.badge:hover { transform: translateY(-1px); box-shadow: 0 3px 8px -2px rgba(27,
 .page-hero .bio { margin-bottom: 20px; color: var(--ink-soft); font-style: italic; }
 .page-hero-art { display: flex; flex-direction: column; }
 .scene-box { position: relative; aspect-ratio: 420 / 340; }
+/* the murmuration gets a wider stage than the other scenes */
+.page-hero-wide { grid-template-columns: minmax(300px, 1fr) minmax(360px, 47%); }
+.page-hero-wide .scene-box { aspect-ratio: 500 / 340; }
 /* a line under each figure saying what it is */
 .art-caption {
     margin: 8px 0 0 0;
@@ -1121,9 +1124,11 @@ pre:hover .copy-button { opacity: 1; }
     .card-body { padding-top: 8px; }
     .page-hero { grid-template-columns: minmax(0, 1fr); gap: 12px; }
     .page-hero-art { max-width: 320px; }
+    .page-hero-wide .page-hero-art { max-width: 560px; }
     .latest-main .compact-grid { grid-template-columns: minmax(0, 1fr); column-gap: 0; }
 }
 @media (max-width: 600px) {
+    .page-hero-wide .scene-box { aspect-ratio: 460 / 340; }
     .nw-list { padding-left: 20px; }
     .nw-list li { grid-template-columns: minmax(0, 1fr); padding: 8px 0; }
     .nw-list li::before { left: -24px; top: 12px; }

@@ -494,7 +494,9 @@
         let fx = sx * 140, fy = sy * 140;
         if (na) { fx += (ax / na - b.vx) * 2.2; fy += (ay / na - b.vy) * 2.2; }
         if (nc) { fx += (cx / nc - b.x) * 1.6; fy += (cy / nc - b.y) * 1.6; }
-        fx += (W * 0.5 - b.x) * 0.35; fy += (H * 0.5 - b.y) * 0.5;                 // stay in frame
+        // stay in frame, around an anchor that roams the width so the flock cruises
+        const tx = W * (0.5 + 0.3 * Math.sin(t * 0.09)), ty = H * (0.5 + 0.14 * Math.sin(t * 0.13 + 1.7));
+        fx += (tx - b.x) * 0.35; fy += (ty - b.y) * 0.5;
         fx += (noise(b.x * 0.01, b.y * 0.01, t * 0.5 + b.phase) - 0.5) * 260;      // wander
         fy += (noise(b.y * 0.01 + 7, b.x * 0.01, t * 0.5 + b.phase) - 0.5) * 260;
         // a wave front passing through scatters them
