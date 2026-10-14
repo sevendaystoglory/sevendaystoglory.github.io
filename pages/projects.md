@@ -11,8 +11,8 @@ permalink: /pages/projects/
     <p class="bio">Side projects and tools.</p>
   </div>
   <div class="page-hero-art">
-    <div class="scene-box"><canvas class="scene-canvas" data-scene="storm-small" aria-hidden="true"></canvas></div>
-    <p class="art-caption">a storm.</p>
+    <div class="scene-box"><canvas class="scene-canvas" data-scene="chaos" aria-hidden="true"></canvas></div>
+    <p class="art-caption">the chaos game: jump halfway to a random corner, over and over, and the sierpinski triangle appears. each colour is a smaller copy of the whole. click for the next fractal, move across to bend it.</p>
   </div>
 </section>
 

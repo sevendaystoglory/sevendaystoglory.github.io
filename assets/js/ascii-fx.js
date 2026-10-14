@@ -393,6 +393,218 @@
     return 0.5 * noise(x, y, z) + 0.25 * noise(x * 2.1, y * 2.1, z) + 0.125 * noise(x * 4.3, y * 4.3, z) + 0.0625 * noise(x * 8.7, y * 8.7, z);
   }
 
+  // ── chaos game: fractals grown from one random rule ──────────────
+  // Pick a corner at random, jump halfway toward it, and repeat: the points
+  // land on the Sierpinski triangle and nowhere else. Other sets of
+  // shrinking maps grow other fractals the same way (a fern, a dragon, the
+  // Koch curve, a carpet), and the scene drifts from one to the next by
+  // blending their maps, so every frame in between is a fractal too.
+  // Thousands of points play at once and a cell's glyph counts how many land
+  // in it; its colour says which map put the last one there, so each colour
+  // is a smaller copy of the whole. One point plays slowly in the open, its
+  // jump drawn as a dotted line toward the fixed point of the map it drew.
+  // The pointer pulls the fixed points toward it and bends the fractal, a
+  // click moves on to the next one, and a super wave scatters the points
+  // into noise, from which they fall back one generation at a time.
+  function chaos(canvas) {
+    const R3 = Math.sqrt(3) / 2, PR = (3 - Math.sqrt(5)) / 2;
+    // a similarity: scale s, turn a, then shift (e, f); maps are [a, b, c, d, e, f]
+    // for x' = a x + b y + e, y' = c x + d y + f, with y up
+    const sim = (s, a, e, f) => [s * Math.cos(a), -s * Math.sin(a), s * Math.sin(a), s * Math.cos(a), e, f];
+    const pent = [], carpet = [];
+    for (let i = 0; i < 5; i++) { const a = Math.PI / 2 + i * 2 * Math.PI / 5; pent.push(sim(PR, 0, (1 - PR) * Math.cos(a), (1 - PR) * Math.sin(a))); }
+    for (let i = 0; i < 3; i++) for (let j = 0; j < 3; j++) if (i !== 1 || j !== 1) carpet.push(sim(1 / 3, 0, i / 3, j / 3));
+    const SETS = [
+      { name: 'sierpinski triangle · dim 1.585', maps: [sim(0.5, 0, 0, 0), sim(0.5, 0, 0.5, 0), sim(0.5, 0, 0.25, R3 / 2)] },
+      { name: 'barnsley fern', turn: -Math.PI / 2, mirror: true, cols: [C.amber, C.sage, C.clay, C.midblue],
+        maps: [[0, 0, 0, 0.16, 0, 0], [0.85, 0.04, -0.04, 0.85, 0, 1.6], [0.2, -0.26, 0.23, 0.22, 0, 1.6], [-0.15, 0.28, 0.26, 0.24, 0, 0.44]], w: [0.01, 0.85, 0.07, 0.07] },
+      { name: 'heighway dragon · dim 2', maps: [[0.5, -0.5, 0.5, 0.5, 0, 0], [-0.5, -0.5, 0.5, -0.5, 1, 0]] },
+      { name: 'koch curve · dim 1.262', maps: [sim(1 / 3, 0, 0, 0), sim(1 / 3, Math.PI / 3, 1 / 3, 0), sim(1 / 3, -Math.PI / 3, 0.5, R3 / 3), sim(1 / 3, 0, 2 / 3, 0)] },
+      { name: 'sierpinski carpet · dim 1.893', maps: carpet },
+      { name: 'lévy c curve · dim 2', maps: [[0.5, -0.5, 0.5, 0.5, 0, 0], [0.5, 0.5, -0.5, 0.5, 0.5, 0.5]] },
+      { name: 'sierpinski pentagon · dim 1.672', maps: pent }
+    ];
+    const PAL = [C.navy, C.clay, C.midblue, C.amber, C.sage, mix(C.navy, C.clay, 0.5), mix(C.midblue, C.sage, 0.5), mix(C.clay, C.amber, 0.5)];
+    // Every set is padded to K maps by repeating its own maps with their
+    // weight shared out, which leaves its fractal unchanged, so any two sets
+    // can be blended map by map. Each is turned (and mirrored, if asked) and
+    // flipped into screen axes (y down) once, and its extent there measured
+    // by playing the game.
+    const K = 8;
+    for (const S of SETS) {
+      const n = S.maps.length, w = S.w || S.maps.map(() => 1 / n);
+      S.src = []; S.pw = [];
+      for (let j = 0; j < K; j++) { const i = j % n; S.src.push(i); S.pw.push(w[i] / (Math.floor((K - 1 - i) / n) + 1)); }
+      const c = Math.cos(S.turn || 0), s = Math.sin(S.turn || 0), mx = S.mirror ? -1 : 1;
+      S.R = [c * mx, -s, -s * mx, -c];                     // flip · turn · mirror: rigid, so its inverse is its transpose
+      let x = 0, y = 0, x0 = Infinity, x1 = -Infinity, y0 = Infinity, y1 = -Infinity;
+      for (let k = 0; k < 30000; k++) {
+        let r = Math.random(), i = 0;
+        while (i < n - 1 && (r -= w[i]) > 0) i++;
+        const M = S.maps[i], nx = M[0] * x + M[1] * y + M[4], ny = M[2] * x + M[3] * y + M[5];
+        x = nx; y = ny;
+        if (k < 20) continue;
+        const sx = S.R[0] * x + S.R[1] * y, sy = S.R[2] * x + S.R[3] * y;
+        if (sx < x0) x0 = sx; if (sx > x1) x1 = sx; if (sy < y0) y0 = sy; if (sy > y1) y1 = sy;
+      }
+      S.box = [x0, x1, y0, y1];
+      S.m = new Float64Array(K * 6);
+    }
+    // the maps in canvas pixels for a W x H box: T(x) = s R x + t fits the
+    // set's extent with a margin, and each map becomes T f T^-1
+    function fit(W, H) {
+      for (const S of SETS) {
+        const [x0, x1, y0, y1] = S.box, R = S.R;
+        const s = Math.min((W * 0.92) / (x1 - x0), (H * 0.84) / (y1 - y0));
+        const tx = W / 2 - s * (x0 + x1) / 2, ty = H / 2 - s * (y0 + y1) / 2 + H * 0.03;
+        for (let j = 0; j < K; j++) {
+          const M = S.maps[S.src[j]], o = j * 6;
+          // R M R^T
+          const p = R[0] * M[0] + R[1] * M[2], q = R[0] * M[1] + R[1] * M[3];
+          const u = R[2] * M[0] + R[3] * M[2], v = R[2] * M[1] + R[3] * M[3];
+          const a = p * R[0] + q * R[1], b = p * R[2] + q * R[3], c = u * R[0] + v * R[1], d = u * R[2] + v * R[3];
+          S.m[o] = a; S.m[o + 1] = b; S.m[o + 2] = c; S.m[o + 3] = d;
+          S.m[o + 4] = tx - (a * tx + b * ty) + s * (R[0] * M[4] + R[1] * M[5]);
+          S.m[o + 5] = ty - (c * tx + d * ty) + s * (R[2] * M[4] + R[3] * M[5]);
+        }
+      }
+    }
+
+    // ── the game in play ─────────────────────────────────────────────
+    const N = 4000, HOLD = 9, MORPH = 3.2, GEN = 0.34, PLAY = 0.5;
+    const ptx = new Float32Array(N), pty = new Float32Array(N), ptm = new Uint8Array(N);
+    const M = new Float64Array(K * 6), CW = new Float64Array(K), FX = new Float64Array(K), FY = new Float64Array(K);
+    const COL = [];
+    let from = 0, to = 0, morphAt = 0, nextAt = 0, slowUntil = 0, nextGen = 0, opening = !reduced;
+    let W = 0, H = 0, gc = 0, gr = 0, dens = null, last = null, level = 1, lastT = -1;
+    const cursor = { x: 0, y: 0, on: false, k: 0 };
+    const player = { x: 0, y: 0, ox: 0, oy: 0, j: 0, at: -1 };
+    const ease = (m) => m * m * (3 - 2 * m);
+    const pick = () => { const r = Math.random() * CW[K - 1]; let j = 0; while (j < K - 1 && CW[j] < r) j++; return j; };
+    // the maps of this frame: the two sets blended, then each fixed point
+    // pulled toward the pointer by moving the map's shift
+    function blend(m) {
+      const A = SETS[from], B = SETS[to], e = ease(m);
+      let acc = 0;
+      for (let j = 0; j < K; j++) {
+        const o = j * 6;
+        for (let q = 0; q < 6; q++) M[o + q] = A.m[o + q] + (B.m[o + q] - A.m[o + q]) * e;
+        acc += A.pw[j] + (B.pw[j] - A.pw[j]) * e; CW[j] = acc;
+        COL[j] = mix((A.cols || PAL)[A.src[j]], (B.cols || PAL)[B.src[j]], e);
+        const a = M[o], b = M[o + 1], c = M[o + 2], d = M[o + 3], det = (1 - a) * (1 - d) - b * c;
+        let fx = ((1 - d) * M[o + 4] + b * M[o + 5]) / det, fy = (c * M[o + 4] + (1 - a) * M[o + 5]) / det;
+        if (cursor.k > 0.001) {
+          const dx = cursor.x - fx, dy = cursor.y - fy, sg = Math.min(W, H) * 0.3;
+          const g = cursor.k * 0.7 * Math.exp(-(dx * dx + dy * dy) / (2 * sg * sg));
+          M[o + 4] += (1 - a) * dx * g - b * dy * g; M[o + 5] += -c * dx * g + (1 - d) * dy * g;
+          fx += dx * g; fy += dy * g;
+        }
+        FX[j] = fx; FY[j] = fy;
+      }
+    }
+    function jump(n) {
+      for (let k = 0; k < n; k++) for (let i = 0; i < N; i++) {
+        const j = pick(), o = j * 6, x = ptx[i], y = pty[i];
+        ptx[i] = M[o] * x + M[o + 1] * y + M[o + 4]; pty[i] = M[o + 2] * x + M[o + 3] * y + M[o + 5]; ptm[i] = j;
+      }
+    }
+    function scatter() { for (let i = 0; i < N; i++) { ptx[i] = Math.random() * W; pty[i] = Math.random() * H; ptm[i] = (Math.random() * K) | 0; } }
+    // a cell's count decays each frame and gains every point that lands in it
+    function deposit(decay) {
+      const cw = W / gc, rh = H / gr;
+      for (let i = 0; i < dens.length; i++) dens[i] *= decay;
+      for (let i = 0; i < N; i++) {
+        const c = Math.floor(ptx[i] / cw), r = Math.floor(pty[i] / rh);
+        if (c < 0 || r < 0 || c >= gc || r >= gr) continue;
+        dens[r * gc + c] += 1; last[r * gc + c] = ptm[i];
+      }
+      let sum = 0, n = 0;
+      for (let i = 0; i < dens.length; i++) if (dens[i] > 0.5) { sum += dens[i]; n++; }
+      level = n ? 1.1 * sum / n : 1;
+    }
+    // straight onto the fractal, for a still frame
+    function settle() { blend(0); scatter(); jump(30); dens.fill(0); for (let k = 0; k < 4; k++) { jump(1); deposit(1); } }
+    function next(t) { if (from === to) { to = (from + 1) % SETS.length; morphAt = t; } }
+    function shake(t) { scatter(); slowUntil = t + GEN * 8; nextGen = t + GEN; }
+
+    function prep(t, cols, rows) {
+      if (cols !== gc || rows !== gr) {
+        gc = cols; gr = rows; W = canvas.clientWidth; H = canvas.clientHeight;
+        fit(W, H);
+        dens = new Float32Array(cols * rows); last = new Uint8Array(cols * rows);
+        if (opening) { blend(0); scatter(); } else settle();
+      }
+      if (t === lastT) return true;
+      lastT = t;
+      // the first real frame starts the opening: noise falling onto the triangle
+      if (opening && t > 0) { opening = false; shake(t); nextAt = t + GEN * 8 + HOLD; }
+      if (!reduced && !opening && from === to && t >= nextAt) next(t);
+      let m = 0;
+      if (from !== to) {
+        m = clamp01((t - morphAt) / MORPH);
+        if (m >= 1) { from = to; m = 0; nextAt = t + HOLD; }
+      }
+      cursor.k += ((cursor.on ? 1 : 0) - cursor.k) * 0.15;
+      blend(m);
+      const slow = t < slowUntil;
+      if (!slow || t >= nextGen) { jump(1); if (slow) nextGen = t + GEN; }
+      deposit(slow ? 0.35 : 0.72);
+      if (!slow && t - player.at > PLAY) {
+        if (player.at < 0) { player.x = ptx[0]; player.y = pty[0]; }
+        const j = pick(), o = j * 6;
+        player.ox = player.x; player.oy = player.y; player.j = j; player.at = t;
+        player.x = M[o] * player.ox + M[o + 1] * player.oy + M[o + 4]; player.y = M[o + 2] * player.ox + M[o + 3] * player.oy + M[o + 5];
+      }
+      return false;
+    }
+    const G = '.:-=+*#%@';
+    // the slow point, its last jump and where it was headed, and the name
+    function overlay(ctx, t, cols, rows, cell, rowH, font) {
+      const put = (x, y, ch, color, scale) => {
+        const c = Math.floor(x / cell), r = Math.floor(y / rowH);
+        if (c < 0 || r < 0 || c >= cols || r >= rows) return;
+        ctx.clearRect(c * cell, r * rowH, cell, rowH);
+        ctx.fillStyle = color;
+        if (scale) ctx.font = '700 ' + Math.round(cell * scale) + 'px ' + MONO;
+        ctx.fillText(ch, (c + 0.5) * cell, (r + 0.5) * rowH);
+        if (scale) ctx.font = font;
+      };
+      if (player.at >= 0 && t >= slowUntil) {
+        const f = 1 - 0.6 * clamp01((t - player.at) / PLAY);
+        const dx = player.x - player.ox, dy = player.y - player.oy, n = Math.floor(Math.hypot(dx, dy) / (cell * 1.6));
+        for (let s = 1; s < n; s++) put(player.ox + dx * s / n, player.oy + dy * s / n, '·', rgba(C.clay, 0.75 * f), 0);
+        put(FX[player.j], FY[player.j], '+', rgba(C.amber, 0.9 * f), 1.5);
+        put(player.x, player.y, '@', rgba(C.clay, 1), 1.6);
+      }
+      const S = SETS[from !== to && ease(clamp01((t - morphAt) / MORPH)) > 0.5 ? to : from];
+      ctx.textAlign = 'left'; ctx.font = '600 10px ' + MONO;
+      const label = S.name, w = ctx.measureText(label).width;
+      ctx.clearRect(4, 2, w + 12, 18);
+      ctx.fillStyle = rgba(C.navy, 0.45); ctx.fillText(label, 10, 12);
+      ctx.textAlign = 'center'; ctx.font = font;
+    }
+    const grid = makeGrid(canvas, 6, (u, v, t, c, r) => {
+      const i = r * gc + c, d = dens[i];
+      if (d < 0.3) return null;
+      const L = 1 - Math.exp(-d / level);
+      return [L, rgba(COL[last[i]], 0.3 + 0.65 * L), G[(L * 8.99) | 0]];
+    }, prep, overlay);
+    grid.frame.__every = 1000 / 20;
+
+    canvas.addEventListener('pointermove', (ev) => {
+      const b = canvas.getBoundingClientRect();
+      cursor.x = ev.clientX - b.left; cursor.y = ev.clientY - b.top; cursor.on = true;
+    });
+    canvas.addEventListener('pointerleave', () => { cursor.on = false; });
+    canvas.addEventListener('pointerdown', (e) => {
+      e.stopPropagation();                                   // a click here moves to the next fractal; it is not a press on blank paper
+      const t = performance.now() / 1000;
+      if (!reduced) { next(t); return; }
+      from = to = (from + 1) % SETS.length; settle(); lastT = -1; grid.frame(t);
+    });
+    pageOn(document, 'ascii:thunder', () => { if (dens && !reduced) shake(performance.now() / 1000); });
+  }
+
   // ── storm: cloud, rain in gusts, ridges, and lightning ───────────
   // A dark cloud mass billows out of the top of the box, lit from within
   // now and then by sheet lightning. Rain falls out of it in streaks that
@@ -2346,6 +2558,7 @@
     const cl = document.getElementById('ascii-clouds');   if (cl) clouds(cl);
     const hs = document.getElementById('hero-scene');     if (hs) storm(hs, { cloud: 0.36, boltEvery: 9 });
     document.querySelectorAll('[data-scene="storm-small"]').forEach(c => storm(c, { cloud: 0.4, boltEvery: 12, rain: 2.2, salvo: 3 }));
+    document.querySelectorAll('[data-scene="chaos"]').forEach(c => chaos(c));
     document.querySelectorAll('[data-scene="attractor"]').forEach(c => attractor(c));
     document.querySelectorAll('[data-scene="flock"]').forEach(c => flock(c));
     document.querySelectorAll('.feat-card-link').forEach(hoverAscii);
