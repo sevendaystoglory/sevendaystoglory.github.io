@@ -23,7 +23,7 @@ title: Home
       Previously, I worked on building AI-native video infra and specifically visual information
       retrieval with <a href="https://abhinavsh.info/">Dr.&nbsp;Abhinav Shrivastava</a>, on
       trustworthy LLMs via data attribution with
-      <a href="https://sites.google.com/view/prathosh/home">Dr.&nbsp;Prathosh A.P.</a> at IISc
+      <a href="https://prathosh.in/">Dr.&nbsp;Prathosh A.P.</a> at IISc
       Bangalore, and on test-time alignment at Purdue with
       <a href="https://beerkay.github.io/">Dr.&nbsp;Berkay Celik</a>; I also worked with
       <a href="https://pengtaoxie.github.io/">Dr.&nbsp;Pengtao Xie</a> at UCSD on predicting histone
