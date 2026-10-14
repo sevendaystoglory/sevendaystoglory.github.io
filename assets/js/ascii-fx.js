@@ -346,6 +346,7 @@
     }
     pageOn(document, 'ascii:thunder', () => { if (cur) seed(); });
     canvas.addEventListener('pointerdown', (e) => {
+      e.stopPropagation();                                   // a click here sows cells; it is not a press on blank paper
       const b = canvas.getBoundingClientRect(), c = ((e.clientX - b.left) / (b.width / gc)) | 0, r = ((e.clientY - b.top) / (b.height / gr)) | 0;
       for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) if (Math.random() < 0.75) cur[((r + dy + gr) % gr) * gc + (c + dx + gc) % gc] = 1;
     });
