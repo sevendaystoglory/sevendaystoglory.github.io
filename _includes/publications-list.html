@@ -6,10 +6,10 @@
       <div class="pub-authors">{% include authors.html authors=pub.authors %}</div>
       <div class="pub-badges">
         {%- if pub.venue == "Preprint" -%}
-        <span class="badge badge-venue"><span class="bl">Preprint</span><span class="bv">{{ pub.year }}</span></span>
+        <span class="badge badge-venue badge-v-preprint"><span class="bl">Preprint</span><span class="bv">{{ pub.year }}</span></span>
         {%- else -%}
         {%- assign vshort = pub.short | replace: "--", "-" -%}
-        <span class="badge badge-venue" title="{{ pub.venue }}"><span class="bl">{% if vshort == "ICLR" %}<img class="venue-mark" src="/assets/images/iclr-mark.svg" alt="">{% elsif vshort == "NeurIPS-W" or vshort == "OPT-ML" %}<img class="venue-mark" src="/assets/images/neurips-mark.svg" alt="">{% endif %}{{ vshort }}</span><span class="bv">{{ pub.year }}</span></span>
+        <span class="badge badge-venue {% if vshort == "ICLR" %}badge-v-iclr{% elsif vshort == "NeurIPS-W" or vshort == "OPT-ML" %}badge-v-neurips{% endif %}" title="{{ pub.venue }}"><span class="bl">{% if vshort == "ICLR" %}<img class="venue-mark" src="/assets/images/iclr-mark.svg" alt="">{% elsif vshort == "NeurIPS-W" or vshort == "OPT-ML" %}<img class="venue-mark" src="/assets/images/neurips-mark.svg" alt="">{% endif %}{{ vshort }}</span><span class="bv">{{ pub.year }}</span></span>
         {%- endif -%}
         {%- for l in pub.links -%}{% include pill.html label=l.label url=l.url %}{%- endfor -%}
       </div>

@@ -695,11 +695,15 @@ a.badge:hover { transform: translateY(-1px); box-shadow: 0 3px 8px -2px rgba(27,
     border-radius: 3px;
     margin: -2px 1px -2px -2px;
 }
+/* each kind of badge carries its own colour on the right-hand chip */
 .badge-venue .bv { background: var(--clay); }
-.badge-paper .bv { background: #B9542F; }
-.badge-forum .bv { background: var(--link); }
-.badge-view  .bv { background: var(--link); }
-.badge-code  .bv { background: #3A4A66; }
+.badge-v-preprint .bv { background: #B31B1B; }   /* arXiv red */
+.badge-v-iclr .bv { background: #1F7A8C; }       /* teal */
+.badge-v-neurips .bv { background: #6B4E9B; }    /* NeurIPS purple */
+.badge-paper .bv { background: #C0392B; }
+.badge-forum .bv { background: #D08A3E; }
+.badge-view  .bv { background: #5E84B9; }
+.badge-code  .bv { background: #3E8E5E; }
 .pub-note {
     margin: 12px 0 0 0;
     font-size: 14.5px;
