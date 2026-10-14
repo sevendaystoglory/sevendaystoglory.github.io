@@ -18,7 +18,9 @@
 
   const clamp01 = (x) => x < 0 ? 0 : x > 1 ? 1 : x;
   const mix = (a, b, t) => [a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t, a[2] + (b[2] - a[2]) * t];
-  const rgba = (c, a) => 'rgba(' + (c[0] | 0) + ',' + (c[1] | 0) + ',' + (c[2] | 0) + ',' + Math.max(0, Math.min(1, a)).toFixed(3) + ')';
+  // alpha to three places from a table: this runs thousands of times a frame
+  const A3 = Array.from({ length: 1001 }, (_, i) => (i / 1000).toFixed(3));
+  const rgba = (c, a) => 'rgba(' + (c[0] | 0) + ',' + (c[1] | 0) + ',' + (c[2] | 0) + ',' + A3[a <= 0 ? 0 : a >= 1 ? 1000 : (a * 1000 + 0.5) | 0] + ')';
   const rampChar = (lum) => RAMP[(clamp01(lum) * (RAMP.length - 1)) | 0];
   const hexToRgb = (h) => [parseInt(h.slice(1, 3), 16), parseInt(h.slice(3, 5), 16), parseInt(h.slice(5, 7), 16)];
   const parseColor = (s) => {
@@ -79,9 +81,17 @@
   // ── a glyph grid on a canvas ─────────────────────────────────────
   // cellPx is in CSS pixels. `paint(col, row, t)` returns null for an empty
   // cell or [lum, color, char?]. The canvas background stays transparent.
-  function makeGrid(canvas, cellPx, paint) {
+  // `prep(t, cols, rows)` runs once per frame before the cells; returning true
+  // keeps the previous paint (the canvas is left as it is, which costs nothing).
+  // With an `overlay(ctx, t, cols, rows, cell, rowH, font)` the grid is painted
+  // into a layer that is laid under the overlay every frame, so slow scenery
+  // can be repainted rarely while things moving over it are drawn each frame.
+  function makeGrid(canvas, cellPx, paint, prep, overlay) {
     const ctx = canvas.getContext('2d');
     let cols = 0, rows = 0, cell = cellPx, dpr = 1;
+    let baseFont = '';
+    const layer = overlay ? document.createElement('canvas') : null;
+    const lctx = layer ? layer.getContext('2d') : null;
 
     function resize() {
       const w = canvas.clientWidth, h = canvas.clientHeight;
@@ -89,28 +99,42 @@
       dpr = Math.min(window.devicePixelRatio || 1, 2);
       canvas.width = Math.round(w * dpr);
       canvas.height = Math.round(h * dpr);
+      if (layer) { layer.width = canvas.width; layer.height = canvas.height; }
       cols = Math.max(1, Math.round(w / cellPx));
       rows = Math.max(1, Math.round(h / cellPx));
       cell = w / cols;
-      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-      ctx.font = '600 ' + (cell + 1).toFixed(1) + 'px ' + MONO;
-      ctx.textAlign = 'center';
-      ctx.textBaseline = 'middle';
+      baseFont = '600 ' + Math.round(cell + 1) + 'px ' + MONO;
+      for (const c of (layer ? [ctx, lctx] : [ctx])) {
+        c.setTransform(dpr, 0, 0, dpr, 0, 0);
+        c.font = baseFont;
+        c.textAlign = 'center';
+        c.textBaseline = 'middle';
+      }
     }
 
     function frame(t) {
       if (!cols) resize();
-      ctx.clearRect(0, 0, canvas.clientWidth, canvas.clientHeight);
-      const rowH = canvas.clientHeight / rows;
-      for (let r = 0; r < rows; r++) {
-        for (let c = 0; c < cols; c++) {
-          const v = paint(c / cols, r / rows, t, c, r);
-          if (!v || v[0] <= 0.02) continue;
-          ctx.fillStyle = v[1];
-          if (v[3]) ctx.font = '700 ' + (cell * v[3]).toFixed(1) + 'px ' + MONO;
-          ctx.fillText(v[2] || rampChar(v[0]), (c + 0.5) * cell, (r + 0.5) * rowH);
-          if (v[3]) ctx.font = '600 ' + (cell + 1).toFixed(1) + 'px ' + MONO;
+      const W = canvas.clientWidth, H = canvas.clientHeight, rowH = H / rows;
+      const keep = prep ? prep(t, cols, rows) === true : false;
+      if (keep && !layer) return;
+      const g = layer ? lctx : ctx;
+      if (!keep) {
+        g.clearRect(0, 0, W, H);
+        for (let r = 0; r < rows; r++) {
+          for (let c = 0; c < cols; c++) {
+            const v = paint(c / cols, r / rows, t, c, r);
+            if (!v || v[0] <= 0.02) continue;
+            g.fillStyle = v[1];
+            if (v[3]) g.font = '700 ' + Math.round(cell * v[3]) + 'px ' + MONO;
+            g.fillText(v[2] || rampChar(v[0]), (c + 0.5) * cell, (r + 0.5) * rowH);
+            if (v[3]) g.font = baseFont;
+          }
         }
+      }
+      if (layer) {
+        ctx.clearRect(0, 0, W, H);
+        ctx.drawImage(layer, 0, 0, W, H);
+        overlay(ctx, t, cols, rows, cell, rowH, baseFont);
       }
     }
 
@@ -137,13 +161,22 @@
       [0.2, 0.75, -0.5, 0.05, 0.08, 0.1], [0.5, 0.42, -0.45, 0.03, 0.06, 0.09]
     ];
     const cursor = { x: 0.5, y: 0.5, on: false, k: 0 };   // k eases toward on/off
-    function height(x, y, t) {
+    // where each bump is this frame (they drift with time); set once per frame
+    const bcx = new Float64Array(bumps.length), bcy = new Float64Array(bumps.length);
+    function centres(t) {
+      for (let i = 0; i < bumps.length; i++) {
+        const b = bumps[i];
+        bcx[i] = b[0] + Math.sin(t * 0.17 + b[4] * 40) * b[4];
+        bcy[i] = b[1] + Math.cos(t * 0.13 + b[5] * 40) * b[5];
+      }
+    }
+    centres(0);
+    function height(x, y) {
       const bx = (x - 0.5) * 2, by = (y - 0.5) * 2;
       let h = 1.1 * (bx * bx + by * by);                    // the bowl
-      for (const b of bumps) {
-        const cx = b[0] + Math.sin(t * 0.17 + b[4] * 40) * b[4];
-        const cy = b[1] + Math.cos(t * 0.13 + b[5] * 40) * b[5];
-        const dx = (x - cx) / 0.42, dy = (y - cy) / 0.36;
+      for (let i = 0; i < bumps.length; i++) {
+        const b = bumps[i];
+        const dx = (x - bcx[i]) / 0.42, dy = (y - bcy[i]) / 0.36;
         h += b[2] * Math.exp(-(dx * dx + dy * dy) / (2 * (b[3] + 0.054)));
       }
       if (cursor.k > 0.001) {
@@ -159,7 +192,7 @@
     function spawnHigh(t) {
       let best = null;
       for (let i = 0; i < 12; i++) {
-        const x = 0.2 + Math.random() * 0.6, y = 0.2 + Math.random() * 0.6, h = height(x, y, t);
+        const x = 0.2 + Math.random() * 0.6, y = 0.2 + Math.random() * 0.6, h = height(x, y);
         if (!best || h > best[2]) best = [x, y, h];
       }
       return { x: best[0], y: best[1], age: 0, trail: [], auto: true };
@@ -171,8 +204,8 @@
       for (let i = balls.length - 1; i >= 0; i--) {
         const b = balls[i];
         const e = 0.01;
-        const gx = (height(b.x + e, b.y, t) - height(b.x - e, b.y, t)) / (2 * e);
-        const gy = (height(b.x, b.y + e, t) - height(b.x, b.y - e, t)) / (2 * e);
+        const gx = (height(b.x + e, b.y) - height(b.x - e, b.y)) / (2 * e);
+        const gy = (height(b.x, b.y + e) - height(b.x, b.y - e)) / (2 * e);
         const g = Math.hypot(gx, gy);
         b.x = clamp01(b.x - gx * 0.012); b.y = clamp01(b.y - gy * 0.012);
         b.trail.push([b.x, b.y]); if (b.trail.length > 18) b.trail.shift();
@@ -186,34 +219,77 @@
     }
 
     let lastT = -1;
-    const grid = makeGrid(canvas, 7, (u, v, t, c, r) => {
-      if (c === 0 && r === 0 && t !== lastT) { lastT = t; step(t); }
-      const h = clamp01((height(u, v, t) + 0.6) / 2.2);   // hollows ~0, inner hills ~0.5, rim ~1
-      // a round, feathered edge rather than a box
-      const vig = clamp01(2.2 - Math.hypot((u - 0.5) * 2, (v - 0.5) * 2) * 1.6);
-      if (vig <= 0) return null;
-      for (const b of balls) {
-        if (Math.abs(u - b.x) < 0.013 && Math.abs(v - b.y) < 0.017) return [1, rgba(C.clay, 1), '@', 2.4];
-      }
-      for (const b of balls) {
-        for (let i = b.trail.length - 1; i >= 0; i--) {
-          if (Math.abs(u - b.trail[i][0]) < 0.012 && Math.abs(v - b.trail[i][1]) < 0.016) return [0.7, rgba(C.clay, 0.3 + 0.65 * i / b.trail.length), i > b.trail.length - 4 ? '*' : '·'];
+    // Per frame: the surface sampled once per cell (with a one-cell margin so
+    // the slope can be read from neighbours), and the points and trails
+    // rasterised into a map of cells. Per resize: the vignette and the
+    // thinning pattern, which never change.
+    let gc = 0, gr = 0, HG = null, vigA = null, thinA = null, dirty = true, lastPaint = -1;
+    pageOn(document, 'ascii:thunder', () => { dirty = true; });
+    function prep(t, cols, rows) {
+      if (cols !== gc || rows !== gr) {
+        gc = cols; gr = rows; dirty = true;
+        HG = new Float32Array((cols + 2) * (rows + 2));
+        vigA = new Float32Array(cols * rows); thinA = new Float32Array(cols * rows);
+        for (let r = 0; r < rows; r++) for (let c = 0; c < cols; c++) {
+          const u = c / cols, v = r / rows;
+          vigA[r * cols + c] = clamp01(2.2 - Math.hypot((u - 0.5) * 2, (v - 0.5) * 2) * 1.6);
+          thinA[r * cols + c] = hash(c, r, 9);
         }
       }
-      // slope: lit from the upper left, shaded on the far side
-      const e = 0.012;
-      const hx = height(u + e, v, t) - height(u - e, v, t), hy = height(u, v + e, t) - height(u, v - e, t);
+      if (t !== lastT) { lastT = t; centres(t); step(t); }
+      // the surface is repainted while the pointer is shaping it, after a
+      // thunderclap, and otherwise every fourth frame: the hills drift about a
+      // pixel in that time
+      const active = cursor.on || cursor.k > 0.001;
+      if (!dirty && !active && t - lastPaint < 0.25) return true;
+      dirty = false; lastPaint = t;
+      const S = cols + 2;
+      for (let r = -1; r <= rows; r++) {
+        const v = r / rows, row = (r + 1) * S;
+        for (let c = -1; c <= cols; c++) HG[row + c + 1] = height(c / cols, v);
+      }
+      return false;
+    }
+    // the points and their trails, drawn over the surface every frame: each
+    // takes its cell (trails oldest to newest, then the points, so the newest
+    // mark wins a shared cell)
+    function overlay(ctx, t, cols, rows, cell, rowH, font) {
+      const put = (x, y, dx, dy, lum, color, ch, scale) => {
+        const c0 = Math.max(0, Math.ceil((x - dx) * cols)), c1 = Math.min(cols - 1, Math.floor((x + dx) * cols));
+        const r0 = Math.max(0, Math.ceil((y - dy) * rows)), r1 = Math.min(rows - 1, Math.floor((y + dy) * rows));
+        for (let r = r0; r <= r1; r++) for (let c = c0; c <= c1; c++) {
+          if (Math.abs(c / cols - x) >= dx || Math.abs(r / rows - y) >= dy || vigA[r * cols + c] <= 0) continue;
+          ctx.clearRect(c * cell, r * rowH, cell, rowH);
+          ctx.fillStyle = color;
+          if (scale) ctx.font = '700 ' + Math.round(cell * scale) + 'px ' + MONO;
+          ctx.fillText(ch, (c + 0.5) * cell, (r + 0.5) * rowH);
+          if (scale) ctx.font = font;
+        }
+      };
+      for (let k = balls.length - 1; k >= 0; k--) {
+        const b = balls[k], n = b.trail.length;
+        for (let i = 0; i < n; i++) put(b.trail[i][0], b.trail[i][1], 0.012, 0.016, 0.7, rgba(C.clay, 0.3 + 0.65 * i / n), i > n - 4 ? '*' : '·', 0);
+      }
+      for (let k = balls.length - 1; k >= 0; k--) put(balls[k].x, balls[k].y, 0.013, 0.017, 1, rgba(C.clay, 1), '@', 2.4);
+    }
+    const grid = makeGrid(canvas, 7, (u, v, t, c, r) => {
+      const i = r * gc + c, vig = vigA[i];
+      if (vig <= 0) return null;                            // a round, feathered edge rather than a box
+      const S = gc + 2, g = (r + 1) * S + c + 1;
+      const h = clamp01((HG[g] + 0.6) / 2.2);              // hollows ~0, inner hills ~0.5, rim ~1
+      // slope: lit from the upper left, shaded on the far side (central differences over the neighbours)
+      const hx = (HG[g + 1] - HG[g - 1]) * 0.012 * gc, hy = (HG[g + S] - HG[g - S]) * 0.012 * gr;
       const lit = clamp01(0.5 - (hx + hy) * 2.2);
       // contour bands: a bright line every level, a faint band between
       const lv = (h * 7) % 1;
       const line = lv < 0.16 ? 1 : 0;
       if (h < 0.16 && !line) return null;                  // the floor of a hollow is open
       // between the lines the fill thins toward the valleys so the terrain breathes
-      if (!line && hash(c, r, 9) > 0.55 + h * 0.45) return null;
+      if (!line && thinA[i] > 0.55 + h * 0.45) return null;
       const lum = line ? (0.6 + h * 0.4) * vig : (0.1 + h * 0.45 + lit * 0.2) * vig;
       const col = line ? mix(C.navy, C.clay, Math.pow(h, 1.2)) : mix(mix(C.pale, C.midblue, 0.55 + lit * 0.3), C.amber, h * 0.8);
       return [lum, rgba(col, (line ? 0.6 + h * 0.4 : 0.28 + h * 0.4) * vig)];
-    });
+    }, prep, overlay);
 
     function at(ev) {
       const r = canvas.getBoundingClientRect();
@@ -232,7 +308,7 @@
       const p = at(ev);
       if (balls.length >= MAX_BALLS) balls.splice(1, 1);   // keep the house point, drop the oldest extra
       balls.push({ x: p[0], y: p[1], age: 0, trail: [], auto: false });
-      if (reduced) { step(performance.now() / 1000); grid.frame(performance.now() / 1000); }
+      if (reduced) { const tn = performance.now() / 1000; centres(tn); step(tn); grid.frame(tn); }
     });
   }
 
@@ -240,9 +316,10 @@
   function hills(canvas) {
     const front = (x, t) => 0.55 * Math.exp(-Math.pow((x - 0.3 + 0.02 * Math.sin(t * 0.3)) / 0.33, 2)) + 0.38 * Math.exp(-Math.pow((x - 0.82) / 0.22, 2));
     const back  = (x, t) => 0.72 * Math.exp(-Math.pow((x - 0.6 + 0.02 * Math.cos(t * 0.25)) / 0.3, 2));
-    makeGrid(canvas, 8, (u, v, t) => {
+    let F = null, B = null;
+    makeGrid(canvas, 8, (u, v, t, c) => {
       const y = 1 - v;
-      const f = front(u, t), b = back(u, t);
+      const f = F[c], b = B[c];
       if (y < f) {
         const depth = (f - y) / f;
         const wave = 0.12 * Math.sin(u * 14 + t * 0.9 + y * 6);
@@ -253,6 +330,9 @@
         return [0.1 + depth * 0.45, rgba(C.midblue, 0.25 + depth * 0.35)];
       }
       return null;
+    }, (t, cols) => {
+      if (!F || F.length !== cols) { F = new Float32Array(cols); B = new Float32Array(cols); }
+      for (let c = 0; c < cols; c++) { F[c] = front(c / cols, t); B[c] = back(c / cols, t); }
     });
   }
 
@@ -286,6 +366,9 @@
     const cellPx = 7;
     let W = 0, H = 0, cols = 0, rows = 0, lastT = 0;
     let ridges = [];            // per layer: array of crest y (px) per column
+    let ridgeN = [];            // per layer: the thinning noise per cell, fixed for a size
+    let CF = null, cRows = 0, cPhase = -1;   // the cloud noise per cell, refreshed in rotation
+    const rainCol = mix(C.midblue, C.navy, 0.3);
     const rain = [];
     let bolt = null, flash = 0, nextBolt = 0;
     let salvo = opts.salvo || 0;   // bolts still owed from the opening salvo
@@ -309,6 +392,12 @@
         }
         return ys;
       });
+      ridgeN = [0, 1, 2].map(L => {
+        const a = new Float32Array(cols * rows);
+        for (let r = 0; r < rows; r++) for (let c = 0; c < cols; c++) a[r * cols + c] = noise(c * 0.3, r * 0.3, L * 7);
+        return a;
+      });
+      cRows = Math.ceil(cloudBot() / cellPx); CF = new Float32Array(cols * cRows); cPhase = -1;
       const want = Math.round(cols * (opts.rain == null ? 1.6 : opts.rain));
       while (rain.length < want) rain.push(newDrop(true));
       rain.length = want;
@@ -373,17 +462,18 @@
       const cb = cloudBot();
 
       // storm cloud across the top, lit from below when the bolt fires
-      for (let r = 0; r < Math.ceil(cb / cellPx); r++) {
+      const all = cPhase < 0; cPhase = (cPhase + 1) & 3;
+      ctx.font = '600 8px ' + MONO;
+      for (let r = 0; r < cRows; r++) {
         const v = (r * cellPx) / cb;
+        if (all || (r & 3) === cPhase) for (let c = 0; c < cols; c++) CF[r * cols + c] = fbm((c / cols) * 2.6 + t * 0.04, v * 2.2, t * 0.03);
+        const col = mix(C.navy, C.amber, flash * 0.8 * (1 - v)), lift = clamp01(1.5 - v * 1.3);
         for (let c = 0; c < cols; c++) {
           const u = c / cols;
           const gate = 0.55 + 0.45 * clamp01((u - 0.1) * 2);            // heavier toward the right
-          const n = fbm(u * 2.6 + t * 0.04, v * 2.2, t * 0.03);
-          const d = clamp01((n - 0.5 + (1 - v) * 0.18) / 0.22) * gate;
+          const d = clamp01((CF[r * cols + c] - 0.5 + (1 - v) * 0.18) / 0.22) * gate;
           if (d < 0.08) continue;
-          const col = mix(C.navy, C.amber, flash * 0.8 * (1 - v));
-          ctx.fillStyle = rgba(col, (0.12 + d * 0.5) * clamp01(1.5 - v * 1.3));
-          ctx.font = '600 8px ' + MONO;
+          ctx.fillStyle = rgba(col, (0.12 + d * 0.5) * lift);
           ctx.fillText(rampChar(0.1 + d * 0.75), (c + 0.5) * cellPx, (r + 0.5) * cellPx);
         }
       }
@@ -405,7 +495,7 @@
             const depth = (y - crest) / (H * 0.1);
             const dens = Math.exp(-depth * 1.1) * (0.95 - L * 0.2) + 0.1;
             // the mass thins in clumps, never on the crest itself
-            if (!edge && depth > 0.3 && noise(c * 0.3, r * 0.3, L * 7) > dens) continue;   // solid just under the crest
+            if (!edge && depth > 0.3 && ridgeN[L][r * cols + c] > dens) continue;   // solid just under the crest
             const ch = edge ? (slope > 0.3 ? '\\' : slope < -0.3 ? '/' : '^') : rampChar(dens * 0.75);
             const col = edge ? mix(cols3[L], C.amber, flash * 0.9) : cols3[L];
             ctx.fillStyle = rgba(col, edge ? Math.min(1, alpha3[L] + 0.2) : alpha3[L] * (0.35 + dens * 0.65));
@@ -423,7 +513,7 @@
         const c = Math.min(cols, Math.max(0, Math.round(d.x / cellPx)));
         if (d.y > ridges[2][c] + 6 || d.y > H || d.x < -20) Object.assign(d, newDrop(false));
         if (d.x < 0 || d.x > W) continue;
-        ctx.fillStyle = rgba(mix(C.midblue, C.navy, 0.3), d.a * (0.35 + w * 0.65));
+        ctx.fillStyle = rgba(rainCol, d.a * (0.35 + w * 0.65));
         ctx.fillText(lean > 0.7 ? '/' : lean > 0.4 ? '/' : '|', d.x, d.y);
       }
 
@@ -482,7 +572,7 @@
       for (const b of birds) if (!b.x) { b.x = W * (0.5 + Math.random() * 0.4); b.y = H * (0.25 + Math.random() * 0.5); }
     }
     let box = null;
-    const boxNow = () => box || (box = canvas.getBoundingClientRect());   // read the layout once per frame
+    const boxNow = () => box || (box = { left: canvas.getBoundingClientRect().left + window.scrollX, top: canvas.getBoundingClientRect().top + window.scrollY });   // the layout, read once per frame, in page coordinates
     const QA = Math.PI / 12;                                              // heading step for drawing
     function step(t, dt) {
       box = null;
@@ -511,7 +601,7 @@
         for (const rp of ripples) {
           const age = t - rp.born; if (age < 0 || age > rp.life) continue;
           const box = boxNow();
-          const dx = box.left + window.scrollX + b.x - rp.px, dy = box.top + window.scrollY + b.y - rp.py, d = Math.hypot(dx, dy) || 1;
+          const dx = box.left + b.x - rp.px, dy = box.top + b.y - rp.py, d = Math.hypot(dx, dy) || 1;
           const Rt = frontR(rp, Math.atan2(dy, dx), age);
           if (Math.abs(d - Rt) < 60) { fx += dx / d * 900 * (0.5 + rp.k); fy += dy / d * 900 * (0.5 + rp.k); }
         }
@@ -655,23 +745,44 @@
       const sc = Math.min(W, H) / 55;
       return [W * 0.5 + rx * sc, H * 0.52 - (pz - 26) * sc, depth];
     }
+    // Trail points snap to a 6 px grid and most cells collect several of them.
+    // Each cell is drawn once, as its newest point, at the opacity the stacked
+    // draws would have added up to: a third of the glyph draws for the same
+    // picture. Sizes are whole pixels and the font is set only when it changes.
+    let lastK = new Int32Array(0), rem = new Float32Array(0);
+    const KC = new Int32Array(N), KN = new Float32Array(N);
     function frame(t) {
       if (!W) resize();
       const dt = lastT ? Math.min(t - lastT, 0.2) : 0; lastT = t;
       if (dt) step(Math.max(1, Math.round(dt * 220)));
       ctx.clearRect(0, 0, W, H);
-      // the trail, oldest first so the head draws on top
-      const cell = 6;
+      const cell = 6, gw = Math.ceil(W / cell) + 1, gh = Math.ceil(H / cell) + 1;
+      if (lastK.length !== gw * gh) { lastK = new Int32Array(gw * gh); rem = new Float32Array(gw * gh); }
+      lastK.fill(-1); rem.fill(1);
+      const a0 = 0.2 * Math.sin(t * 0.1), ca = Math.cos(a0), sa = Math.sin(a0), sc = Math.min(W, H) / 55;
+      // which point owns each cell, and what the stacked opacity comes to
       for (let k = 0; k < filled; k += 2) {
         const i = (head - filled + k + N) % N;
-        const [sx, sy, depth] = project(pts[i * 3], pts[i * 3 + 1], pts[i * 3 + 2], t);
-        const age = k / filled;                                   // 0 tail .. 1 head
-        const near = clamp01(0.5 + depth / 50);                   // 0 far .. 1 near
+        const px = pts[i * 3], py = pts[i * 3 + 1], pz = pts[i * 3 + 2];
+        const rx = px * ca - py * sa, depth = px * sa + py * ca;
+        const cx = Math.round((W * 0.5 + rx * sc) / cell), cy = Math.round((H * 0.52 - (pz - 26) * sc) / cell);
+        if (cx < 0 || cy < 0 || cx >= gw || cy >= gh) { KC[k] = -1; continue; }
+        const g = cy * gw + cx, age = k / filled, near = clamp01(0.5 + depth / 50);
+        KC[k] = g; KN[k] = near;
+        lastK[g] = k; rem[g] *= 1 - (0.3 + age * 0.6) * (0.55 + near * 0.45);
+      }
+      // the trail, oldest first so the head draws on top
+      let curFont = '';
+      for (let k = 0; k < filled; k += 2) {
+        const g = KC[k];
+        if (g < 0 || lastK[g] !== k) continue;
+        const age = k / filled, near = KN[k];                     // 0 tail .. 1 head; 0 far .. 1 near
         const col = mix(mix(C.navy, C.midblue, 1 - near), C.clay, Math.pow(age, 7));   // clay only near the head
-        ctx.fillStyle = rgba(col, (0.3 + age * 0.6) * (0.55 + near * 0.45));
-        ctx.font = '600 ' + (6 + near * 2 + age * 3).toFixed(1) + 'px ' + MONO;
+        ctx.fillStyle = rgba(col, 1 - rem[g]);
+        const f = '600 ' + Math.round(6 + near * 2 + age * 3) + 'px ' + MONO;
+        if (f !== curFont) ctx.font = curFont = f;
         const ch = age > 0.97 ? '@' : age > 0.85 ? (near > 0.5 ? '#' : '*') : age > 0.5 ? (near > 0.5 ? '+' : '·') : (near > 0.5 ? ':' : '.');
-        ctx.fillText(ch, Math.round(sx / cell) * cell, Math.round(sy / cell) * cell);
+        ctx.fillText(ch, (g % gw) * cell, Math.floor(g / gw) * cell);
       }
       // the lamp: the head of the trajectory
       const hi = (head - 1 + N) % N;
@@ -705,15 +816,36 @@
     const IVORY = [246, 243, 236];
     let box = null, boxT = -1, blastAt = -99;
     pageOn(document, 'ascii:thunder', () => { blastAt = performance.now() / 1000; });
+    // The field, sampled at every cell corner. The noise drifts about a third
+    // of a pixel per frame, so each frame refreshes only every fourth row and
+    // nobody can tell; waves and the shade sample read it bilinearly.
+    let D = null, Dc = 0, Dr = 0, phase = -1, lastPaint = -1;
+    function refresh(t, cols, rows) {
+      const all = phase < 0; phase = (phase + 1) & 1;
+      for (let r = 0; r < Dr; r++) {
+        if (!all && (r & 1) !== phase) continue;
+        const v = r / rows, row = r * Dc;
+        for (let c = 0; c < Dc; c++) D[row + c] = density(c / cols, v, t);
+      }
+    }
+    function sample(u, v) {
+      let x = u * (Dc - 1), y = v * (Dr - 1);
+      if (x < 0) x = 0; else if (x > Dc - 1) x = Dc - 1;
+      if (y < 0) y = 0; else if (y > Dr - 1) y = Dr - 1;
+      const x0 = x | 0, y0 = y | 0, x1 = x0 < Dc - 1 ? x0 + 1 : x0, y1 = y0 < Dr - 1 ? y0 + 1 : y0, fx = x - x0, fy = y - y0;
+      return (D[y0 * Dc + x0] * (1 - fx) + D[y0 * Dc + x1] * fx) * (1 - fy) + (D[y1 * Dc + x0] * (1 - fx) + D[y1 * Dc + x1] * fx) * fy;
+    }
     // where a wave front is crossing the cloud, the field is pushed outward
     // along the ring and thinned a little, so the billows bulge away from it
+    let wu = 0, wv = 0, wthin = 1;
     function waved(u, v, t) {
-      if (!ripples.length && !(window.__rays && window.__rays.length)) return [u, v, 1];
-      if (t !== boxT) { boxT = t; const r = canvas.getBoundingClientRect(); box = { x: r.left + window.scrollX, y: r.top + window.scrollY, w: r.width, h: r.height }; }
+      wu = u; wv = v; wthin = 1;
+      if (!ripples.length && !(window.__rays && window.__rays.length)) return false;
+      if (t !== boxT) { boxT = t; const r = canvas.getBoundingClientRect(); box = { x: r.left + window.scrollX, y: r.top + window.scrollY, w: r.width, h: r.height, sx: window.scrollX, sy: window.scrollY }; }
       const X = box.x + u * box.w, Y = box.y + v * box.h;
       let du = 0, dv = 0, thin = 1;
       for (const r of (window.__rays || [])) {
-        const dx = X - (r.x + window.scrollX), dy = Y - (r.y + window.scrollY), dd = Math.hypot(dx, dy) || 1;
+        const dx = X - (r.x + box.sx), dy = Y - (r.y + box.sy), dd = Math.hypot(dx, dy) || 1;
         if (dd > 160) continue;
         const k = (1 - dd / 160);
         du += dx / dd * k * 0.06; dv += dy / dd * k * 0.06; thin *= 1 - k * 0.6;
@@ -729,21 +861,33 @@
         du += dx / dd * bump * 0.045; dv += dy / dd * bump * 0.045;
         thin *= 1 - bump * 0.3;
       }
-      return [u + du, v + dv, thin];
+      wu = u + du; wv = v + dv; wthin = thin;
+      return du !== 0 || dv !== 0;
     }
-    makeGrid(canvas, 7, (u0, v0, t) => {
-      const [u, v, thin] = waved(u0, v0, t);
-      const blast = 1 - 0.92 * Math.exp(-Math.max(0, t - blastAt) * 0.9);   // thinned by the thunder, growing back
-      const d = density(u, v, t) * thin * blast;
+    let blast = 1;
+    makeGrid(canvas, 7, (u0, v0, t, c, r) => {
+      const moved = waved(u0, v0, t);
+      const d = (moved ? sample(wu, wv) : D[r * Dc + c]) * wthin * blast;
       if (d <= 0.02) return null;
+      const u = wu, v = wv;
       // light from the upper left: a cell is in shadow where density rises toward the light
-      const shade = clamp01(0.5 + (density(u - 0.014, v - 0.02, t) - d) * 7) * d;
+      const shade = clamp01(0.5 + (sample(u - 0.014, v - 0.02) - d) * 7) * d;
       // lit tops stay almost empty amber; shaded undersides are dense sage, deepest to navy
       let col = mix(mix(C.amber, IVORY, 0.4), C.sage, clamp01(shade * 1.6));
       col = mix(col, C.navy, clamp01(shade - 0.45) * 0.9);
       const edge = clamp01(u0 / 0.38) * clamp01((1 - v0) / 0.1) * clamp01(v0 / 0.08);
       const lum = (0.06 + d * 0.2 + shade * 0.9) * edge;
       return [lum, rgba(col, (0.2 + d * 0.3 + shade * 0.5) * edge)];
+    }, (t, cols, rows) => {
+      let sized = false;
+      if (Dc !== cols + 1 || Dr !== rows + 1) { Dc = cols + 1; Dr = rows + 1; D = new Float32Array(Dc * Dr); phase = -1; sized = true; }
+      const stirred = ripples.length > 0 || (window.__rays && window.__rays.length > 0) || t - blastAt < 6;
+      // the field drifts a third of a pixel a frame: between waves every other frame is kept as it is
+      if (!sized && !stirred && t - lastPaint < 0.12) return true;
+      lastPaint = t;
+      refresh(t, cols, rows);
+      blast = 1 - 0.92 * Math.exp(-Math.max(0, t - blastAt) * 0.9);   // thinned by the thunder, growing back
+      return false;
     });
   }
 
@@ -781,6 +925,9 @@
       if (!grid) build();
       card.classList.add('ascii-on');
     });
+    // sample it in idle time once the image is in, so first contact costs nothing
+    const warm = () => { if (grid) return; (window.requestIdleCallback || setTimeout)(() => { if (!grid) build(); }); };
+    if (img.complete && img.naturalWidth) warm(); else img.addEventListener('load', warm, { once: true });
     card.addEventListener('mouseleave', () => card.classList.remove('ascii-on'));
   }
 
@@ -821,24 +968,43 @@
     function angle(x, y, t) {
       return Math.sin(x * 0.0035 + t * 0.08) * 1.4 + Math.cos(y * 0.003 - t * 0.06) * 1.4 + Math.sin((x + y) * 0.0015 + t * 0.04);
     }
-    const shift = () => (window.scrollY || 0) * 0.06;
+    // The scroll position, read once at the top of each frame (and when a ray
+    // is launched from a timer). Reading it again after a glitch run has
+    // swapped its text node forces the browser to lay the page out there and
+    // then, and a super wave swaps hundreds of runs a frame.
+    let SX = 0, SY = 0;
+    const snapScroll = () => { SX = window.scrollX || 0; SY = window.scrollY || 0; };
+    const shift = () => SY * 0.06;
 
+    // Keeps the field from growing without bound: once it is a batch over its
+    // cap the oldest thrown glyphs are retired in one pass (a super wave sheds
+    // hundreds a frame, and retiring one at a time was a scan per shed).
+    function trimDebris(cap) {
+      if (parts.length <= cap + 40) return;
+      let drop = parts.length - cap, k = 0;
+      for (let i = 0; i < parts.length; i++) {
+        const q = parts[i];
+        if (drop > 0 && q.launched) { drop--; continue; }
+        parts[k++] = q;
+      }
+      parts.length = k;
+    }
     document.addEventListener('ascii:launch', (e) => {
       const d = e.detail;
-      const p = spawn(d.x, d.y + window.scrollY);
+      const p = spawn(d.x, d.y + SY);
       p.isGlyph = true; p.ch = d.ch || p.ch; p.size = 12; p.base = 0.3; p.boost = 1; p.launched = true; p.page = true;
       p.vx = d.vx; p.vy = d.vy;
       p.col = d.color && d.color[0] === '#' ? hex(d.color) : C.navy;
       parts.push(p);
-      // keep the field from growing without bound: retire the oldest launched one
-      if (parts.length > want + 60) {
-        const i = parts.findIndex(q => q.launched);
-        if (i >= 0) parts.splice(i, 1);
-      }
+      trimDebris(want + 60);
     });
 
-    // a particle's on-screen y (page-space debris scrolls; ambient ones parallax)
-    const screenY = (p) => p.page ? p.y - window.scrollY : ((p.y - shift()) % (h + 20) + (h + 20)) % (h + 20) - 10;
+    // a particle's on-screen y (page-space debris scrolls; ambient ones parallax),
+    // worked out once per frame into p.sy for the collision, front and ray tests
+    function placeAll() {
+      const sh = shift(), hh = h + 20;
+      for (const p of parts) p.sy = p.page ? p.y - SY : ((p.y - sh) % hh + hh) % hh - 10;
+    }
 
     // ── ripples: press to charge, release to send a ring out through the
     // field. The ring is a thick front; every letter it is passing over
@@ -847,7 +1013,7 @@
     // how big, fast, thick and disruptive the wave is. ──
     const TINTS = ['#C8623A', '#DE934D', '#5E84B9', '#5B7F6E', '#CD8F7C', '#1B2A41'];
     let charge = null, textNodes = null;
-    document.addEventListener('ascii:textchanged', () => { textNodes = null; });
+    document.addEventListener('ascii:textchanged', () => { textNodes = null; scheduleWarm(); });
     const range = document.createRange();
 
     function collectText() {
@@ -877,18 +1043,48 @@
       while (pos.length < w.chars.length) pos.push(pos[pos.length - 1]);
       return pos;
     }
+    // Measuring every run of the page is the slow part of starting a wave or a
+    // ray (tens of ms on a long post), so positions are kept on the run and
+    // dropped whenever the layout can have moved: a resize, fonts or images
+    // arriving, anything that changes the page's size, or text changing.
+    const posOf = (w) => w.pos || (w.pos = charPositions(w));
+    // a few milliseconds of idle time at a go, until every run is measured
+    let warmId = 0;
+    function warm(deadline) {
+      warmId = 0;
+      if (reduced) return;
+      if (!textNodes) collectText();
+      const end = performance.now() + (deadline && deadline.timeRemaining ? Math.min(6, deadline.timeRemaining()) : 4);
+      let i = 0;
+      for (; i < textNodes.length; i++) {
+        const w = textNodes[i];
+        if (w.pos || !w.node.parentNode) continue;
+        posOf(w);
+        if (performance.now() > end) { i++; break; }
+      }
+      if (i < textNodes.length) scheduleWarm();
+    }
+    function scheduleWarm() {
+      if (warmId) return;
+      warmId = window.requestIdleCallback ? requestIdleCallback(warm, { timeout: 2000 }) : setTimeout(warm, 300);
+    }
+    const dropPositions = () => { if (textNodes) for (const w of textNodes) w.pos = null; scheduleWarm(); };
+    window.addEventListener('resize', dropPositions);
+    window.addEventListener('load', dropPositions);
+    if (document.fonts && document.fonts.ready) document.fonts.ready.then(dropPositions);
+    if (window.ResizeObserver) new ResizeObserver(dropPositions).observe(document.body);
     const SUPER_HOLD = 2.25;                    // seconds of holding for the super wave
     // content the super front crosses sheds into the background field: a glyph
     // (or a coloured cell of the photo) that flies on outward with the wave
     function shed(x, y, rp, ch, color) {
       const dx = x - rp.px, dy = y - rp.py, d = Math.hypot(dx, dy) || 1;
       const sp = 220 + Math.random() * 180;
-      const p = spawn(x - window.scrollX, y);                       // y in page space
+      const p = spawn(x - SX, y);                                   // y in page space
       p.isGlyph = true; p.ch = ch; p.size = 11; p.base = 0.3; p.boost = 1; p.launched = true; p.flash = 0.8; p.page = true;
       p.vx = dx / d * sp + (Math.random() - 0.5) * 60; p.vy = dy / d * sp + (Math.random() - 0.5) * 60;
       p.col = color || C.navy;
       parts.push(p);
-      if (parts.length > want + 160) { const i = parts.findIndex(q => q.launched); if (i >= 0) parts.splice(i, 1); }
+      trimDebris(want + 160);
     }
     function startRipple(px, py, now, k, sup) {
       if (!textNodes) collectText();
@@ -904,7 +1100,7 @@
       const reach = rp.speed * rp.life;
       for (const w of textNodes) {
         if (!w.node.parentNode) continue;                 // already glitching under another ring
-        const pos = charPositions(w);
+        const pos = posOf(w);
         if (!pos) continue;
         let dmin = Infinity, dmax = 0;
         const dist = pos.map(([x, y]) => { const d = Math.hypot(x - px, y - py); if (d < dmin) dmin = d; if (d > dmax) dmax = d; return d; });
@@ -948,7 +1144,7 @@
       const k = Math.max(0.1, clamp01(held / 0.55));
       if (charge.near) { for (const e of charge.near) healRun(e); charge.near = null; }
       if (charge.images) clearImageSet(charge.images);
-      if (charge.thumbs) for (const card of charge.thumbs) { card.classList.remove('ascii-on'); card._asciiUntil = 0; }
+      if (charge.thumbs) thumbClear(charge.thumbs);
       if (held >= SUPER_HOLD) {
         // the super wave: three fronts, a thunderclap, and the rest of the page hears it
         startRipple(charge.px, charge.py, now, k, true);
@@ -987,6 +1183,7 @@
     const PC = Math.round(PN * (1 + 2 * PAD));   // ripple canvas size
     let photoPix = null, photoCanvas = null, shatter = null;
     const PAPER = [246, 246, 244];
+    const idle = (fn) => (window.requestIdleCallback || setTimeout)(fn);
     function photoTarget() {
       const link = document.querySelector('.ascii-photo-link');
       const wrap = link && link.querySelector('.ascii-photo-wrap');
@@ -1007,11 +1204,46 @@
       const r = wrap.getBoundingClientRect();
       return { x: r.left + window.scrollX, y: r.top + window.scrollY, size: r.width };
     }
+    {
+      const img = document.querySelector('.ascii-photo-link .ascii-photo');
+      const warmPhoto = () => idle(() => { if (!photoCanvas) photoTarget(); });
+      if (img) { if (img.complete && img.naturalWidth) warmPhoto(); else img.addEventListener('load', warmPhoto, { once: true }); }
+    }
     // Images in posts get the same treatment as the photo: a canvas laid over
     // each (inside the post body) carries the band of ASCII tiles the wave
     // is crossing. Pixels are sampled once per image; images the browser
     // will not let us read (hot-linked) are skipped.
     const imgCache = new WeakMap();
+    function sampleImage(body, img) {
+      let c = imgCache.get(img);
+      if (c) return c;
+      const r = img.getBoundingClientRect();
+      if (!r.width) return null;
+      const w = Math.round(r.width), h = Math.round(r.height);
+      const off = document.createElement('canvas');
+      off.width = w; off.height = h;
+      const o = off.getContext('2d', { willReadFrequently: true });
+      o.drawImage(img, 0, 0, w, h);
+      let pix = null;
+      try { pix = o.getImageData(0, 0, w, h).data; } catch (_) { c = { bad: true }; imgCache.set(img, c); return c; }
+      const cv = document.createElement('canvas');
+      cv.className = 'ascii-img-ripple';
+      cv.width = w; cv.height = h;
+      body.appendChild(cv);
+      c = { pix, w, h, canvas: cv, linger: new Map() };
+      imgCache.set(img, c);
+      return c;
+    }
+    function warmImages() {
+      const body = document.querySelector('.post-body');
+      if (!body || reduced) return;
+      body.querySelectorAll('img').forEach(img => {
+        const go = () => idle(() => { if (img.isConnected && img.naturalWidth && !imgCache.has(img)) sampleImage(body, img); });
+        if (img.complete && img.naturalWidth) go(); else img.addEventListener('load', go, { once: true });
+      });
+    }
+    warmImages();
+    document.addEventListener('ascii:page-enter', warmImages);
     function imageTargets() {
       const body = document.querySelector('.post-body');
       if (!body) return [];
@@ -1021,23 +1253,8 @@
         if (!img.complete || !img.naturalWidth) return;
         const r = img.getBoundingClientRect();
         if (!r.width) return;
-        let c = imgCache.get(img);
-        if (!c) {
-          const w = Math.round(r.width), h = Math.round(r.height);
-          const off = document.createElement('canvas');
-          off.width = w; off.height = h;
-          const o = off.getContext('2d', { willReadFrequently: true });
-          o.drawImage(img, 0, 0, w, h);
-          let pix = null;
-          try { pix = o.getImageData(0, 0, w, h).data; } catch (_) { imgCache.set(img, { bad: true }); return; }
-          const cv = document.createElement('canvas');
-          cv.className = 'ascii-img-ripple';
-          cv.width = w; cv.height = h;
-          body.appendChild(cv);
-          c = { pix, w, h, canvas: cv, linger: new Map() };
-          imgCache.set(img, c);
-        }
-        if (c.bad) return;
+        const c = sampleImage(body, img);
+        if (!c || c.bad) return;
         c.canvas.style.left = (r.left - bodyRect.left) + 'px';
         c.canvas.style.top = (r.top - bodyRect.top) + 'px';
         c.canvas.style.width = r.width + 'px';
@@ -1066,10 +1283,15 @@
       const age = R / rp.speed, tick = Math.floor(age * 12);
       const amp = (3 + 9 * rp.k) * a;
       const cols = Math.ceil(c.w / cell), rows = Math.ceil(c.h / cell);
-      for (let r = 0; r < rows; r++) for (let q = 0; q < cols; q++) {
+      // only the cells the band and its falloff can reach: a box of cells, then a radial test
+      const Rmax = R * 1.1 + rp.thick * 2.8, Rmin = Math.max(0, R * 0.9 - rp.thick * 2.8);
+      const q0 = Math.max(0, Math.floor((rp.px - Rmax - tg.x) * tg.sx / cell)), q1 = Math.min(cols - 1, Math.ceil((rp.px + Rmax - tg.x) * tg.sx / cell));
+      const r0 = Math.max(0, Math.floor((rp.py - Rmax - tg.y) * tg.sy / cell)), r1 = Math.min(rows - 1, Math.ceil((rp.py + Rmax - tg.y) * tg.sy / cell));
+      for (let r = r0; r <= r1; r++) for (let q = q0; q <= q1; q++) {
         const x = (q + 0.5) * cell, y = (r + 0.5) * cell;               // canvas px (scale ~1)
         const X = tg.x + x / tg.sx, Y = tg.y + y / tg.sy;               // page px
         const dx = X - rp.px, dy = Y - rp.py, d = Math.hypot(dx, dy) || 1;
+        if (d > Rmax || d < Rmin) continue;
         const Rt = frontR(rp, Math.atan2(dy, dx), age);
         const T = rp.thick * (0.6 + 0.8 * hash(q, r, 5)) * (0.4 + 0.6 * a);
         let ph, wgt;
@@ -1123,20 +1345,23 @@
       return true;
     }
     // a point hit on a project thumbnail flips it to ASCII for a moment
-    function thumbHit(cards, pxPage, pyPage, t) {
-      for (const card of cards) {
-        const r = card.querySelector('.feat-thumb').getBoundingClientRect();
-        const x = pxPage - window.scrollX, y = pyPage - window.scrollY;
-        if (x >= r.left && x <= r.right && y >= r.top && y <= r.bottom) { card.dispatchEvent(new Event('mouseenter')); card._asciiUntil = t + 0.35; }
+    function thumbHit(list, pxPage, pyPage, t) {
+      for (const th of list) {
+        if (pxPage >= th.x0 && pxPage <= th.x1 && pyPage >= th.y0 && pyPage <= th.y1) { th.card.dispatchEvent(new Event('mouseenter')); th.card._asciiUntil = t + 0.35; }
       }
     }
-    function thumbCool(cards, t) {
-      for (const card of cards) if (card._asciiUntil && t > card._asciiUntil) { card.classList.remove('ascii-on'); card._asciiUntil = 0; }
+    function thumbCool(list, t) {
+      for (const th of list) if (th.card._asciiUntil && t > th.card._asciiUntil) { th.card.classList.remove('ascii-on'); th.card._asciiUntil = 0; }
     }
+    function thumbClear(list) {
+      for (const th of list) { th.card.classList.remove('ascii-on'); th.card._asciiUntil = 0; th.on = false; }
+    }
+    // the thumbnails and where they are on the page, measured once when a wave, ray or charge is armed
     function thumbTargets() {
+      const sx = window.scrollX, sy = window.scrollY;
       return Array.from(document.querySelectorAll('.feat-card-link')).map(card => {
         const r = card.querySelector('.feat-thumb').getBoundingClientRect();
-        return { card, cx: r.left + window.scrollX + r.width / 2, cy: r.top + window.scrollY + r.height / 2, on: false };
+        return { card, cx: r.left + sx + r.width / 2, cy: r.top + sy + r.height / 2, x0: r.left + sx, y0: r.top + sy, x1: r.right + sx, y1: r.bottom + sy, on: false };
       });
     }
     function drawPhotoBand(rp, R, a) {
@@ -1156,9 +1381,11 @@
       const amp = (3 + 9 * rp.k) * scale * a;
       const warm = C.amber, cool = C.midblue;
       const cx = PC / 2, cy = PC / 2, rim = PN / 2;           // the photo's circle
+      const Rmax = R * scale * 1.1 + Tp * 2.8, Rmin = R * scale * 0.9 - Tp * 2.8;   // the band and its falloff
       for (let r = r0; r < r1; r++) for (let c = c0; c < c1; c++) {
         const x = (c + 0.5) * cell, y = (r + 0.5) * cell;
         const dx = x - ox, dy = y - oy, d = Math.hypot(dx, dy) || 1;
+        if (d > Rmax || d < Rmin) continue;
         const Rt = frontR(rp, Math.atan2(dy, dx), age) * scale;
         const T = Tp * (0.6 + 0.8 * hash(c, r, 5)) * (0.4 + 0.6 * a);   // ragged band, narrowing as the wave dies
         // the band is fully ASCII; a zone either side of it falls off gradually
@@ -1208,6 +1435,7 @@
         const ex = x - cx, ey = y - cy, er = Math.hypot(ex, ey);
         if (er > rim || er < rim - 14) continue;
         const dx = x - ox, dy = y - oy, d = Math.hypot(dx, dy) || 1;
+        if (d > R * scale * 1.1 || d < R * scale * 0.9 - Tp) continue;
         const Rt = frontR(rp, Math.atan2(dy, dx), age) * scale;
         if (d > Rt || d < Rt - Tp) continue;
         const ph = (d - (Rt - Tp)) / Tp, bump = Math.sin(ph * Math.PI);
@@ -1245,48 +1473,81 @@
         charge.near = [];
         charge.photo = photoTarget();
         charge.images = imageTargets();
-        charge.thumbs = Array.from(document.querySelectorAll('.feat-card-link'));
+        charge.thumbs = thumbTargets();
       } else if (Math.hypot(charge.px - charge.nearX, charge.py - charge.nearY) < 500) return;
       charge.nearX = charge.px; charge.nearY = charge.py;
       const have = new Set(charge.near.map(en => en.w));
       for (const w of textNodes) {
         if (have.has(w) || !w.node.parentNode) continue;
-        const pos = charPositions(w);
+        const pos = posOf(w);
         if (!pos) continue;
         let close = false;
         for (const [x, y] of pos) if (Math.hypot(x - charge.px, y - charge.py) < 1200) { close = true; break; }
-        if (close) charge.near.push({ w, pos, hitUntil: new Float64Array(pos.length), hot: new Uint8Array(pos.length), hit: false });
+        if (close) charge.near.push({ w, pos, hitUntil: new Float64Array(pos.length), hot: new Uint8Array(pos.length), hit: false, hitMax: 0 });
       }
     }
-    // letters hit by a particle flip for a moment (the charge's own glitch runs)
-    function glitchHits(e, t) {
-      const span = e.w.span || (e.w.span = document.createElement('span'));
+    // Put a run on the page with the flagged letters flipped: each stays in
+    // the flow (invisible) with its glyph painted over it by CSS, so the line
+    // never reflows. When the same letters were flipped last time, only the
+    // glyphs and colours are refreshed in place, which is most frames of a
+    // lingering run; otherwise the span is rebuilt. The span and its state
+    // belong to the run, since several waves may write the same run.
+    function applyRun(e, flag, glyph, colr) {
+      const w = e.w, n = flag.length;
+      let any = false, same = w.shown && !!w.flag;
+      for (let i = 0; i < n; i++) { if (flag[i]) any = true; if (same && flag[i] !== w.flag[i]) same = false; }
+      if (!any) { healRun(e); return; }
+      e.hit = true;
+      if (same) {
+        for (let i = 0, k = 0; i < n; i++) if (flag[i]) {
+          const g = w.gEls[k++], c = colr[i] || '';
+          if (g.dataset.g !== glyph[i]) g.dataset.g = glyph[i];
+          if (g.style.getPropertyValue('--gc') !== c) { if (c) g.style.setProperty('--gc', c); else g.style.removeProperty('--gc'); }
+        }
+        return;
+      }
+      const span = w.span || (w.span = document.createElement('span'));
       span.className = 'glitch-run';
       while (span.firstChild) span.removeChild(span.firstChild);
-      let plain = '', any = false;
+      const els = [];
+      let plain = '';
       const flush = () => { if (plain) { span.appendChild(document.createTextNode(plain)); plain = ''; } };
-      const tick = Math.floor(t * 15);
-      for (let i = 0; i < e.w.chars.length; i++) {
-        const ch = e.w.chars[i];
-        if (ch !== ' ' && ch.length === 1 && e.hitUntil[i] > t) {
-          flush(); any = true;
+      for (let i = 0; i < n; i++) {
+        if (flag[i]) {
+          flush();
           const g = document.createElement('span');
           g.className = 'g';
-          g.dataset.g = SCRAMBLE[(hash(i, 51, tick) * SCRAMBLE.length) | 0];
-          if (e.hot[i]) g.style.setProperty('--gc', '#C8623A'); else if (hash(i, 53, tick) < 0.2) g.style.setProperty('--gc', TINTS[(hash(i, 55, tick) * TINTS.length) | 0]);
-          g.textContent = ch;
-          span.appendChild(g);
-        } else plain += ch;
+          g.dataset.g = glyph[i];
+          if (colr[i]) g.style.setProperty('--gc', colr[i]);
+          g.textContent = w.chars[i];
+          span.appendChild(g); els.push(g);
+        } else plain += w.chars[i];
       }
       flush();
-      if (!any) { healRun(e); return; }
-      if (!e.hit) { e.w.node.replaceWith(span); e.hit = true; }
+      w.flag = flag; w.gEls = els;
+      if (!w.shown) { w.node.replaceWith(span); w.shown = true; }
+    }
+    // letters hit by a particle flip for a moment (the charge's own glitch runs)
+    const hitAt = (e, q, until, hot) => { e.hitUntil[q] = until; e.hot[q] = hot; if (until > e.hitMax) e.hitMax = until; };
+    function glitchHits(e, t) {
+      if (!(e.hitMax > t)) { if (e.hit) healRun(e); return; }
+      const n = e.w.chars.length, tick = Math.floor(t * 15);
+      const flag = new Uint8Array(n), glyph = new Array(n), colr = new Array(n);
+      for (let i = 0; i < n; i++) {
+        const ch = e.w.chars[i];
+        if (ch !== ' ' && ch.length === 1 && e.hitUntil[i] > t) {
+          flag[i] = 1;
+          glyph[i] = SCRAMBLE[(hash(i, 51, tick) * SCRAMBLE.length) | 0];
+          if (e.hot[i]) colr[i] = '#C8623A'; else if (hash(i, 53, tick) < 0.2) colr[i] = TINTS[(hash(i, 55, tick) * TINTS.length) | 0];
+        }
+      }
+      applyRun(e, flag, glyph, colr);
     }
     function dropCharge() {
       if (charge && charge.near) for (const e of charge.near) healRun(e);
       if (charge && charge.photo) clearPhoto();
       if (charge && charge.images) clearImageSet(charge.images);
-      if (charge && charge.thumbs) for (const card of charge.thumbs) { card.classList.remove('ascii-on'); card._asciiUntil = 0; }
+      if (charge && charge.thumbs) thumbClear(charge.thumbs);
       charge = null;
     }
     // cells a super wave left as ASCII, recovering one by one
@@ -1361,47 +1622,44 @@
     // in the flow (invisible) so the line never reflows; the glyph is painted
     // over it by CSS, a few in colour. Only letters under the front flip.
     function glitchRun(e, rp, age) {
-      const span = e.w.span || (e.w.span = document.createElement('span'));
-      span.className = 'glitch-run';
-      while (span.firstChild) span.removeChild(span.firstChild);
-      let plain = '', any = false;
-      const flush = () => { if (plain) { span.appendChild(document.createTextNode(plain)); plain = ''; } };
-      const t = rp.born + age;
-      if (rp.sup && !e.linger) e.linger = new Float64Array(e.w.chars.length);
-      for (let i = 0; i < e.w.chars.length; i++) {
+      const n = e.w.chars.length, t = rp.born + age;
+      if (rp.sup && !e.linger) { e.linger = new Float64Array(n); e.lingerMax = 0; }
+      const fade = Math.pow(1 - clamp01(age / rp.life), 1.6);                   // the wave's strength here
+      const pf = rp.prob * fade, passed = age >= rp.life;                       // once the wave has died nothing is in the band
+      const flag = new Uint8Array(n), glyph = new Array(n), colr = new Array(n);
+      for (let i = 0; i < n; i++) {
         const ch = e.w.chars[i], d = e.dist[i];
-        const Rt = frontR(rp, e.ang[i], age);
-        const fade = Math.pow(1 - clamp01(age / rp.life), 1.6);                 // the wave's strength here
-        const thick = rp.thick * (0.6 + 0.8 * hash(i, 11, 0)) * (0.4 + 0.6 * fade);   // ragged band, narrowing as the wave dies
-        const inBand = ch !== ' ' && ch.length === 1 && d <= Rt && d >= Rt - thick && e.roll[i] < rp.prob * fade;
+        let inBand = false, Rt = 0;
+        if (!passed && ch !== ' ' && ch.length === 1 && e.roll[i] < pf) {
+          Rt = frontR(rp, e.ang[i], age);
+          const thick = rp.thick * (0.6 + 0.8 * hash(i, 11, 0)) * (0.4 + 0.6 * fade);   // ragged band, narrowing as the wave dies
+          inBand = d <= Rt && d >= Rt - thick;
+        }
         // a super wave leaves some letters damaged after it has passed; they recover on their own clock
         if (inBand && rp.sup && e.linger[i] === 0) {
           e.linger[i] = hash(i, 61, 0) < 0.3 ? t + 0.8 + Math.pow(hash(i, 63, 0), 1.5) * 4.5 : -1;
+          if (e.linger[i] > e.lingerMax) e.lingerMax = e.linger[i];
           if (hash(i, 67, 0) < 0.14) shed(e.pos[i][0], e.pos[i][1], rp, ch, null);
         }
         const lingering = rp.sup && e.linger[i] > t;
         if (inBand || lingering) {
-          flush(); any = true;
-          const g = document.createElement('span');
-          g.className = 'g';
+          flag[i] = 1;
           const jitter = lingering ? Math.floor(t * 3 + hash(i, 65, 0) * 9) : (hash(i, 13, 0) < 0.3 ? Math.floor(age * 20) : Math.floor(Rt / 9));   // some letters keep re-rolling
-          g.dataset.g = SCRAMBLE[(hash(i, Math.floor(d), jitter) * SCRAMBLE.length) | 0];
-          if (hash(i, 17, jitter) < 0.35) g.style.setProperty('--gc', TINTS[(hash(i, 19, jitter) * TINTS.length) | 0]);
-          g.textContent = ch;
-          span.appendChild(g);
-        } else plain += ch;
+          glyph[i] = SCRAMBLE[(hash(i, Math.floor(d), jitter) * SCRAMBLE.length) | 0];
+          if (hash(i, 17, jitter) < 0.35) colr[i] = TINTS[(hash(i, 19, jitter) * TINTS.length) | 0];
+        }
       }
-      flush();
-      if (!any) { healRun(e); return; }
-      if (!e.hit) { e.w.node.replaceWith(span); e.hit = true; }
+      applyRun(e, flag, glyph, colr);
     }
     function healRun(e) {
-      if (e.hit) { e.w.span.replaceWith(e.w.node); e.hit = false; }
+      const w = e.w;
+      e.hit = false;
+      if (w.shown) { w.span.replaceWith(w.node); w.shown = false; w.flag = null; w.gEls = null; }
     }
     function restoreRipple(rp) {
       for (const e of rp.near) healRun(e);
       if (ripples.length <= 1) { clearImages(); for (const tg of imageList) tg.c.linger.clear(); }
-      for (const th of rp.thumbs) if (th.on) { th.card.classList.remove('ascii-on'); th.on = false; }
+      thumbClear(rp.thumbs);
       clearPhoto();
     }
     function drawRipples(t) {
@@ -1422,7 +1680,7 @@
         const e = clamp01(held / 1.6);                          // energy, 0 .. 1 over 1.6 s
         const dark = clamp01((held - SUPER_HOLD) / 0.2);        // 0 .. 1 in the 0.2 s after 2.25 s
         const INK = [22, 28, 44];
-        const vx = charge.px - window.scrollX, vy = charge.py - window.scrollY;
+        const vx = charge.px - SX, vy = charge.py - SY;
         const rad = (6 + 44 * e * e) * (1 - 0.68 * dark);       // the ball collapses as it goes dark
         const n = Math.round((6 + e * e * 40) * (1 - 0.45 * dark));
         const spin = 1 + e * 7 + dark * 9;
@@ -1431,7 +1689,7 @@
         let warm = e < 0.35 ? mix(C.navy, C.midblue, e / 0.35) : e < 0.7 ? mix(C.midblue, C.amber, (e - 0.35) / 0.35) : mix(C.amber, C.clay, (e - 0.7) / 0.3);
         warm = mix(warm, INK, dark);
         const hotCol = mix(C.clay, INK, dark);
-        ctx.font = '600 ' + (9 + e * 5 - dark * 3).toFixed(1) + 'px ' + MONO;
+        ctx.font = '600 ' + Math.round(9 + e * 5 - dark * 3) + 'px ' + MONO;
         for (let i = 0; i < n; i++) {
           const ang = hash(i, 3, 0) * Math.PI * 2 + t * spin * (hash(i, 4, 0) < 0.5 ? 1 : -1);
           const r = rad * (0.3 + 0.7 * hash(i, 5, 0)) + (hash(i, 6, reroll) - 0.5) * shake;
@@ -1481,7 +1739,7 @@
             for (let q = 0; q < en.pos.length; q++) {
               const x = en.pos[q][0], y = en.pos[q][1];
               if (Math.abs(x - charge.px) > R || Math.abs(y - charge.py) > R || Math.hypot(x - charge.px, y - charge.py) > R) continue;
-              if (hash(q, 71, slot) < 0.3 + 0.7 * e) { en.hitUntil[q] = t + 0.25 + 0.3 * e; en.hot[q] = hash(q, 73, slot) < 0.3 ? 1 : 0; }
+              if (hash(q, 71, slot) < 0.3 + 0.7 * e) hitAt(en, q, t + 0.25 + 0.3 * e, hash(q, 73, slot) < 0.3 ? 1 : 0);
             }
           }
           if (charge.photo) {
@@ -1513,7 +1771,7 @@
               const ha = Math.atan2(hoy - at(Math.max(0, dist - 8))[1], hox - at(Math.max(0, dist - 8))[0]);
               for (const e of charge.near) {
                 for (let q = 0; q < e.pos.length; q++) {
-                  if (Math.abs(e.pos[q][0] - hx) < 10 && Math.abs(e.pos[q][1] - hy) < 10) { e.hitUntil[q] = t + 0.35; e.hot[q] = tr.hot ? 1 : 0; }
+                  if (Math.abs(e.pos[q][0] - hx) < 10 && Math.abs(e.pos[q][1] - hy) < 10) hitAt(e, q, t + 0.35, tr.hot ? 1 : 0);
                 }
               }
               if (charge.photo) {
@@ -1523,7 +1781,7 @@
               for (const tg of charge.images) imagePatch(tg, hx, hy, 16, tr.hot);
               thumbHit(charge.thumbs, hx, hy, t);
               for (const pp of parts) {
-                if (Math.abs(pp.x - (hx - window.scrollX)) < 12 && Math.abs(screenY(pp) - (hy - window.scrollY)) < 12 && t - pp.lastHit > 0.3) {
+                if (Math.abs(pp.x - (hx - SX)) < 12 && Math.abs(pp.sy - (hy - SY)) < 12 && t - pp.lastHit > 0.3) {
                   pp.vx += Math.cos(ha) * 220; pp.vy += Math.sin(ha) * 220; pp.flash = 0.8; pp.lastHit = t;
                 }
               }
@@ -1550,7 +1808,7 @@
         if (age < 0) continue;
         if (age > rp.life) {
           if (rp.sup && age < rp.life + 5.6) {              // the front is gone; the damage lingers
-            for (const e of rp.near) if (e.linger) glitchRun(e, rp, age);
+            for (const e of rp.near) { if (e.linger && e.lingerMax > t) glitchRun(e, rp, age); else if (e.hit) healRun(e); }
             drawPhotoLinger(rp, t);
             for (const tg of imageList) drawImageLinger(tg.c, t);
             continue;
@@ -1558,30 +1816,40 @@
           restoreRipple(rp); ripples.splice(i, 1); continue;
         }
         const R = age * rp.speed, a = Math.pow(1 - age / rp.life, 2.2) * rp.alpha;   // eases out, never cuts off
-        const vx = rp.px - window.scrollX, vy = rp.py - window.scrollY;
+        const vx = rp.px - SX, vy = rp.py - SY;
         // the front: rows of glyphs filling the band, brightest at the leading edge
         const rows = Math.max(1, Math.round(rp.thick / 11));
         ctx.font = '600 10px ' + MONO;
         const n = Math.max(10, Math.round((2 * Math.PI * R) / 15));
         const tick = Math.floor(age * 12);
+        const M = 16;                                                        // margin around the viewport
         for (let q = 0; q < n; q++) {
           const ang = (q / n) * Math.PI * 2 + age * 0.3;
           const Rt = frontR(rp, ang, age);
+          const ca = Math.cos(ang), sa = Math.sin(ang);
+          // along this spoke the band runs from the sparks (Rt + 38) in to Rt - rows * 11:
+          // when both ends are off the same side of the viewport, so is everything between
+          const x1 = vx + ca * (Rt + 40), y1 = vy + sa * (Rt + 40), x0 = vx + ca * (Rt - rows * 11), y0 = vy + sa * (Rt - rows * 11);
+          if ((x0 < -M && x1 < -M) || (x0 > w + M && x1 > w + M) || (y0 < -M && y1 < -M) || (y0 > h + M && y1 > h + M)) continue;
           for (let row = 0; row < rows; row++) {
             if (hash(q, row + i * 7, tick) < 0.14) continue;                 // gaps
             const r = Rt - row * 11 + (hash(q, row, tick) - 0.5) * 3;       // jitter
             if (r < 4) continue;
+            const x = vx + ca * r, y = vy + sa * r;
+            if (x < -M || x > w + M || y < -M || y > h + M) continue;
             const fade = 1 - row / rows;
             const g = SCRAMBLE[(hash(q, row + i * 7, tick + 1) * SCRAMBLE.length) | 0];
             const tinted = hash(q, row, tick + 2) < 0.12;
             ctx.fillStyle = tinted ? rgba(hexToRgb(TINTS[(hash(q, 23, tick) * TINTS.length) | 0]), 0.6 * a * fade) : rgba(C.navy, (0.18 + 0.25 * hash(q, row, 3)) * a * fade);
-            ctx.fillText(g, vx + Math.cos(ang) * r, vy + Math.sin(ang) * r);
+            ctx.fillText(g, x, y);
           }
           // sparks thrown ahead of the front
           if (hash(q, 29, tick) < 0.06) {
             const r = Rt + 8 + hash(q, 31, tick) * 30;
+            const x = vx + ca * r, y = vy + sa * r;
+            if (x < -M || x > w + M || y < -M || y > h + M) continue;
             ctx.fillStyle = rgba(hexToRgb(TINTS[(hash(q, 37, tick) * TINTS.length) | 0]), 0.5 * a);
-            ctx.fillText(SCRAMBLE[(hash(q, 41, tick) * SCRAMBLE.length) | 0], vx + Math.cos(ang) * r, vy + Math.sin(ang) * r);
+            ctx.fillText(SCRAMBLE[(hash(q, 41, tick) * SCRAMBLE.length) | 0], x, y);
           }
         }
         drawPhotoBand(rp, R, a);
@@ -1596,7 +1864,7 @@
         }
         // shove the particles the front passes
         for (const p of parts) {
-          const dx = p.x - vx, dy = screenY(p) - vy, d = Math.hypot(dx, dy) || 1;
+          const dx = p.x - vx, dy = p.sy - vy, d = Math.hypot(dx, dy) || 1;
           const Rt = frontR(rp, Math.atan2(dy, dx), age);
           if (d <= Rt && d >= Rt - 12 && t - p.lastHit > 0.5) {
             p.vx += dx / d * rp.shove * a; p.vy += dy / d * rp.shove * a; p.flash = 0.45; p.lastHit = t;
@@ -1604,8 +1872,9 @@
         }
         // the letters under the front
         for (const e of rp.near) {
-          if (!rp.sup && (e.dmin > R * 1.3 || e.dmax < R * 0.7 - rp.thick * 1.4)) { healRun(e); continue; }
-          if (rp.sup && e.dmin > R * 1.3 && !e.linger) { healRun(e); continue; }
+          if (!rp.sup && (e.dmin > R * 1.1 || e.dmax < R * 0.9 - rp.thick * 1.5)) { healRun(e); continue; }
+          if (rp.sup && e.dmin > R * 1.1 && !e.linger) { healRun(e); continue; }
+          if (rp.sup && e.linger && e.dmax < R * 0.9 - rp.thick * 2 && !(e.lingerMax > t)) { healRun(e); continue; }   // passed, nothing left to flicker
           glitchRun(e, rp, age);
         }
       }
@@ -1626,21 +1895,25 @@
     const rayGap = () => { const mean = 60 * Math.pow(0.01, flux); return mean * (0.5 + Math.random()); };
     const showerChance = () => 0.1 + flux * 0.7;
     document.addEventListener('ascii:flux', (e) => { flux = clamp01(e.detail); nextRay = performance.now() / 1000 + Math.min(rayGap(), 2); try { localStorage.setItem('ray-flux', String(flux)); } catch (_) {} });
+    // The layer is a hairline and a dot for a third of a second, so it is drawn
+    // at one pixel per CSS pixel (at full resolution it was a 20 MB texture
+    // blended over the page every frame) and it is hidden while no ray flies.
     const rayCanvas = document.createElement('canvas');
     rayCanvas.className = 'ray-layer';
     rayCanvas.setAttribute('aria-hidden', 'true');
+    rayCanvas.style.visibility = 'hidden';
     document.body.appendChild(rayCanvas);
     const rctx = rayCanvas.getContext('2d');
+    let rayShown = false;
     function sizeRayCanvas() {
-      const dpr = Math.min(window.devicePixelRatio || 1, 2);
-      rayCanvas.width = Math.round(w * dpr); rayCanvas.height = Math.round(h * dpr);
-      rctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      rayCanvas.width = w; rayCanvas.height = h;
+      rctx.setTransform(1, 0, 0, 1, 0, 0);
       rctx.textAlign = 'center'; rctx.textBaseline = 'middle';
     }
     // a burst of glyphs thrown out into the field from a point, roughly along a direction
     function spew(x, y, dirx, diry, n, hot) {
       for (let i = 0; i < n; i++) {
-        const p = spawn(x, y + window.scrollY);                      // y in page space
+        const p = spawn(x, y + SY);                                  // y in page space
         p.page = true;
         const a = Math.atan2(diry, dirx) + (Math.random() - 0.5) * 2.2;
         const sp = 160 + Math.random() * 320;
@@ -1650,7 +1923,7 @@
         p.col = hot ? (Math.random() < 0.5 ? C.clay : C.amber) : (Math.random() < 0.3 ? C.midblue : C.navy);
         parts.push(p);
       }
-      if (parts.length > want + 200) parts.splice(parts.findIndex(q => q.launched), Math.max(1, parts.length - want - 200));
+      trimDebris(want + 200);
     }
     function launchRay(now) {
       const fromLeft = Math.random() < 0.5;
@@ -1664,15 +1937,22 @@
       };
       if (!textNodes) collectText();
       ray.near = [];
+      // only the runs the ray's straight path comes near (a wide margin, since
+      // the page may scroll a little while it flies)
+      snapScroll();
+      const ox = ray.x + SX, oy = ray.y + SY - shift(), nv = Math.hypot(ray.vx, ray.vy);
       for (const wn of textNodes) {
         if (!wn.node.parentNode) continue;
-        const pos = charPositions(wn);
+        const pos = posOf(wn);
         if (!pos) continue;
-        ray.near.push({ w: wn, pos, hitUntil: new Float64Array(pos.length), hot: new Uint8Array(pos.length), hit: false });
+        let close = false;
+        for (let i = 0; i < pos.length; i++) { if (Math.abs((pos[i][0] - ox) * ray.vy - (pos[i][1] - oy) * ray.vx) / nv < 160) { close = true; break; } }
+        if (!close) continue;
+        ray.near.push({ w: wn, pos, hitUntil: new Float64Array(pos.length), hot: new Uint8Array(pos.length), hit: false, hitMax: 0 });
       }
       ray.photo = photoTarget();
       ray.images = imageTargets();
-      ray.thumbs = Array.from(document.querySelectorAll('.feat-card-link'));
+      ray.thumbs = thumbTargets();
       rays.push(ray);
     }
     function drawRays(t, dt) {
@@ -1683,7 +1963,12 @@
         nextRay = t + rayGap();
         document.dispatchEvent(new CustomEvent('ascii:ray', { detail: rayCount }));
       }
-      if (rayCanvas.width !== Math.round(w * Math.min(window.devicePixelRatio || 1, 2))) sizeRayCanvas();
+      if (!rays.length) {
+        if (rayShown) { rctx.clearRect(0, 0, w, h); rayCanvas.style.visibility = 'hidden'; rayShown = false; }
+        return;
+      }
+      if (rayCanvas.width !== w || rayCanvas.height !== h) sizeRayCanvas();
+      if (!rayShown) { rayCanvas.style.visibility = 'visible'; rayShown = true; }
       rctx.clearRect(0, 0, w, h);
       for (const r of rays) clearImageSet(r.images);
       for (let i = rays.length - 1; i >= 0; i--) {
@@ -1691,7 +1976,7 @@
         r.x += r.vx * dt; r.y += r.vy * dt;
         r.trail.push([r.x, r.y]); if (r.trail.length > 14) r.trail.shift();
         const gone = r.x < -160 || r.x > w + 160 || r.y < -160 || r.y > h + 160;
-        if (gone) { for (const e of r.near) healRun(e); clearImageSet(r.images); for (const card of r.thumbs) { card.classList.remove('ascii-on'); card._asciiUntil = 0; } rays.splice(i, 1); continue; }
+        if (gone) { for (const e of r.near) healRun(e); clearImageSet(r.images); thumbClear(r.thumbs); rays.splice(i, 1); continue; }
         // the ray in negative: a tiny head and a hairline tail on the difference
         // layer, so what it crosses flips for an instant; the damage is what you see
         const len = r.trail.length;
@@ -1708,7 +1993,7 @@
         const dirx = r.vx, diry = r.vy;
         let hits = 0;
         for (const pp of parts) {
-          const dx = pp.x - r.x, dy = screenY(pp) - r.y, d = Math.hypot(dx, dy);
+          const dx = pp.x - r.x, dy = pp.sy - r.y, d = Math.hypot(dx, dy);
           if (d < 40 && t - pp.lastHit > 0.4) {
             pp.vx += dx / (d || 1) * 320 + r.vx * 0.12; pp.vy += dy / (d || 1) * 320 + r.vy * 0.12;
             pp.flash = 1; pp.lastHit = t;
@@ -1719,11 +2004,11 @@
         }
         if (hits && t - r.lastSpew > 0.08) { spew(r.x, r.y, -dirx, -diry, Math.min(4, hits), r.hot); r.lastSpew = t; }
         // letters under the head glitch, and spit out glyphs
-        const px = r.x + window.scrollX, py = r.y + window.scrollY - shift();
+        const px = r.x + SX, py = r.y + SY - shift();
         for (const e of r.near) {
           let any = false;
           for (let q = 0; q < e.pos.length; q++) {
-            if (Math.abs(e.pos[q][0] - px) < 14 && Math.abs(e.pos[q][1] - py) < 14) { e.hitUntil[q] = t + 0.35; e.hot[q] = r.hot ? 1 : 0; any = true; }
+            if (Math.abs(e.pos[q][0] - px) < 14 && Math.abs(e.pos[q][1] - py) < 14) { hitAt(e, q, t + 0.35, r.hot ? 1 : 0); any = true; }
           }
           if (any && t - r.lastSpew > 0.08) { spew(r.x, r.y, -dirx, -diry, 3, r.hot); r.lastSpew = t; }
           if (any || e.hit) glitchHits(e, t);
@@ -1746,10 +2031,10 @@
     function collide(t) {
       for (const m of parts) {
         if (Math.hypot(m.vx, m.vy) < 30) continue;
-        const my = screenY(m);
+        const my = m.sy;
         for (const o of parts) {
           if (o === m || t - o.lastHit < 0.6) continue;
-          const dx = o.x - m.x, dy = screenY(o) - my;
+          const dx = o.x - m.x, dy = o.sy - my;
           if (dx * dx + dy * dy > 100) continue;
           // pass most of the momentum on, with a little scatter
           o.vx += m.vx * 0.6 + (Math.random() - 0.5) * 30;
@@ -1768,9 +2053,13 @@
       const sh = shift();
       const keep = Math.pow(0.3, dt);      // momentum decays over a second or so
       ctx.clearRect(0, 0, w, h);
+      snapScroll();
+      placeAll();
       if (dt) collide(t);
       drawRipples(t);
       drawRays(t, dt);
+      const scrollY = SY, pageH = document.documentElement.scrollHeight;
+      let curFont = '';
       for (const p of parts) {
         const a = angle(p.x, p.y, t);
         p.x += (Math.cos(a) * 12 + p.vx) * dt; p.y += (Math.sin(a) * 12 + p.vy) * dt;
@@ -1793,8 +2082,8 @@
         let y;
         if (p.page) {
           // thrown debris keeps its place on the page and scrolls with it
-          y = p.y - window.scrollY;
-          if (p.y < -200 || p.y > document.documentElement.scrollHeight + 200) { p.dead = true; continue; }
+          y = p.y - scrollY;
+          if (p.y < -200 || p.y > pageH + 200) { p.dead = true; continue; }
           if (y < -40 || y > h + 40) continue;                        // off screen: skip the draw
         } else {
           if (p.y < -10) p.y = h + 10; else if (p.y > h + 10) p.y = -10;
@@ -1804,7 +2093,9 @@
         const alpha = Math.min(1, p.base * (0.55 + 0.45 * Math.sin(t * 0.7 + p.phase)) + p.flash * 0.55 + p.boost * 0.35) * fade;
         ctx.fillStyle = rgba(p.col, alpha);
         if (p.isGlyph) {
-          ctx.font = '600 ' + (p.size * (1 + p.flash * 0.5)).toFixed(1) + 'px ' + MONO;
+          // whole pixel sizes, and the font set only when it changes: each size is its own glyph-cache entry
+          const f = '600 ' + Math.round(p.size * (1 + p.flash * 0.5)) + 'px ' + MONO;
+          if (f !== curFont) ctx.font = curFont = f;
           ctx.fillText(p.ch, p.x, y);
         } else {
           ctx.beginPath(); ctx.arc(p.x, y, p.size * (1 + p.flash), 0, Math.PI * 2); ctx.fill();
