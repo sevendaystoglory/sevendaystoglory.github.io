@@ -122,7 +122,18 @@ strong { font-weight: 600; color: var(--ink); }
     display: flex;
     flex-direction: column;
     align-items: center;
-    text-align: center;
+    text-align: center;    min-height: 100%;                   /* so the hint can sit at the bottom */
+}
+/* a line at the foot of the pane saying how the page plays */
+.sidebar-hint {
+    margin: auto 0 0;
+    padding-top: 1.6rem;
+    font-family: var(--sans);
+    font-size: 0.78rem;
+    line-height: 1.5;
+    color: var(--ink-soft);
+    opacity: 0.75;
+    max-width: 200px;
 }
 .sidebar-name {
     font-family: var(--serif);
