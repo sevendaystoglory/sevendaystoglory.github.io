@@ -1158,9 +1158,4 @@ pre:hover .copy-button { opacity: 1; }
     .feat-thumb { width: 100%; min-height: 0; aspect-ratio: 2 / 1; margin: 6px 0 16px; }
     .pub-title { font-size: 17px; }
 }
-
-/* the dev switcher for the footer scene (?dev) */
-.footer-knob { margin: 6px 0 0; font-family: var(--mono, ui-monospace, Menlo, monospace); font-size: 11px; letter-spacing: 0.04em; color: var(--ink-dim); text-align: right; }
-.footer-knob button { font: inherit; color: inherit; background: none; border: 0; padding: 0; cursor: pointer; }
-.footer-knob button:hover { color: var(--ink); }
-.footer-knob button.on { color: var(--clay); font-weight: 700; }
+.footer-caption { margin: 6px 0 16px; }
