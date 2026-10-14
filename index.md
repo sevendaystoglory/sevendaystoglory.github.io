@@ -16,7 +16,8 @@ title: Home
       Much of my perspective on these topics has come through the <strong>geometry of deep
       learning</strong>, i.e. what the optimizer and the loss landscape govern about what gets
       learned, how a network can keep learning (loss of information plasticity), and how to make
-      LLMs trustworthy through data attribution.
+      LLMs trustworthy through data attribution. I am always open to collaborations, so feel free
+      to reach out.
     </p>
     <p class="bio">
       Previously, I worked on building AI-native video infra and specifically visual information
