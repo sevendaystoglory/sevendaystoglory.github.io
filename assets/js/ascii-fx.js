@@ -897,10 +897,33 @@
       }
       ripples.push(rp);
     }
+    // Is the pointer actually on glyphs (or on something clickable)? A press
+    // on blank paper is a wave, so the browser must not start a text
+    // selection from it; a press on text is left alone so it still selects.
+    function overText(x, y) {
+      const el = document.elementFromPoint(x, y);
+      if (!el) return false;
+      if (el.closest('a, button, input, textarea, select, label, [contenteditable], pre, code, .flux, .sidebar-email, img, video')) return true;
+      const r = document.createRange();
+      const lh = parseFloat(getComputedStyle(el).lineHeight) || 0;
+      for (const n of el.childNodes) {
+        if (n.nodeType !== 3 || !n.nodeValue.trim()) continue;
+        r.selectNodeContents(n);
+        for (const b of r.getClientRects()) {
+          const pad = Math.max(0, (lh - b.height) / 2);   // the leading between two lines still counts as text
+          if (x >= b.left - 2 && x <= b.right + 2 && y >= b.top - pad && y <= b.bottom + pad) return true;
+        }
+      }
+      return false;
+    }
+    let blankPress = false;
     document.addEventListener('pointerdown', (e) => {
       if (reduced || e.button > 0) return;
+      blankPress = !overText(e.clientX, e.clientY);
+      if (blankPress && e.pointerType === 'mouse') e.preventDefault();   // no selection drag from blank paper
       charge = { px: e.clientX + window.scrollX, py: e.clientY + window.scrollY, start: performance.now() / 1000 };
     });
+    document.addEventListener('selectstart', (e) => { if (blankPress && charge) e.preventDefault(); });
     const release = () => {
       if (!charge) return;
       const now = performance.now() / 1000;
@@ -929,11 +952,11 @@
     // or any text getting selected, cancels the charge
     document.addEventListener('pointermove', (e) => {
       if (!charge) return;
-      if (Math.hypot(e.clientX + window.scrollX - charge.px, e.clientY + window.scrollY - charge.py) > 8) dropCharge();
+      if (Math.hypot(e.clientX + window.scrollX - charge.px, e.clientY + window.scrollY - charge.py) > 12) dropCharge();
     });
     document.addEventListener('selectionchange', () => {
       const sel = window.getSelection();
-      if (charge && sel && !sel.isCollapsed) dropCharge();
+      if (charge && !blankPress && sel && !sel.isCollapsed) dropCharge();
     });
 
     // The profile photo: inside the band the ring is crossing, the photo turns
