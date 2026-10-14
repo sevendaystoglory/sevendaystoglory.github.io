@@ -2105,6 +2105,10 @@
               };
               const [hox, hoy] = at(dist);
               const hx = charge.px + hox, hy = charge.py + hoy;
+              // each particle streaks the photos it crosses (the photos measured once, as the ball goes dark)
+              if (!charge.marks) charge.marks = trackTargets();
+              if (!tr.track) { tr.track = new Map(); tr.marks = charge.marks; }
+              markTracks(tr, hx, hy, t);
               const ha = Math.atan2(hoy - at(Math.max(0, dist - 8))[1], hox - at(Math.max(0, dist - 8))[0]);
               for (const e of charge.near) {
                 for (let q = 0; q < e.pos.length; q++) {
@@ -2266,11 +2270,12 @@
     // it, the way cosmic rays mark a long camera exposure: a broken hairline
     // with knots of ionisation along it, and now and then a short curl where
     // it knocked an electron loose (they all curl the same way, as in a
-    // cloud chamber's field). The debris a super wave throws leaves the same
-    // tracks for a few seconds after the burst. Each photo gets a canvas of
+    // cloud chamber's field). The particles the dark ball fires while it is
+    // held, and the debris its burst throws for a few seconds after, leave
+    // the same tracks. Each photo gets a canvas of
     // its own, drawn in negative like the rays, so a track sits on the photo
     // wherever it scrolls; tracks fade out over TRACK_LIFE seconds.
-    const TRACK_LIFE = 12;
+    const TRACK_LIFE = 6;
     let burst = null;
     const trackHosts = new Map();            // photo element -> { cv, g, tracks }
     let lastTrackPaint = 0, tracksDirty = false;
@@ -2379,8 +2384,8 @@
         g.clearRect(0, 0, W, H);
         for (const tr of th.tracks) {
           const age = t - tr.born;
-          // a moment's flash as it is struck, then faint, then gone over the last six seconds
-          drawTrack(g, tr, W, H, 0.5 * clamp01((TRACK_LIFE - age) / 6) * (1 + 0.8 * clamp01(1 - age / 0.6)));
+          // a moment's flash as it is struck, then faint, then gone over the last three seconds
+          drawTrack(g, tr, W, H, 0.5 * clamp01((TRACK_LIFE - age) / 3) * (1 + 0.8 * clamp01(1 - age / 0.6)));
         }
       }
     }
