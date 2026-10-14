@@ -12,7 +12,7 @@ permalink: /pages/projects/
   </div>
   <div class="page-hero-art">
     <div class="scene-box"><canvas class="scene-canvas" data-scene="chaos" aria-hidden="true"></canvas></div>
-    <p class="art-caption">the <a href="https://en.wikipedia.org/wiki/Chaos_game" target="_blank" rel="noopener">chaos game</a>. click for the next fractal, move across to bend it.</p>
+    <p class="art-caption">the <a href="https://en.wikipedia.org/wiki/Chaos_game" target="_blank" rel="noopener">chaos game</a>. click for the next fractal.</p>
   </div>
 </section>
 

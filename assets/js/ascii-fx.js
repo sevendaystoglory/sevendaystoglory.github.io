@@ -403,9 +403,9 @@
   // in it; its colour says which map put the last one there, so each colour
   // is a smaller copy of the whole. One point plays slowly in the open, its
   // jump drawn as a dotted line toward the fixed point of the map it drew.
-  // The pointer pulls the fixed points toward it and bends the fractal, a
-  // click moves on to the next one, and a super wave scatters the points
-  // into noise, from which they fall back one generation at a time.
+  // A click moves on to the next one (a quicker blend than the timed one),
+  // and a super wave scatters the points into noise, from which they fall
+  // back one generation at a time.
   function chaos(canvas) {
     const R3 = Math.sqrt(3) / 2, PR = (3 - Math.sqrt(5)) / 2;
     // a similarity: scale s, turn a, then shift (e, f); maps are [a, b, c, d, e, f]
@@ -471,18 +471,16 @@
     }
 
     // ── the game in play ─────────────────────────────────────────────
-    const N = 4000, HOLD = 9, MORPH = 3.2, GEN = 0.34, PLAY = 0.5;
+    const N = 4000, HOLD = 9, MORPH = 3.2, MORPH_CLICK = 1.4, GEN = 0.34, PLAY = 0.5;
     const ptx = new Float32Array(N), pty = new Float32Array(N), ptm = new Uint8Array(N);
     const M = new Float64Array(K * 6), CW = new Float64Array(K), FX = new Float64Array(K), FY = new Float64Array(K);
     const COL = [];
-    let from = 0, to = 0, morphAt = 0, nextAt = 0, slowUntil = 0, nextGen = 0, opening = !reduced;
+    let from = 0, to = 0, morphAt = 0, morphLen = MORPH, nextAt = 0, slowUntil = 0, nextGen = 0, opening = !reduced;
     let W = 0, H = 0, gc = 0, gr = 0, dens = null, last = null, level = 1, lastT = -1;
-    const cursor = { x: 0, y: 0, on: false, k: 0 };
     const player = { x: 0, y: 0, ox: 0, oy: 0, j: 0, at: -1 };
     const ease = (m) => m * m * (3 - 2 * m);
     const pick = () => { const r = Math.random() * CW[K - 1]; let j = 0; while (j < K - 1 && CW[j] < r) j++; return j; };
-    // the maps of this frame: the two sets blended, then each fixed point
-    // pulled toward the pointer by moving the map's shift
+    // the maps of this frame: the two sets blended, and each map's fixed point
     function blend(m) {
       const A = SETS[from], B = SETS[to], e = ease(m);
       let acc = 0;
@@ -492,14 +490,7 @@
         acc += A.pw[j] + (B.pw[j] - A.pw[j]) * e; CW[j] = acc;
         COL[j] = mix((A.cols || PAL)[A.src[j]], (B.cols || PAL)[B.src[j]], e);
         const a = M[o], b = M[o + 1], c = M[o + 2], d = M[o + 3], det = (1 - a) * (1 - d) - b * c;
-        let fx = ((1 - d) * M[o + 4] + b * M[o + 5]) / det, fy = (c * M[o + 4] + (1 - a) * M[o + 5]) / det;
-        if (cursor.k > 0.001) {
-          const dx = cursor.x - fx, dy = cursor.y - fy, sg = Math.min(W, H) * 0.3;
-          const g = cursor.k * 0.7 * Math.exp(-(dx * dx + dy * dy) / (2 * sg * sg));
-          M[o + 4] += (1 - a) * dx * g - b * dy * g; M[o + 5] += -c * dx * g + (1 - d) * dy * g;
-          fx += dx * g; fy += dy * g;
-        }
-        FX[j] = fx; FY[j] = fy;
+        FX[j] = ((1 - d) * M[o + 4] + b * M[o + 5]) / det; FY[j] = (c * M[o + 4] + (1 - a) * M[o + 5]) / det;
       }
     }
     function jump(n) {
@@ -524,7 +515,7 @@
     }
     // straight onto the fractal, for a still frame
     function settle() { blend(0); scatter(); jump(30); dens.fill(0); for (let k = 0; k < 4; k++) { jump(1); deposit(1); } }
-    function next(t) { if (from === to) { to = (from + 1) % SETS.length; morphAt = t; } }
+    function next(t, len) { if (from === to) { to = (from + 1) % SETS.length; morphAt = t; morphLen = len; } }
     function shake(t) { scatter(); slowUntil = t + GEN * 8; nextGen = t + GEN; }
 
     function prep(t, cols, rows) {
@@ -538,13 +529,12 @@
       lastT = t;
       // the first real frame starts the opening: noise falling onto the triangle
       if (opening && t > 0) { opening = false; shake(t); nextAt = t + GEN * 8 + HOLD; }
-      if (!reduced && !opening && from === to && t >= nextAt) next(t);
+      if (!reduced && !opening && from === to && t >= nextAt) next(t, MORPH);
       let m = 0;
       if (from !== to) {
-        m = clamp01((t - morphAt) / MORPH);
+        m = clamp01((t - morphAt) / morphLen);
         if (m >= 1) { from = to; m = 0; nextAt = t + HOLD; }
       }
-      cursor.k += ((cursor.on ? 1 : 0) - cursor.k) * 0.15;
       blend(m);
       const slow = t < slowUntil;
       if (!slow || t >= nextGen) { jump(1); if (slow) nextGen = t + GEN; }
@@ -576,7 +566,7 @@
         put(FX[player.j], FY[player.j], '+', rgba(C.amber, 0.9 * f), 1.5);
         put(player.x, player.y, '@', rgba(C.clay, 1), 1.6);
       }
-      const S = SETS[from !== to && ease(clamp01((t - morphAt) / MORPH)) > 0.5 ? to : from];
+      const S = SETS[from !== to && ease(clamp01((t - morphAt) / morphLen)) > 0.5 ? to : from];
       ctx.textAlign = 'left'; ctx.font = '600 10px ' + MONO;
       const label = S.name, w = ctx.measureText(label).width;
       ctx.clearRect(4, 2, w + 12, 18);
@@ -591,15 +581,10 @@
     }, prep, overlay);
     grid.frame.__every = 1000 / 20;
 
-    canvas.addEventListener('pointermove', (ev) => {
-      const b = canvas.getBoundingClientRect();
-      cursor.x = ev.clientX - b.left; cursor.y = ev.clientY - b.top; cursor.on = true;
-    });
-    canvas.addEventListener('pointerleave', () => { cursor.on = false; });
     canvas.addEventListener('pointerdown', (e) => {
       e.stopPropagation();                                   // a click here moves to the next fractal; it is not a press on blank paper
       const t = performance.now() / 1000;
-      if (!reduced) { next(t); return; }
+      if (!reduced) { next(t, MORPH_CLICK); return; }
       from = to = (from + 1) % SETS.length; settle(); lastT = -1; grid.frame(t);
     });
     pageOn(document, 'ascii:thunder', () => { if (dens && !reduced) shake(performance.now() / 1000); });
