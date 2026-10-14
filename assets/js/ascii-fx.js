@@ -954,7 +954,9 @@
     // or any text getting selected, cancels the charge
     document.addEventListener('pointermove', (e) => {
       if (!charge) return;
-      if (Math.hypot(e.clientX + window.scrollX - charge.px, e.clientY + window.scrollY - charge.py) > 12) dropCharge();
+      const x = e.clientX + window.scrollX, y = e.clientY + window.scrollY;
+      if (blankPress) { charge.tx = x; charge.ty = y; return; }   // the ball rides along with the pointer
+      if (Math.hypot(x - charge.px, y - charge.py) > 12) dropCharge();   // a drag on text is a selection
     });
     document.addEventListener('selectionchange', () => {
       const sel = window.getSelection();
@@ -1374,6 +1376,12 @@
         // collapses to a small dense ball that fires off particles one after
         // another in fast straight tracks, like an accelerator supercharging.
         const held = t - charge.start;
+        // a dragged ball trails the pointer a little, like something with mass
+        if (charge.tx != null) {
+          const f = 1 - Math.pow(0.001, Math.min(0.1, t - (charge.lastT || t)));
+          charge.px += (charge.tx - charge.px) * f; charge.py += (charge.ty - charge.py) * f;
+        }
+        charge.lastT = t;
         const e = clamp01(held / 1.6);                          // energy, 0 .. 1 over 1.6 s
         const dark = clamp01((held - SUPER_HOLD) / 0.2);        // 0 .. 1 in the 0.2 s after 2.25 s
         const INK = [22, 28, 44];
