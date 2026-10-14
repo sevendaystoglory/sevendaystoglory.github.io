@@ -72,7 +72,6 @@
   year: 2025
   links:
     - { label: "arXiv", url: "https://arxiv.org/abs/2510.23334" }
-    - { label: "HTML", url: "https://arxiv.org/html/2510.23334v1" }
   abstract: >-
     AdaSearch is an inference-time alignment method that strategically allocates
     sampling budget across response blocks via a decaying schedule, reflecting that
