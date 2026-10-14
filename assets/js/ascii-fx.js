@@ -2275,7 +2275,8 @@
     // the same tracks. Each photo gets a canvas of
     // its own, drawn in negative like the rays, so a track sits on the photo
     // wherever it scrolls. Each track has a life of its own, between one and
-    // TRACK_LIFE seconds, so a shower of them goes out one by one.
+    // TRACK_LIFE seconds (two more for the debris of a super burst), so a
+    // shower of them goes out one by one.
     const TRACK_LIFE = 2.5;
     let burst = null;
     const trackHosts = new Map();            // photo element -> { cv, g, tracks }
@@ -2327,7 +2328,7 @@
         // leaves a curve; a gap (it left the photo and came back) starts a new run
         let tr = r.track.get(tg.el);
         if (!tr) {
-          tr = { pts: [u0, v0, u1, v1], born: t, life: 1 + Math.random() * (TRACK_LIFE - 1), seed: Math.random() * 1000, hot: r.hot, curl: Math.random() < 0.5 ? 1 : -1 };
+          tr = { pts: [u0, v0, u1, v1], born: t, life: 1 + Math.random() * (TRACK_LIFE - 1) + (r.trackExtra || 0), seed: Math.random() * 1000, hot: r.hot, curl: Math.random() < 0.5 ? 1 : -1 };
           r.track.set(tg.el, tr);
           trackHost(tg.el).tracks.push(tr);
         } else {
@@ -2571,7 +2572,7 @@
           if (burst && p.launched && p.born >= burst.start - 0.05) {
             if (t > burst.until) burst = null;
             else if (Math.hypot(p.vx, p.vy) > 90) {
-              if (!p.track) { p.track = new Map(); p.marks = burst.marks; p.hot = p.col === C.clay || p.col === C.amber; }
+              if (!p.track) { p.track = new Map(); p.marks = burst.marks; p.trackExtra = 2; p.hot = p.col === C.clay || p.col === C.amber; }
               markTracks(p, p.x + SX, p.y, t);
             }
           }
