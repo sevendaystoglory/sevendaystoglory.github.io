@@ -379,6 +379,473 @@
     }, prep);
   }
 
+  // ── footer: Physarum slime mould ─────────────────────────────────
+  // Thousands of agents lay a trail and steer toward the strongest trail
+  // ahead of them, so they gather into veins that merge, split and reroute.
+  // The trail field (two pixels a cell) decays and blurs each frame and is
+  // read through the glyph ramp. The pointer is food.
+  function slime(canvas) {
+    const FP = 2;
+    let fw = 0, fh = 0, A = null, B = null, ag = null, N = 0, food = null, lastT = 0;
+    function alloc(W, H) {
+      fw = Math.ceil(W / FP); fh = Math.ceil(H / FP);
+      A = new Float32Array(fw * fh); B = new Float32Array(fw * fh);
+      N = Math.round(fw * fh * 0.05); ag = new Float32Array(N * 3);
+      scatter();
+    }
+    function scatter() { for (let i = 0; i < N; i++) { ag[i * 3] = Math.random() * fw; ag[i * 3 + 1] = Math.random() * fh; ag[i * 3 + 2] = Math.random() * Math.PI * 2; } }
+    pageOn(document, 'ascii:thunder', scatter);
+    const at = (x, y) => A[((y + fh) % fh | 0) * fw + ((x + fw) % fw | 0)];
+    function step() {
+      const SA = 0.5, SD = 5, SP = 1.2;
+      for (let i = 0; i < N; i++) {
+        let x = ag[i * 3], y = ag[i * 3 + 1], a = ag[i * 3 + 2];
+        const f = at(x + Math.cos(a) * SD, y + Math.sin(a) * SD);
+        const l = at(x + Math.cos(a - SA) * SD, y + Math.sin(a - SA) * SD);
+        const r = at(x + Math.cos(a + SA) * SD, y + Math.sin(a + SA) * SD);
+        if (f > l && f > r) { /* straight on */ }
+        else if (l > r) a -= 0.35; else if (r > l) a += 0.35; else a += (Math.random() - 0.5) * 0.6;
+        x += Math.cos(a) * SP; y += Math.sin(a) * SP;
+        if (x < 0) x += fw; else if (x >= fw) x -= fw;
+        if (y < 0) y += fh; else if (y >= fh) y -= fh;
+        ag[i * 3] = x; ag[i * 3 + 1] = y; ag[i * 3 + 2] = a;
+        const k = (y | 0) * fw + (x | 0);
+        A[k] = Math.min(6, A[k] + 1);
+      }
+      if (food) for (let dy = -3; dy <= 3; dy++) for (let dx = -3; dx <= 3; dx++) { if (dx * dx + dy * dy > 9) continue; const k = ((food[1] + dy + fh) % fh | 0) * fw + ((food[0] + dx + fw) % fw | 0); A[k] = Math.min(6, A[k] + 1.2); }
+      // decay and blur
+      for (let y = 0; y < fh; y++) {
+        const up = ((y - 1 + fh) % fh) * fw, row = y * fw, dn = ((y + 1) % fh) * fw;
+        for (let x = 0; x < fw; x++) {
+          const xl = (x - 1 + fw) % fw, xr = (x + 1) % fw;
+          B[row + x] = (A[up + xl] + A[up + x] + A[up + xr] + A[row + xl] + A[row + x] + A[row + xr] + A[dn + xl] + A[dn + x] + A[dn + xr]) * (0.93 / 9);
+        }
+      }
+      const tmp = A; A = B; B = tmp;
+    }
+    let cell = 8, cols = 0;
+    const grid = makeGrid(canvas, cell, (u, v, t, c, r) => {
+      // the average trail under this glyph cell
+      let s = 0, n = 0;
+      const x0 = (c * cell / FP) | 0, y0 = (r * cell / FP) | 0, k = Math.max(1, (cell / FP) | 0);
+      for (let y = y0; y < y0 + k && y < fh; y++) for (let x = x0; x < x0 + k && x < fw; x++) { s += A[y * fw + x]; n++; }
+      const d = clamp01(s / n / 2.6);
+      if (d < 0.06) return null;
+      return [1, rgba(mix(C.navy, C.clay, d * d * 0.9), 0.12 + 0.8 * d), rampChar(0.08 + d * 0.9)];
+    }, (t, cs) => {
+      cols = cs;
+      if (!A || fw !== Math.ceil(canvas.clientWidth / FP)) alloc(canvas.clientWidth, canvas.clientHeight);
+      if (lastT && t !== lastT) step();
+      lastT = t;
+    });
+    canvas.addEventListener('pointermove', (e) => { const r = canvas.getBoundingClientRect(); food = [(e.clientX - r.left) / FP, (e.clientY - r.top) / FP]; });
+    canvas.addEventListener('pointerleave', () => { food = null; });
+  }
+
+  // ── footer: Gray-Scott reaction-diffusion ─────────────────────────
+  // Two chemicals on a torus (four pixels a cell), U feeding V and V eating
+  // U, in the coral regime: spots that divide and grow into labyrinths.
+  // The pointer drops V; when a pattern burns out it is reseeded.
+  function gray(canvas) {
+    const FP = 4, F = 0.037, K = 0.06, DU = 0.16, DV = 0.08;
+    let fw = 0, fh = 0, U = null, V = null, U2 = null, V2 = null, lastT = 0, drop = null, bornAt = 0;
+    function seed(x, y, rad) { for (let dy = -rad; dy <= rad; dy++) for (let dx = -rad; dx <= rad; dx++) { if (dx * dx + dy * dy > rad * rad) continue; const k = ((y + dy + fh) % fh) * fw + ((x + dx + fw) % fw); V[k] = 1; U[k] = 0.5; } }
+    function reseed(t) { U.fill(1); V.fill(0); for (let i = 0; i < 5; i++) seed((Math.random() * fw) | 0, (Math.random() * fh) | 0, 2 + (Math.random() * 2) | 0); bornAt = t; }
+    pageOn(document, 'ascii:thunder', () => { for (let i = 0; i < 6; i++) seed((Math.random() * fw) | 0, (Math.random() * fh) | 0, 3); });
+    function step() {
+      for (let y = 0; y < fh; y++) {
+        const up = ((y - 1 + fh) % fh) * fw, row = y * fw, dn = ((y + 1) % fh) * fw;
+        for (let x = 0; x < fw; x++) {
+          const xl = (x - 1 + fw) % fw, xr = (x + 1) % fw, k = row + x;
+          const u = U[k], v = V[k];
+          const lu = U[up + x] + U[dn + x] + U[row + xl] + U[row + xr] - 4 * u;
+          const lv = V[up + x] + V[dn + x] + V[row + xl] + V[row + xr] - 4 * v;
+          const uvv = u * v * v;
+          U2[k] = u + DU * lu - uvv + F * (1 - u);
+          V2[k] = v + DV * lv + uvv - (F + K) * v;
+        }
+      }
+      let tmp = U; U = U2; U2 = tmp; tmp = V; V = V2; V2 = tmp;
+    }
+    const cell = 8;
+    makeGrid(canvas, cell, (u0, v0, t, c, r) => {
+      const x0 = (c * cell / FP) | 0, y0 = (r * cell / FP) | 0, k = Math.max(1, (cell / FP) | 0);
+      let s = 0, n = 0;
+      for (let y = y0; y < y0 + k && y < fh; y++) for (let x = x0; x < x0 + k && x < fw; x++) { s += V[y * fw + x]; n++; }
+      const d = clamp01(s / n * 2.4);
+      if (d < 0.08) return null;
+      return [1, rgba(mix(mix(C.midblue, C.navy, d), C.clay, clamp01((d - 0.7) * 2.5)), 0.15 + 0.75 * d), rampChar(0.1 + d * 0.9)];
+    }, (t) => {
+      if (!U || fw !== Math.ceil(canvas.clientWidth / FP)) {
+        fw = Math.ceil(canvas.clientWidth / FP); fh = Math.ceil(canvas.clientHeight / FP);
+        U = new Float32Array(fw * fh); V = new Float32Array(fw * fh); U2 = new Float32Array(fw * fh); V2 = new Float32Array(fw * fh);
+        reseed(t);
+      }
+      if (lastT && t !== lastT) {
+        if (drop) seed(drop[0], drop[1], 2);
+        for (let i = 0; i < 6; i++) step();
+        if (t - bornAt > 8 && (t * 7 | 0) % 7 === 0) { let s = 0; for (let i = 0; i < V.length; i += 7) s += V[i]; if (s / (V.length / 7) < 0.004) reseed(t); }
+      }
+      lastT = t;
+    });
+    canvas.addEventListener('pointermove', (e) => { const r = canvas.getBoundingClientRect(); drop = [((e.clientX - r.left) / FP) | 0, ((e.clientY - r.top) / FP) | 0]; });
+    canvas.addEventListener('pointerleave', () => { drop = null; });
+  }
+
+  // ── footer: the donut ─────────────────────────────────────────────
+  // The spinning torus of donut.c, shaded through the ramp and lit from
+  // above-behind the viewer, turning on its own until it is dragged.
+  function donut(canvas) {
+    let A = 1, B = 0.4, vA = 0.45, vB = 0.2, dragging = false, lx = 0, ly = 0, lastT = 0;
+    let gc = 0, gr = 0, Z = null, L = null;
+    const SHADE = '.,-~:;=!*#$@';
+    makeGrid(canvas, 8, (u, v, t, c, r) => {
+      const i = r * gc + c;
+      if (!Z[i]) return null;
+      const l = clamp01(L[i] / 1.42);
+      return [1, rgba(mix(C.navy, C.clay, l * 0.85), 0.3 + 0.7 * l), SHADE[(l * 11.99) | 0]];
+    }, (t, cols, rows) => {
+      if (cols !== gc || rows !== gr) { gc = cols; gr = rows; Z = new Float32Array(cols * rows); L = new Float32Array(cols * rows); }
+      const dt = lastT ? Math.min(0.2, t - lastT) : 0; lastT = t;
+      if (!dragging) { A += vA * dt; B += vB * dt; }
+      Z.fill(0);
+      const R1 = 1, R2 = 2, K2 = 5, K1 = rows * K2 * 3 / (8 * (R1 + R2)) * 1.05;
+      const cA = Math.cos(A), sA = Math.sin(A), cB = Math.cos(B), sB = Math.sin(B);
+      for (let th = 0; th < 6.28; th += 0.06) {
+        const ct = Math.cos(th), st = Math.sin(th);
+        for (let ph = 0; ph < 6.28; ph += 0.02) {
+          const cp = Math.cos(ph), sp = Math.sin(ph);
+          const cx = R2 + R1 * ct, cy = R1 * st;
+          const x = cx * (cB * cp + sA * sB * sp) - cy * cA * sB;
+          const y = cx * (sB * cp - sA * cB * sp) + cy * cA * cB;
+          const z = K2 + cA * cx * sp + cy * sA;
+          const ooz = 1 / z;
+          const xp = (cols / 2 + K1 * ooz * x * 1.0) | 0, yp = (rows / 2 - K1 * ooz * y) | 0;
+          if (xp < 0 || xp >= cols || yp < 0 || yp >= rows) continue;
+          const lum = cp * ct * sB - cA * ct * sp - sA * st + cB * (cA * st - ct * sA * sp);
+          const i = yp * cols + xp;
+          if (ooz > Z[i]) { Z[i] = ooz; L[i] = lum > 0 ? lum : 0; }
+        }
+      }
+    });
+    canvas.addEventListener('pointerdown', (e) => { dragging = true; lx = e.clientX; ly = e.clientY; try { canvas.setPointerCapture(e.pointerId); } catch (_) {} });
+    canvas.addEventListener('pointermove', (e) => { if (!dragging) return; B += (e.clientX - lx) * 0.01; A += (e.clientY - ly) * 0.01; lx = e.clientX; ly = e.clientY; });
+    const stop = () => { dragging = false; };
+    canvas.addEventListener('pointerup', stop); canvas.addEventListener('pointercancel', stop);
+  }
+
+  // ── footer: optimizer race ────────────────────────────────────────
+  // A random loss surface drawn as contour lines; SGD, momentum, Nesterov
+  // and Adam set off from the same point and leave their tracks as they
+  // descend. When they have all settled a new surface is drawn.
+  function race(canvas) {
+    let bumps = [], runners = [], dirty = true, steps = 0, still = 0, lastT = 0;
+    const NAMES = [['sgd', C.navy], ['momentum', C.midblue], ['nesterov', C.sage], ['adam', C.clay]];
+    function f(x, y) {
+      const bx = (x - 0.5) * 2, by = (y - 0.5) * 2;
+      let h = 0.9 * (bx * bx + by * by * 2.2);
+      for (const b of bumps) { const dx = (x - b[0]) / 0.5, dy = (y - b[1]) / 0.22; h += b[2] * Math.exp(-(dx * dx + dy * dy) / (2 * b[3])); }
+      return h;
+    }
+    const grad = (x, y) => { const e = 0.003; return [(f(x + e, y) - f(x - e, y)) / (2 * e), (f(x, y + e) - f(x, y - e)) / (2 * e)]; };
+    function round() {
+      bumps = []; for (let i = 0; i < 6; i++) bumps.push([0.1 + Math.random() * 0.8, 0.15 + Math.random() * 0.7, (Math.random() < 0.5 ? -1 : 1) * (0.4 + Math.random() * 0.6), 0.05 + Math.random() * 0.08]);
+      let best = null;
+      for (let i = 0; i < 20; i++) { const x = 0.1 + Math.random() * 0.8, y = 0.2 + Math.random() * 0.6, h = f(x, y); if (!best || h > best[2]) best = [x, y, h]; }
+      runners = NAMES.map(([name, col]) => ({ name, col, x: best[0], y: best[1], vx: 0, vy: 0, m1: [0, 0], m2: [0, 0], k: 0, trail: [] }));
+      dirty = true; steps = 0; still = 0;
+    }
+    round();
+    pageOn(document, 'ascii:thunder', round);
+    function advance() {
+      const lr = 0.004;
+      let moving = 0;
+      runners.forEach((p, i) => {
+        const [gx, gy] = grad(p.x, p.y);
+        let dx = 0, dy = 0;
+        if (i === 0) { dx = -lr * gx; dy = -lr * gy; }
+        else if (i === 1) { p.vx = 0.9 * p.vx - lr * gx; p.vy = 0.9 * p.vy - lr * gy; dx = p.vx; dy = p.vy; }
+        else if (i === 2) { const [lx, ly] = grad(p.x + 0.9 * p.vx, p.y + 0.9 * p.vy); p.vx = 0.9 * p.vx - lr * lx; p.vy = 0.9 * p.vy - lr * ly; dx = p.vx; dy = p.vy; }
+        else {
+          p.k++;
+          p.m1[0] = 0.9 * p.m1[0] + 0.1 * gx; p.m1[1] = 0.9 * p.m1[1] + 0.1 * gy;
+          p.m2[0] = 0.999 * p.m2[0] + 0.001 * gx * gx; p.m2[1] = 0.999 * p.m2[1] + 0.001 * gy * gy;
+          const c1 = 1 - Math.pow(0.9, p.k), c2 = 1 - Math.pow(0.999, p.k), a = 0.006;
+          dx = -a * (p.m1[0] / c1) / (Math.sqrt(p.m2[0] / c2) + 1e-8); dy = -a * (p.m1[1] / c1) / (Math.sqrt(p.m2[1] / c2) + 1e-8);
+        }
+        p.x = clamp01(p.x + dx); p.y = clamp01(p.y + dy);
+        if (Math.hypot(dx, dy) > 0.0006) moving++;
+        if (steps % 2 === 0) p.trail.push([p.x, p.y]);
+      });
+      steps++;
+      still = moving ? 0 : still + 1;
+      if (still > 40 || steps > 1400) round();
+    }
+    let gc = 0, gr = 0, HF = null;
+    makeGrid(canvas, 8, (u, v, t, c, r) => {
+      const h = HF[r * gc + c];
+      const lv = (h * 9) % 1;
+      if (lv < 0.16) return [1, rgba(mix(C.pale, C.navy, 0.3 + 0.5 * clamp01(h)), 0.22 + 0.3 * clamp01(h)), hash(c, r, 2) < 0.5 ? '-' : '~'];
+      if (hash(c, r, 4) < 0.06) return [1, rgba(C.pale, 0.5), '.'];
+      return null;
+    }, (t, cols, rows) => {
+      if (cols !== gc || rows !== gr) { gc = cols; gr = rows; HF = new Float32Array(cols * rows); dirty = true; }
+      if (lastT && t !== lastT) { advance(); advance(); }
+      lastT = t;
+      if (!dirty) return true;
+      dirty = false;
+      let lo = Infinity, hi = -Infinity;
+      for (let r = 0; r < rows; r++) for (let c = 0; c < cols; c++) { const h = f(c / cols, r / rows); HF[r * cols + c] = h; if (h < lo) lo = h; if (h > hi) hi = h; }
+      for (let i = 0; i < HF.length; i++) HF[i] = (HF[i] - lo) / (hi - lo + 1e-6);
+      return false;
+    }, (ctx, t, cols, rows, cell, rowH) => {
+      const W = cols * cell, H = rows * rowH;
+      ctx.textAlign = 'center';
+      for (const p of runners) {
+        ctx.font = '600 8px ' + MONO;
+        for (let i = 0; i < p.trail.length; i++) { const q = p.trail[i]; ctx.fillStyle = rgba(p.col, 0.25 + 0.5 * i / p.trail.length); ctx.fillText('·', q[0] * W, q[1] * H); }
+        ctx.font = '700 12px ' + MONO; ctx.fillStyle = rgba(p.col, 1); ctx.fillText('@', p.x * W, p.y * H);
+        ctx.font = '600 10px ' + MONO; ctx.textAlign = 'left'; ctx.fillText(p.name, p.x * W + 8, p.y * H - 6); ctx.textAlign = 'center';
+      }
+      ctx.textAlign = 'left'; ctx.font = '600 10px ' + MONO;
+      let x = 10;
+      for (const p of runners) { ctx.fillStyle = rgba(p.col, 0.9); ctx.fillText('@ ' + p.name, x, 12); x += 22 + p.name.length * 6.2; }
+      ctx.fillStyle = rgba(C.navy, 0.5); ctx.fillText('step ' + steps, x + 10, 12);
+    });
+  }
+
+  // ── footer: Rule 30 textile ───────────────────────────────────────
+  // A one-dimensional cellular automaton woven row by row from the bottom
+  // and scrolling up, like cloth off a loom. A click changes the rule.
+  function rule(canvas) {
+    const RULES = [30, 90, 110, 73]; let ri = 0;
+    let gc = 0, gr = 0, ring = null, head = 0, frames = 0, lastT = 0;
+    function reset(randomly) {
+      ring = []; for (let r = 0; r < gr; r++) ring.push(new Uint8Array(gc));
+      head = 0;
+      const row = ring[gr - 1];
+      if (randomly) for (let c = 0; c < gc; c++) row[c] = Math.random() < 0.5 ? 1 : 0; else row[gc >> 1] = 1;
+    }
+    function next() {
+      const prev = ring[(head + gr - 1) % gr], row = ring[head], n = RULES[ri];
+      for (let c = 0; c < gc; c++) {
+        const k = (prev[(c - 1 + gc) % gc] << 2) | (prev[c] << 1) | prev[(c + 1) % gc];
+        row[c] = (n >> k) & 1;
+      }
+      head = (head + 1) % gr;
+    }
+    pageOn(document, 'ascii:thunder', () => reset(true));
+    canvas.addEventListener('pointerdown', () => { ri = (ri + 1) % RULES.length; reset(false); });
+    makeGrid(canvas, 8, (u, v, t, c, r) => {
+      const row = ring[(head + r) % gr];
+      if (row[c]) {
+        const thread = hash(c, 0, 3) < 0.05;
+        return [1, rgba(thread ? C.clay : C.navy, thread ? 0.85 : 0.55 + 0.25 * hash(c, r, 5)), '#%&@8'[(hash(c, r, 6) * 4.99) | 0]];
+      }
+      return hash(c, r, 1) < 0.07 ? [1, rgba(C.midblue, 0.25), '.'] : null;
+    }, (t, cols, rows) => {
+      if (cols !== gc || rows !== gr) { gc = cols; gr = rows; reset(false); }
+      if (lastT && t !== lastT && ++frames % 2 === 0) next();
+      lastT = t;
+    }, (ctx, t, cols, rows, cell, rowH) => {
+      ctx.textAlign = 'left'; ctx.font = '600 10px ' + MONO; ctx.fillStyle = rgba(C.navy, 0.5);
+      ctx.fillText('rule ' + RULES[ri] + '  (click)', 10, 12);
+    });
+  }
+
+  // ── footer: Game of Life ──────────────────────────────────────────
+  // Conway's Life on a torus, four generations a second: births flash
+  // amber and settle into navy, the recently dead fade. A click paints a
+  // clump, a super wave reseeds, and a still or empty board reseeds itself.
+  function life(canvas) {
+    let gc = 0, gr = 0, cur = null, nxt = null, age = null, died = null, frames = 0, lastT = 0, quiet = 0, gen = 0;
+    const GUN = [[0,4],[0,5],[1,4],[1,5],[10,4],[10,5],[10,6],[11,3],[11,7],[12,2],[12,8],[13,2],[13,8],[14,5],[15,3],[15,7],[16,4],[16,5],[16,6],[17,5],[20,2],[20,3],[20,4],[21,2],[21,3],[21,4],[22,1],[22,5],[24,0],[24,1],[24,5],[24,6],[34,2],[34,3],[35,2],[35,3]];
+    function seed() {
+      cur.fill(0); age.fill(0); died.fill(0); gen = 0; quiet = 0;
+      for (let i = 0; i < cur.length; i++) if (Math.random() < 0.1) cur[i] = 1;
+      if (gc > 50 && gr > 14) for (const [x, y] of GUN) cur[(y + 2) * gc + x + 3] = 1;
+      for (let g = 0; g < 3; g++) { const x = (Math.random() * (gc - 6)) | 0, y = (Math.random() * (gr - 6)) | 0; for (const [dx, dy] of [[1,0],[2,1],[0,2],[1,2],[2,2]]) cur[(y + dy) * gc + x + dx] = 1; }
+    }
+    function step() {
+      let changed = 0, pop = 0;
+      for (let r = 0; r < gr; r++) {
+        const up = ((r - 1 + gr) % gr) * gc, row = r * gc, dn = ((r + 1) % gr) * gc;
+        for (let c = 0; c < gc; c++) {
+          const cl = (c - 1 + gc) % gc, cr = (c + 1) % gc;
+          const n = cur[up + cl] + cur[up + c] + cur[up + cr] + cur[row + cl] + cur[row + cr] + cur[dn + cl] + cur[dn + c] + cur[dn + cr];
+          const a = cur[row + c], b = a ? (n === 2 || n === 3 ? 1 : 0) : (n === 3 ? 1 : 0);
+          nxt[row + c] = b;
+          if (b) { age[row + c] = a ? Math.min(250, age[row + c] + 1) : 0; pop++; } else if (a) died[row + c] = 4;
+          if (a !== b) changed++;
+        }
+      }
+      const tmp = cur; cur = nxt; nxt = tmp;
+      for (let i = 0; i < died.length; i++) if (died[i] && !cur[i]) died[i]--;
+      gen++;
+      quiet = changed < 4 ? quiet + 1 : 0;
+      if (quiet > 12 || pop < cur.length * 0.015) seed();
+    }
+    pageOn(document, 'ascii:thunder', () => { if (cur) seed(); });
+    canvas.addEventListener('pointerdown', (e) => {
+      const b = canvas.getBoundingClientRect(), c = ((e.clientX - b.left) / (b.width / gc)) | 0, r = ((e.clientY - b.top) / (b.height / gr)) | 0;
+      for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) if (Math.random() < 0.75) cur[((r + dy + gr) % gr) * gc + (c + dx + gc) % gc] = 1;
+    });
+    makeGrid(canvas, 8, (u, v, t, c, r) => {
+      const i = r * gc + c;
+      if (cur[i]) {
+        const a = age[i];
+        if (a === 0) return [1, rgba(C.amber, 0.95), '*'];
+        if (a < 4) return [1, rgba(mix(C.amber, C.navy, a / 4), 0.85), '#'];
+        return [1, rgba(C.navy, 0.72), '@'];
+      }
+      if (died[i]) return [1, rgba(C.midblue, 0.12 * died[i]), '.'];
+      return null;
+    }, (t, cols, rows) => {
+      if (cols !== gc || rows !== gr) { gc = cols; gr = rows; cur = new Uint8Array(cols * rows); nxt = new Uint8Array(cols * rows); age = new Uint8Array(cols * rows); died = new Uint8Array(cols * rows); seed(); }
+      if (lastT && t !== lastT && ++frames % 4 === 0) step();
+      lastT = t;
+    }, (ctx) => { ctx.textAlign = 'left'; ctx.font = '600 10px ' + MONO; ctx.fillStyle = rgba(C.navy, 0.45); ctx.fillText('gen ' + gen, 10, 12); });
+  }
+
+  // ── footer: the visitor's seismograph ─────────────────────────────
+  // A trace scrolling left that records this visitor: pointer speed as a
+  // tremor, clicks and rays as spikes, a super wave as a quake. Nobody
+  // else's visit draws the same line.
+  function seismo(canvas) {
+    const SP = 2;                                   // px per sample
+    let buf = null, n = 0, head = 0, energy = 0, spike = 0, lx = null, ly = null, lastT = 0, phase = 0;
+    let gc = 0, gr = 0, Y = null;
+    pageOn(document, 'pointermove', (e) => { if (lx != null) energy += Math.min(40, Math.hypot(e.clientX - lx, e.clientY - ly)) / 40; lx = e.clientX; ly = e.clientY; });
+    pageOn(document, 'pointerdown', () => { spike = Math.max(spike, 0.5); });
+    pageOn(document, 'ascii:ray', () => { spike = Math.max(spike, 0.4); });
+    pageOn(document, 'ascii:thunder', () => { spike = 1.4; });
+    makeGrid(canvas, 8, (u, v, t, c, r) => {
+      const y0 = Y[c], y1 = Y[Math.min(gc - 1, c + 1)];
+      const mid = gr / 2;
+      if (Math.abs(r + 0.5 - y0) < 0.5) {
+        const d = y1 - y0, big = Math.abs(y0 - mid) > gr * 0.22;
+        const ch = d > 1.5 ? '\\' : d < -1.5 ? '/' : '-';
+        return [1, rgba(big ? C.clay : C.navy, big ? 0.95 : 0.75), ch];
+      }
+      const lo = Math.min(y0, y1), hi = Math.max(y0, y1);
+      if (r + 0.5 > lo && r + 0.5 < hi) return [1, rgba(Math.abs(y0 - mid) > gr * 0.22 ? C.clay : C.navy, 0.7), '|'];
+      if (r === (mid | 0) && c % 3 === 0) return [1, rgba(C.midblue, 0.3), '.'];
+      return null;
+    }, (t, cols, rows) => {
+      if (cols !== gc || rows !== gr || !buf) { gc = cols; gr = rows; n = Math.ceil(cols * 8 / SP) + 2; buf = new Float32Array(n); Y = new Float32Array(cols); head = 0; }
+      if (lastT && t !== lastT) {
+        // one new sample a frame: the tremor from the pointer, the spike from events, a faint floor
+        const amp = Math.min(1.5, energy * 0.35 + spike + 0.02 + (Math.random() - 0.5) * 0.03);
+        energy *= 0.6; spike *= 0.55;
+        phase += 0.9 + amp * 2.5;
+        buf[head] = amp * Math.sin(phase);
+        head = (head + 1) % n;
+      }
+      lastT = t;
+      for (let c = 0; c < cols; c++) {
+        const i = (head - n + Math.round(c * 8 / SP) + 2 * n) % n;
+        Y[c] = rows / 2 - buf[i] * rows * 0.42;
+      }
+    }, (ctx, t, cols, rows, cell, rowH) => {
+      // the pen
+      const y = Y[cols - 1] * rowH;
+      ctx.font = '700 11px ' + MONO; ctx.textAlign = 'center'; ctx.fillStyle = rgba(C.clay, 1); ctx.fillText('@', cols * cell - 6, y);
+      ctx.textAlign = 'left'; ctx.font = '600 10px ' + MONO; ctx.fillStyle = rgba(C.navy, 0.45); ctx.fillText('your visit, as a seismograph', 10, 12);
+    });
+  }
+
+  // ── footer: split-flap board ──────────────────────────────────────
+  // Two lines of flap tiles that flip, one letter at a time, through a
+  // rotation of short facts about this visit and this site.
+  function flap(canvas) {
+    const ctx = canvas.getContext('2d');
+    const ALPHA = ' ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789:,.-/\'';
+    const COLS = 36, TW = 20, TH = 28, GAP = 4;
+    let W = 0, H = 0, lastT = 0, rays = 0, lineAt = 0, li = 0;
+    const cur = [new Uint8Array(COLS), new Uint8Array(COLS)], tgt = [new Uint8Array(COLS), new Uint8Array(COLS)], delay = [new Uint8Array(COLS), new Uint8Array(COLS)];
+    pageOn(document, 'ascii:ray', (e) => { rays = e.detail; });
+    function lines() {
+      const d = new Date(), hh = String(d.getHours()).padStart(2, '0'), mm = String(d.getMinutes()).padStart(2, '0');
+      const meta = document.querySelector('meta[name="build"]'), days = meta ? Math.max(0, Math.floor((Date.now() / 1000 - +meta.content) / 86400)) : null;
+      const pubs = document.querySelectorAll('.pub-row').length;
+      const out = [['WELCOME ABOARD', 'LOCAL TIME ' + hh + ':' + mm]];
+      if (days != null) out.push(['LAST DEPLOY', days === 0 ? 'TODAY' : days + (days === 1 ? ' DAY AGO' : ' DAYS AGO')]);
+      out.push(['COSMIC RAYS THIS VISIT', String(rays)]);
+      if (pubs) out.push([pubs + ' PAPERS AND PREPRINTS', 'NEWEST FIRST']);
+      out.push(['NOW BOARDING', 'PUBLICATIONS / WRITING / PROJECTS']);
+      return out;
+    }
+    function setLine(k, text) {
+      const s = text.toUpperCase().slice(0, COLS);
+      for (let i = 0; i < COLS; i++) { const ch = i < s.length ? s[i] : ' '; let j = ALPHA.indexOf(ch); if (j < 0) j = 0; tgt[k][i] = j; delay[k][i] = (i * 0.5) | 0; }
+    }
+    function resize() {
+      W = canvas.clientWidth; H = canvas.clientHeight;
+      if (!W || !H) return;
+      const dpr = Math.min(window.devicePixelRatio || 1, 2);
+      canvas.width = Math.round(W * dpr); canvas.height = Math.round(H * dpr);
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0); ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    }
+    function frame(t) {
+      if (!W) resize();
+      const dt = lastT ? Math.min(0.2, t - lastT) : 0; lastT = t;
+      if (!lineAt || t - lineAt > 7) { const L = lines(); li = (li + 1) % L.length; setLine(0, L[li][0]); setLine(1, L[li][1]); lineAt = t; }
+      ctx.clearRect(0, 0, W, H);
+      const bw = COLS * (TW + GAP) - GAP, x0 = (W - bw) / 2, y0 = (H - (2 * TH + 10)) / 2;
+      for (let k = 0; k < 2; k++) for (let i = 0; i < COLS; i++) {
+        let flipping = false;
+        if (dt && cur[k][i] !== tgt[k][i]) { if (delay[k][i] > 0) delay[k][i]--; else { cur[k][i] = (cur[k][i] + 1) % ALPHA.length; flipping = true; } }
+        const x = x0 + i * (TW + GAP), y = y0 + k * (TH + 10);
+        ctx.fillStyle = rgba(C.navy, 0.92); ctx.fillRect(x, y, TW, TH);
+        ctx.fillStyle = rgba(C.pale, flipping ? 0.6 : 0.95); ctx.font = '700 17px ' + MONO;
+        ctx.fillText(ALPHA[cur[k][i]], x + TW / 2, y + TH / 2 + 1);
+        ctx.fillStyle = 'rgba(254,253,251,0.9)'; ctx.fillRect(x, y + TH / 2 - (flipping ? 1.5 : 0.6), TW, flipping ? 3 : 1.2);
+      }
+    }
+    resize(); frame(0);
+    canvas._frame = frame; frame.__canvas = canvas; canvas._onScreen = true;
+    if (!reduced) seen.observe(canvas);
+    pageCanvases.push(canvas);
+    pageOn(window, 'resize', () => { resize(); frame(performance.now() / 1000); });
+  }
+
+  // ── the footer scene and its dev knob ─────────────────────────────
+  // ?footer=<name> picks a scene for this load; ?dev shows a row of the
+  // names under the canvas, and a pick there is kept in localStorage.
+  const FOOTER = { sea, slime, gray, donut, race, rule, life, seismo, flap };
+  function mountFooter() {
+    const art = document.querySelector('.footer-art');
+    if (!art) return;
+    const q = new URLSearchParams(location.search);
+    let name = q.get('footer');
+    try { if (!name) name = localStorage.getItem('footer-scene'); } catch (_) {}
+    if (!FOOTER[name]) name = 'sea';
+    const old = art.querySelector('canvas');
+    const canvas = document.createElement('canvas');
+    canvas.className = 'footer-canvas'; canvas.id = 'ascii-hills';
+    if (old) { seen.unobserve(old); if (old._frame) live.delete(old._frame); old._frame = null; old.replaceWith(canvas); } else art.appendChild(canvas);
+    FOOTER[name](canvas);
+    let dev = q.has('dev') || q.has('footer');
+    try { dev = dev || localStorage.getItem('footer-dev') === '1'; if (dev) localStorage.setItem('footer-dev', '1'); } catch (_) {}
+    const knob = document.getElementById('footer-knob');
+    if (!knob || !dev) return;
+    knob.hidden = false;
+    while (knob.firstChild) knob.removeChild(knob.firstChild);
+    knob.appendChild(document.createTextNode('footer scene: '));
+    Object.keys(FOOTER).forEach((k, i) => {
+      if (i) knob.appendChild(document.createTextNode(' · '));
+      const b = document.createElement('button');
+      b.type = 'button'; b.textContent = k; b.className = k === name ? 'on' : '';
+      b.addEventListener('click', () => { try { localStorage.setItem('footer-scene', k); } catch (_) {} if (q.get('footer')) history.replaceState(null, '', location.pathname); mountFooter(); });
+      knob.appendChild(b);
+    });
+    knob.appendChild(document.createTextNode('  '));
+    const off = document.createElement('button');
+    off.type = 'button'; off.textContent = '[hide]'; off.title = 'hide this row until the next ?dev';
+    off.addEventListener('click', () => { try { localStorage.removeItem('footer-dev'); } catch (_) {} knob.hidden = true; });
+    knob.appendChild(off);
+  }
+
   // ── value noise, shared by the cloudscape and the meadow ─────────
   const hash = (x, y, z) => {
     let n = Math.sin(x * 127.1 + y * 311.7 + z * 74.7) * 43758.5453;
@@ -2347,7 +2814,7 @@
   // in-place page swap (nav.js replaces .main-col and fires ascii:page-enter)
   function initPage() {
     const l = document.getElementById('ascii-landscape'); if (l) landscape(l);
-    const h = document.getElementById('ascii-hills');     if (h) sea(h);
+    mountFooter();
     const cl = document.getElementById('ascii-clouds');   if (cl) clouds(cl);
     const hs = document.getElementById('hero-scene');     if (hs) storm(hs, { cloud: 0.36, boltEvery: 9 });
     document.querySelectorAll('[data-scene="storm-small"]').forEach(c => storm(c, { cloud: 0.4, boltEvery: 12, rain: 2.2, salvo: 3 }));
