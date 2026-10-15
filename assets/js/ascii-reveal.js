@@ -131,7 +131,8 @@
     let aborted = false;
     let videoMode = true;            // false = sample static <img> (mobile fallback)
     let t0 = 0;
-    let duration = 2780;
+    const REVEAL_MS = 3800;          // how long the reveal runs with the Live Photo
+    let duration = REVEAL_MS;
     let lastCellSize = -1;
     let lastVidOpacity = -1;
     let lastCanvasOpacity = -1;
@@ -316,7 +317,10 @@
       if (started) return;
       started = true;
       if (videoMode) {
-        duration = (video.duration && isFinite(video.duration)) ? video.duration * 1000 : 2780;
+        // the timeline is REVEAL_MS long; the Live Photo is played a little
+        // faster (or slower) so its motion ends with the reveal
+        duration = REVEAL_MS;
+        if (video.duration && isFinite(video.duration)) { try { video.playbackRate = video.duration * 1000 / REVEAL_MS; } catch (_) {} }
         // <img> is already hidden by `.js .ascii-photo:not(.is-shown)`;
         // canvas + video do the work.
       } else {
