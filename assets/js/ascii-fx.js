@@ -1829,19 +1829,26 @@
     // glyphs and colours are refreshed in place, which is most frames of a
     // lingering run; otherwise the span is rebuilt. The span and its state
     // belong to the run, since several waves may write the same run.
-    function applyRun(e, flag, glyph, colr) {
-      const w = e.w, n = flag.length;
+    function applyRun(e, flag, glyph, colr) { e.hit = renderRun(e.w, flag, glyph, colr); }
+    // the stuck letters of a run are laid over whatever a wave or ray is doing to it
+    function mergeStuck(w, flag, glyph, colr, cls, life) {
+      if (!w.stuck) return;
+      for (const s of w.stuck) if (s.until > tNow) { flag[s.i] = 1; glyph[s.i] = s.glyph; colr[s.i] = s.col; cls[s.i] = 'g stuck'; life[s.i] = s.life.toFixed(2) + 's'; }
+    }
+    function renderRun(w, flag, glyph, colr) {
+      const n = flag.length, cls = new Array(n), life = new Array(n);
+      mergeStuck(w, flag, glyph, colr, cls, life);
       let any = false, same = w.shown && !!w.flag;
       for (let i = 0; i < n; i++) { if (flag[i]) any = true; if (same && flag[i] !== w.flag[i]) same = false; }
-      if (!any) { healRun(e); return; }
-      e.hit = true;
+      if (!any) { unshowRun(w); return false; }
       if (same) {
         for (let i = 0, k = 0; i < n; i++) if (flag[i]) {
-          const g = w.gEls[k++], c = colr[i] || '';
+          const g = w.gEls[k++], c = colr[i] || '', cl = cls[i] || 'g';
           if (g.dataset.g !== glyph[i]) g.dataset.g = glyph[i];
+          if (g.className !== cl) { g.className = cl; if (life[i]) g.style.setProperty('--life', life[i]); else g.style.removeProperty('--life'); }
           if (g.style.getPropertyValue('--gc') !== c) { if (c) g.style.setProperty('--gc', c); else g.style.removeProperty('--gc'); }
         }
-        return;
+        return true;
       }
       const span = w.span || (w.span = document.createElement('span'));
       span.className = 'glitch-run';
@@ -1853,9 +1860,10 @@
         if (flag[i]) {
           flush();
           const g = document.createElement('span');
-          g.className = 'g';
+          g.className = cls[i] || 'g';
           g.dataset.g = glyph[i];
           if (colr[i]) g.style.setProperty('--gc', colr[i]);
+          if (life[i]) g.style.setProperty('--life', life[i]);
           g.textContent = w.chars[i];
           span.appendChild(g); els.push(g);
         } else plain += w.chars[i];
@@ -1863,6 +1871,46 @@
       flush();
       w.flag = flag; w.gEls = els;
       if (!w.shown) { w.node.replaceWith(span); w.shown = true; }
+      return true;
+    }
+    function unshowRun(w) {
+      if (w.shown) { w.span.replaceWith(w.node); w.shown = false; w.flag = null; w.gEls = null; }
+    }
+
+    // ── stuck bits: now and then a ray strike flips a letter for good, or as
+    // good as five seconds. It is held as an inverted block (the glyph in paper
+    // on a bar of ink) so it reads as damage rather than a flicker, and comes
+    // back with a stutter. The list lives apart from the rays and waves, whose
+    // runs come and go underneath it. ──
+    const STUCK_LIFE = 4, STUCK_VAR = 2;
+    const stuck = [];
+    let tNow = 0, nextStuckTick = 0;
+    function stickLetter(w, i, t, hot) {
+      if (!w.stuck) w.stuck = [];
+      if (w.stuck.some(s => s.i === i)) return;
+      const life = STUCK_LIFE + Math.random() * STUCK_VAR;
+      const s = { w, i, until: t + life, life, glyph: SCRAMBLE[(Math.random() * SCRAMBLE.length) | 0], col: hot ? '#C8623A' : (Math.random() < 0.25 ? TINTS[(Math.random() * TINTS.length) | 0] : '') };
+      w.stuck.push(s); stuck.push(s);
+    }
+    function tickStuck(t) {
+      tNow = t;
+      if (!stuck.length || t < nextStuckTick) return;
+      nextStuckTick = t + 0.1;
+      for (let k = stuck.length - 1; k >= 0; k--) {
+        const s = stuck[k];
+        if (s.until > t) continue;
+        stuck.splice(k, 1);
+        const w = s.w, j = w.stuck.indexOf(s);
+        if (j >= 0) w.stuck.splice(j, 1);
+        if (!w.stuck.length) w.stuck = null;
+        // whatever else is on the run will paint itself again next frame
+        if (w.shown && w.flag) { const f = w.flag.slice(); f[s.i] = 0; renderRun(w, f, w.gEls ? glyphsOf(w) : new Array(f.length), new Array(f.length)); }
+      }
+    }
+    function glyphsOf(w) {
+      const out = new Array(w.flag.length);
+      for (let i = 0, k = 0; i < w.flag.length; i++) if (w.flag[i]) out[i] = w.gEls[k++].dataset.g;
+      return out;
     }
     // letters hit by a particle flip for a moment (the charge's own glitch runs)
     const hitAt = (e, q, until, hot) => { e.hitUntil[q] = until; e.hot[q] = hot; if (until > e.hitMax) e.hitMax = until; };
@@ -1991,7 +2039,9 @@
     function healRun(e) {
       const w = e.w;
       e.hit = false;
-      if (w.shown) { w.span.replaceWith(w.node); w.shown = false; w.flag = null; w.gEls = null; }
+      if (!w.shown) return;
+      if (w.stuck) renderRun(w, new Uint8Array(w.chars.length), new Array(w.chars.length), new Array(w.chars.length));
+      else unshowRun(w);
     }
     function restoreRipple(rp) {
       for (const e of rp.near) healRun(e);
@@ -2414,7 +2464,8 @@
       const ray = {
         x: fromLeft ? -40 : w + 40, y: y0,
         vx: (fromLeft ? 1 : -1) * Math.cos(ang) * sp, vy: Math.sin(ang) * sp,
-        born: now, trail: [], hot: Math.random() < 0.4, near: null, lastSpew: 0
+        born: now, trail: [], hot: Math.random() < 0.4, near: null, lastSpew: 0,
+        flips: Math.random() < 0.45 ? 1 : 0                            // most rays only scuff; this one may leave a stuck bit
       };
       if (!textNodes) collectText();
       ray.near = [];
@@ -2492,7 +2543,11 @@
         for (const e of r.near) {
           let any = false;
           for (let q = 0; q < e.pos.length; q++) {
-            if (Math.abs(e.pos[q][0] - px) < 14 && Math.abs(e.pos[q][1] - py) < 14) { hitAt(e, q, t + 0.35, r.hot ? 1 : 0); any = true; }
+            if (Math.abs(e.pos[q][0] - px) < 14 && Math.abs(e.pos[q][1] - py) < 14) {
+              hitAt(e, q, t + 0.35, r.hot ? 1 : 0); any = true;
+              const ch = e.w.chars[q];
+              if (r.flips && ch !== ' ' && ch.length === 1 && Math.random() < 0.15) { r.flips--; stickLetter(e.w, q, t, r.hot); }
+            }
           }
           if (any && t - r.lastSpew > 0.08) { spew(r.x, r.y, -dirx, -diry, 3, r.hot); r.lastSpew = t; }
           if (any || e.hit) glitchHits(e, t);
@@ -2540,6 +2595,7 @@
       snapScroll();
       placeAll();
       if (dt) collide(t);
+      tickStuck(t);
       drawRipples(t);
       drawRays(t, dt);
       paintTracks(t);
