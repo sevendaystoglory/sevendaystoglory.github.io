@@ -1882,7 +1882,7 @@
     // on a bar of ink) so it reads as damage rather than a flicker, and comes
     // back with a stutter. The list lives apart from the rays and waves, whose
     // runs come and go underneath it. ──
-    const STUCK_LIFE = 1, STUCK_VAR = 3;                                  // 1 to 4 s, uniform
+    const STUCK_LIFE = 1, STUCK_VAR = 2;                                  // 1 to 3 s, uniform
     const stuck = [];
     let tNow = 0, nextStuckTick = 0;
     function stickLetter(w, i, t, hot) {
@@ -2465,7 +2465,7 @@
         x: fromLeft ? -40 : w + 40, y: y0,
         vx: (fromLeft ? 1 : -1) * Math.cos(ang) * sp, vy: Math.sin(ang) * sp,
         born: now, trail: [], hot: Math.random() < 0.4, near: null, lastSpew: 0,
-        flips: Math.random() < 0.8 ? (Math.random() < 0.3 ? 2 : 1) : 0  // most rays carry a flip, some two
+        flips: Math.random() < 0.65 ? (Math.random() < 0.2 ? 2 : 1) : 0 // most rays carry a flip, a few two
       };
       if (!textNodes) collectText();
       ray.near = [];
