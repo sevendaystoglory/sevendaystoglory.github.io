@@ -1882,7 +1882,7 @@
     // on a bar of ink) so it reads as damage rather than a flicker, and comes
     // back with a stutter. The list lives apart from the rays and waves, whose
     // runs come and go underneath it. ──
-    const STUCK_LIFE = 2, STUCK_VAR = 4;                                  // 2 to 6 s, uniform
+    const STUCK_LIFE = 1, STUCK_VAR = 3;                                  // 1 to 4 s, uniform
     const stuck = [];
     let tNow = 0, nextStuckTick = 0;
     function stickLetter(w, i, t, hot) {
