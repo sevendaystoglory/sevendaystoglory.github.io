@@ -2465,7 +2465,7 @@
         x: fromLeft ? -40 : w + 40, y: y0,
         vx: (fromLeft ? 1 : -1) * Math.cos(ang) * sp, vy: Math.sin(ang) * sp,
         born: now, trail: [], hot: Math.random() < 0.4, near: null, lastSpew: 0,
-        flips: Math.random() < 0.45 ? 1 : 0                            // most rays only scuff; this one may leave a stuck bit
+        flips: Math.random() < 0.8 ? (Math.random() < 0.3 ? 2 : 1) : 0  // most rays carry a flip, some two
       };
       if (!textNodes) collectText();
       ray.near = [];
@@ -2546,7 +2546,7 @@
             if (Math.abs(e.pos[q][0] - px) < 14 && Math.abs(e.pos[q][1] - py) < 14) {
               hitAt(e, q, t + 0.35, r.hot ? 1 : 0); any = true;
               const ch = e.w.chars[q];
-              if (r.flips && ch !== ' ' && ch.length === 1 && Math.random() < 0.15) { r.flips--; stickLetter(e.w, q, t, r.hot); }
+              if (r.flips && ch !== ' ' && ch.length === 1 && Math.random() < 0.3) { r.flips--; stickLetter(e.w, q, t, r.hot); }
             }
           }
           if (any && t - r.lastSpew > 0.08) { spew(r.x, r.y, -dirx, -diry, 3, r.hot); r.lastSpew = t; }
