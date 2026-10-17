@@ -48,7 +48,7 @@
   }
 
   if (!window.requestAnimationFrame) { showStatic(); return; }
-  if ((window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) || document.documentElement.classList.contains('fx-off')) {
+  if (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
     showStatic();
     return;
   }

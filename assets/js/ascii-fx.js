@@ -14,8 +14,10 @@
     clay: [200, 98, 58], amber: [222, 147, 77], sage: [91, 127, 110]
   };
   const reduced = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-  // the visitor's own switch (the sidebar's on | off): the class is set in the
-  // head before first paint from localStorage, so a page opens the way it was left
+  // the visitor's own switch (the sidebar's on | off) for the ambient layer:
+  // the drifting letters, the cosmic rays and the click-and-hold waves. The
+  // scenes in the page keep running. The class is set in the head before
+  // first paint from localStorage, so a page opens the way it was left.
   let fxOff = document.documentElement.classList.contains('fx-off');
   const fxHooks = {};
 
@@ -51,11 +53,11 @@
     entries.forEach(e => {
       const fn = e.target._frame;
       if (!fn) return;
-      if (e.isIntersecting && !fxOff) live.add(fn); else live.delete(fn);
+      if (e.isIntersecting) live.add(fn); else live.delete(fn);
     });
   }, { threshold: 0.05 });
   document.addEventListener('visibilitychange', () => {
-    if (document.hidden || fxOff) live.clear(); else document.querySelectorAll('canvas').forEach(c => { if (c._frame && c._onScreen) live.add(c._frame); });
+    if (document.hidden) live.clear(); else document.querySelectorAll('canvas').forEach(c => { if (c._frame && c._onScreen) live.add(c._frame); });
   });
 
   // Things that belong to the current page (the main column) and must be
@@ -301,7 +303,7 @@
     }
     canvas.addEventListener('pointermove', (ev) => {
       const p = at(ev); cursor.x = p[0]; cursor.y = p[1]; cursor.on = true;
-      if (reduced || fxOff) grid.frame(performance.now() / 1000);
+      if (reduced) grid.frame(performance.now() / 1000);
     });
     canvas.addEventListener('pointerleave', () => { cursor.on = false; });
     pageOn(document, 'ascii:thunder', () => {
@@ -312,7 +314,7 @@
       const p = at(ev);
       if (balls.length >= MAX_BALLS) balls.splice(1, 1);   // keep the house point, drop the oldest extra
       balls.push({ x: p[0], y: p[1], age: 0, trail: [], auto: false });
-      if (reduced || fxOff) { const tn = performance.now() / 1000; centres(tn); step(tn); grid.frame(tn); }
+      if (reduced) { const tn = performance.now() / 1000; centres(tn); step(tn); grid.frame(tn); }
     });
   }
 
@@ -606,7 +608,7 @@
     canvas.addEventListener('pointerdown', (e) => {
       e.stopPropagation();                                   // a click here moves to the next fractal; it is not a press on blank paper
       const t = performance.now() / 1000;
-      if (!reduced && !fxOff) { next(t, MORPH_CLICK); return; }
+      if (!reduced) { next(t, MORPH_CLICK); return; }
       from = to = (from + 1) % SETS.length; settle(); lastT = -1; grid.frame(t);
     });
     pageOn(document, 'ascii:thunder', () => { if (dens && !reduced) shake(performance.now() / 1000); });
@@ -2593,6 +2595,7 @@
     }
 
     function frame(t) {
+      if (fxOff) return;                                   // the switch is off: the field sits faded out
       const dt = lastT ? Math.min(t - lastT, 0.2) : 0; lastT = t;
       const sh = shift();
       const keep = Math.pow(0.3, dt);      // momentum decays over a second or so
@@ -2681,15 +2684,14 @@
   }
 
   // ── the effects switch (sidebar: effects on | off) ───────────────
-  // Off heals the page and lets the field fade; the scenes stop where they
-  // are and answer clicks with a still. On lets each visible canvas back in.
+  // Off heals the page and lets the field fade; the field's frame then does
+  // nothing until the switch is on again. The scenes are not touched.
   function setFx(on) {
     if (fxOff !== !on) {
       fxOff = !on;
       try { localStorage.setItem('ascii-fx', on ? 'on' : 'off'); } catch (_) {}
       document.documentElement.classList.toggle('fx-off', !on);
-      if (!on) { if (fxHooks.settle) fxHooks.settle(); live.clear(); }
-      else document.querySelectorAll('canvas').forEach(c => { if (c._frame) { seen.unobserve(c); seen.observe(c); } });
+      if (!on && fxHooks.settle) fxHooks.settle();
     }
     document.querySelectorAll('.fx-btn').forEach(b => b.setAttribute('aria-pressed', String((b.dataset.fx === 'off') === fxOff)));
   }
@@ -2699,10 +2701,6 @@
     setFx(!fxOff);
   }
   window.asciiFx = { set: setFx, get on() { return !fxOff; } };
-  // with the switch off the scenes get no frames, so each is drawn once as a still
-  function drawStills() {
-    document.querySelectorAll('canvas').forEach(c => { if (c._frame && c.id !== 'bg-drift') c._frame(performance.now() / 1000); });
-  }
 
   // ── the flux dial in the footer ──────────────────────────────────
   function fluxDial() {
@@ -2788,7 +2786,7 @@
   // ── headings decode from glyphs ──────────────────────────────────
   function decode(el) {
     const text = el.textContent, chars = Array.from(text);
-    if (reduced || fxOff || !text.trim()) return;
+    if (reduced || !text.trim()) return;
     el.textContent = chars.map(ch => /\s/.test(ch) || ch.length > 1 ? ch : SCRAMBLE[(Math.random() * SCRAMBLE.length) | 0]).join('');
     el.classList.add('decoding');
     const start = performance.now();
@@ -2825,7 +2823,6 @@
     document.querySelectorAll('.display-name, .section-title, .card-title').forEach(el => decoder.observe(el));
     fluxDial();
     document.dispatchEvent(new Event('ascii:textchanged'));
-    if (fxOff) setTimeout(drawStills, 60);
   }
   function init() {
     const d = document.getElementById('bg-drift');        if (d) drift(d);
