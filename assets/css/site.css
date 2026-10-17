@@ -986,7 +986,7 @@ a.badge:hover { transform: translateY(-1px); box-shadow: 0 3px 8px -2px rgba(27,
     font-size: clamp(30px, 3.4vw, 42px);
     line-height: 1.12;
     letter-spacing: -0.018em;
-    margin: 0 0 60px 0;                 /* air between the title and the first line; no rule here */
+    margin: 0 0 100px 0;                /* air between the title and the first line; no rule here */
     color: var(--ink);
 }
 .post-body { font-size: var(--text); line-height: 1.75; position: relative; }
