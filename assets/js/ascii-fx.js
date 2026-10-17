@@ -1839,7 +1839,7 @@
     // the stuck letters of a run are laid over whatever a wave or ray is doing to it
     function mergeStuck(w, flag, glyph, colr, cls, life) {
       if (!w.stuck) return;
-      for (const s of w.stuck) if (s.until > tNow) { flag[s.i] = 1; glyph[s.i] = s.glyph; colr[s.i] = s.col; cls[s.i] = 'g stuck'; life[s.i] = s.life.toFixed(2) + 's'; }
+      for (const s of w.stuck) if (s.until > tNow) { flag[s.i] = 1; glyph[s.i] = s.glyph; colr[s.i] = s.col; cls[s.i] = s.fading ? 'g stuck fading' : 'g stuck'; life[s.i] = s.life.toFixed(2) + 's'; }
     }
     function renderRun(w, flag, glyph, colr) {
       const n = flag.length, cls = new Array(n), life = new Array(n);
@@ -1892,6 +1892,7 @@
     const stuck = [];
     let tNow = 0, nextStuckTick = 0;
     function stickLetter(w, i, t, hot) {
+      if (fxOff) return;                                   // a ray finishing its run after the switch leaves nothing behind
       if (!w.stuck) w.stuck = [];
       if (w.stuck.some(s => s.i === i)) return;
       const life = STUCK_LIFE + Math.random() * STUCK_VAR;
@@ -2595,7 +2596,10 @@
     }
 
     function frame(t) {
-      if (fxOff) return;                                   // the switch is off: the field sits faded out
+      if (fxOff && t > quietAt) {                          // the switch is off and the wind-down is over
+        if (!quietDone) { settle(); quietDone = true; }
+        return;
+      }
       const dt = lastT ? Math.min(t - lastT, 0.2) : 0; lastT = t;
       const sh = shift();
       const keep = Math.pow(0.3, dt);      // momentum decays over a second or so
@@ -2660,9 +2664,25 @@
       }
       for (let i = parts.length - 1; i >= 0; i--) if (parts[i].dead) parts.splice(i, 1);
     }
-    // the switch going off: everything the field has done to the page is
-    // undone at once (the canvas itself fades out under CSS)
-    fxHooks.settle = () => {
+    // The switch going off eases out over QUIET seconds: nothing new starts,
+    // rays in flight finish, stuck letters and streaks fade early, a live wave
+    // dies down, and the canvas fades under CSS. Then what is left is cleared.
+    const QUIET = 1.6;
+    let quietAt = 0, quietDone = false;
+    fxHooks.off = (tReal) => {
+      const t = lastT || tReal;                            // on the field's own clock
+      quietAt = t + QUIET; quietDone = false;
+      dropCharge();
+      for (const q of stuck) if (q.until > t + 0.9) { q.until = t + 0.4 + Math.random() * 0.5; q.fading = true; }
+      for (const q of stuck) { const w = q.w; if (w.shown && w.flag && !w.repainted) { w.repainted = true; renderRun(w, w.flag.slice(), glyphsOf(w), new Array(w.flag.length)); } }
+      for (const q of stuck) q.w.repainted = false;        // each run once, so the fading class is painted
+      for (const th of trackHosts.values()) for (const tr of th.tracks) tr.life = Math.min(tr.life, t - tr.born + 0.3 + Math.random() * 0.6);
+      tracksDirty = true;
+      for (const rp of ripples) { const age = t - rp.born; if (age < rp.life) rp.life = Math.min(rp.life, Math.max(age, 0) + 1.0); }
+      burst = null;
+    };
+    fxHooks.on = () => { quietAt = 0; quietDone = false; lastT = 0; };
+    const settle = () => {
       dropCharge();
       for (let i = ripples.length - 1; i >= 0; i--) { restoreRipple(ripples[i]); ripples.splice(i, 1); }
       for (const r of rays) { for (const e of r.near) healRun(e); clearImageSet(r.images); thumbClear(r.thumbs); }
@@ -2691,7 +2711,8 @@
       fxOff = !on;
       try { localStorage.setItem('ascii-fx', on ? 'on' : 'off'); } catch (_) {}
       document.documentElement.classList.toggle('fx-off', !on);
-      if (!on && fxHooks.settle) fxHooks.settle();
+      if (!on) { if (fxHooks.off) fxHooks.off(performance.now() / 1000); }
+      else if (fxHooks.on) fxHooks.on();
     }
     document.querySelectorAll('.fx-btn').forEach(b => b.setAttribute('aria-pressed', String((b.dataset.fx === 'off') === fxOff)));
   }

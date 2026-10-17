@@ -101,7 +101,7 @@ strong { font-weight: 600; color: var(--ink); }
     z-index: 0;
     pointer-events: none;
     display: block;
-    transition: opacity 0.9s ease;
+    transition: opacity 1.6s ease;
 }
 /* the effects switch is off: the field fades, the hint and the flux dial step back */
 .fx-off .bg-drift { opacity: 0; }
@@ -423,6 +423,8 @@ html:not(.fx-off) .fx-btn[data-fx="on"], html.fx-off .fx-btn[data-fx="off"] { co
     86%, 90%, 95% { background: var(--bg); color: var(--gc, var(--ink)); box-shadow: 0 0 0 2px var(--gc, var(--ink)); }
     88%, 93%, 97%, 100% { background: var(--gc, var(--ink)); color: var(--bg); }
 }
+/* the effects switch going off: a stuck letter lets go early */
+.glitch-run .g.stuck.fading::after { animation: none; transition: opacity 0.5s ease; opacity: 0; }
 @media (prefers-reduced-motion: reduce) {
     .glitch-run .g.stuck::after { animation: none; }
 }
