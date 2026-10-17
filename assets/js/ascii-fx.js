@@ -14,6 +14,10 @@
     clay: [200, 98, 58], amber: [222, 147, 77], sage: [91, 127, 110]
   };
   const reduced = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  // the visitor's own switch (the sidebar's on | off): the class is set in the
+  // head before first paint from localStorage, so a page opens the way it was left
+  let fxOff = document.documentElement.classList.contains('fx-off');
+  const fxHooks = {};
 
 
   const clamp01 = (x) => x < 0 ? 0 : x > 1 ? 1 : x;
@@ -47,11 +51,11 @@
     entries.forEach(e => {
       const fn = e.target._frame;
       if (!fn) return;
-      if (e.isIntersecting) live.add(fn); else live.delete(fn);
+      if (e.isIntersecting && !fxOff) live.add(fn); else live.delete(fn);
     });
   }, { threshold: 0.05 });
   document.addEventListener('visibilitychange', () => {
-    if (document.hidden) live.clear(); else document.querySelectorAll('canvas').forEach(c => { if (c._frame && c._onScreen) live.add(c._frame); });
+    if (document.hidden || fxOff) live.clear(); else document.querySelectorAll('canvas').forEach(c => { if (c._frame && c._onScreen) live.add(c._frame); });
   });
 
   // Things that belong to the current page (the main column) and must be
@@ -297,7 +301,7 @@
     }
     canvas.addEventListener('pointermove', (ev) => {
       const p = at(ev); cursor.x = p[0]; cursor.y = p[1]; cursor.on = true;
-      if (reduced) grid.frame(performance.now() / 1000);
+      if (reduced || fxOff) grid.frame(performance.now() / 1000);
     });
     canvas.addEventListener('pointerleave', () => { cursor.on = false; });
     pageOn(document, 'ascii:thunder', () => {
@@ -308,7 +312,7 @@
       const p = at(ev);
       if (balls.length >= MAX_BALLS) balls.splice(1, 1);   // keep the house point, drop the oldest extra
       balls.push({ x: p[0], y: p[1], age: 0, trail: [], auto: false });
-      if (reduced) { const tn = performance.now() / 1000; centres(tn); step(tn); grid.frame(tn); }
+      if (reduced || fxOff) { const tn = performance.now() / 1000; centres(tn); step(tn); grid.frame(tn); }
     });
   }
 
@@ -602,7 +606,7 @@
     canvas.addEventListener('pointerdown', (e) => {
       e.stopPropagation();                                   // a click here moves to the next fractal; it is not a press on blank paper
       const t = performance.now() / 1000;
-      if (!reduced) { next(t, MORPH_CLICK); return; }
+      if (!reduced && !fxOff) { next(t, MORPH_CLICK); return; }
       from = to = (from + 1) % SETS.length; settle(); lastT = -1; grid.frame(t);
     });
     pageOn(document, 'ascii:thunder', () => { if (dens && !reduced) shake(performance.now() / 1000); });
@@ -1467,7 +1471,7 @@
     }
     let blankPress = false;
     document.addEventListener('pointerdown', (e) => {
-      if (reduced || e.button > 0) return;
+      if (reduced || fxOff || e.button > 0) return;
       blankPress = !overText(e.clientX, e.clientY);
       if (blankPress && e.pointerType === 'mouse') e.preventDefault();   // no selection drag from blank paper
       charge = { px: e.clientX + window.scrollX, py: e.clientY + window.scrollY, start: performance.now() / 1000 };
@@ -2457,6 +2461,7 @@
       }
     }
     function launchRay(now) {
+      if (fxOff) return;
       const fromLeft = Math.random() < 0.5;
       const ang = (Math.random() < 0.5 ? 1 : -1) * (0.12 + Math.random() * 0.4);   // shallow diagonal
       const sp = 2250 + Math.random() * 1350;
@@ -2652,12 +2657,51 @@
       }
       for (let i = parts.length - 1; i >= 0; i--) if (parts[i].dead) parts.splice(i, 1);
     }
+    // the switch going off: everything the field has done to the page is
+    // undone at once (the canvas itself fades out under CSS)
+    fxHooks.settle = () => {
+      dropCharge();
+      for (let i = ripples.length - 1; i >= 0; i--) { restoreRipple(ripples[i]); ripples.splice(i, 1); }
+      for (const r of rays) { for (const e of r.near) healRun(e); clearImageSet(r.images); thumbClear(r.thumbs); }
+      rays.length = 0; burst = null; shatter = null;
+      for (const q of stuck) q.until = 0;
+      nextStuckTick = 0; tickStuck(performance.now() / 1000);
+      for (const th of trackHosts.values()) th.cv.remove();
+      trackHosts.clear();
+      clearPhoto(); clearImages();
+      if (rayShown) { rctx.clearRect(0, 0, w, h); rayCanvas.style.visibility = 'hidden'; rayShown = false; }
+      lastT = 0;
+    };
     resize();
     frame(0);
     canvas._frame = frame; frame.__canvas = canvas;
     canvas._onScreen = true;
     if (!reduced) seen.observe(canvas);
     window.addEventListener('resize', resize);
+  }
+
+  // ── the effects switch (sidebar: effects on | off) ───────────────
+  // Off heals the page and lets the field fade; the scenes stop where they
+  // are and answer clicks with a still. On lets each visible canvas back in.
+  function setFx(on) {
+    if (fxOff !== !on) {
+      fxOff = !on;
+      try { localStorage.setItem('ascii-fx', on ? 'on' : 'off'); } catch (_) {}
+      document.documentElement.classList.toggle('fx-off', !on);
+      if (!on) { if (fxHooks.settle) fxHooks.settle(); live.clear(); }
+      else document.querySelectorAll('canvas').forEach(c => { if (c._frame) { seen.unobserve(c); seen.observe(c); } });
+    }
+    document.querySelectorAll('.fx-btn').forEach(b => b.setAttribute('aria-pressed', String((b.dataset.fx === 'off') === fxOff)));
+  }
+  function fxSwitch() {
+    document.querySelectorAll('.sidebar-fx').forEach(p => p.addEventListener('pointerdown', (e) => e.stopPropagation()));   // not a press on blank paper
+    document.querySelectorAll('.fx-btn').forEach(b => b.addEventListener('click', () => setFx(b.dataset.fx === 'on')));
+    setFx(!fxOff);
+  }
+  window.asciiFx = { set: setFx, get on() { return !fxOff; } };
+  // with the switch off the scenes get no frames, so each is drawn once as a still
+  function drawStills() {
+    document.querySelectorAll('canvas').forEach(c => { if (c._frame && c.id !== 'bg-drift') c._frame(performance.now() / 1000); });
   }
 
   // ── the flux dial in the footer ──────────────────────────────────
@@ -2744,7 +2788,7 @@
   // ── headings decode from glyphs ──────────────────────────────────
   function decode(el) {
     const text = el.textContent, chars = Array.from(text);
-    if (reduced || !text.trim()) return;
+    if (reduced || fxOff || !text.trim()) return;
     el.textContent = chars.map(ch => /\s/.test(ch) || ch.length > 1 ? ch : SCRAMBLE[(Math.random() * SCRAMBLE.length) | 0]).join('');
     el.classList.add('decoding');
     const start = performance.now();
@@ -2781,6 +2825,7 @@
     document.querySelectorAll('.display-name, .section-title, .card-title').forEach(el => decoder.observe(el));
     fluxDial();
     document.dispatchEvent(new Event('ascii:textchanged'));
+    if (fxOff) setTimeout(drawStills, 60);
   }
   function init() {
     const d = document.getElementById('bg-drift');        if (d) drift(d);
@@ -2789,6 +2834,7 @@
     let nameSeen = false;
     try { nameSeen = !isReload && sessionStorage.getItem('ascii-name-seen') === '1'; sessionStorage.setItem('ascii-name-seen', '1'); } catch (_) {}
     if (!nameSeen) document.querySelectorAll('.sidebar-name').forEach(el => decoder.observe(el));
+    fxSwitch();
     initPage();
   }
   document.addEventListener('ascii:page-enter', initPage);

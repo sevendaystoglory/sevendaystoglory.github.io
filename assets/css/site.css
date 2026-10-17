@@ -101,7 +101,36 @@ strong { font-weight: 600; color: var(--ink); }
     z-index: 0;
     pointer-events: none;
     display: block;
+    transition: opacity 0.9s ease;
 }
+/* the effects switch is off: the field fades, the hint and the flux dial step back */
+.fx-off .bg-drift { opacity: 0; }
+.fx-off .sidebar-hint { opacity: 0; }
+.sidebar-fx {
+    margin: 0.5rem 0 0;
+    font-family: var(--sans);
+    font-size: 0.78rem;
+    line-height: 1.5;
+    color: var(--ink-dim);
+}
+.fx-btn {
+    appearance: none;
+    background: none;
+    border: 0;
+    padding: 0 1px;
+    margin: 0;
+    font: inherit;
+    color: var(--ink-dim);
+    cursor: pointer;
+    text-underline-offset: 3px;
+}
+.fx-btn:hover { color: var(--ink); }
+.fx-btn:focus-visible { outline: 2px solid rgba(200, 98, 58, 0.5); outline-offset: 2px; border-radius: 2px; }
+.fx-sep { margin: 0 0.35em; }
+html:not(.fx-off) .fx-btn[data-fx="on"], html.fx-off .fx-btn[data-fx="off"] { color: var(--ink); text-decoration: underline; }
+
+.fx-off .flux { opacity: 0.35; pointer-events: none; }
+.flux { transition: opacity 0.6s ease; }
 
 /* ------------------------------------------------------------------
    Shell: fixed sidebar + main column
@@ -133,6 +162,7 @@ strong { font-weight: 600; color: var(--ink); }
     line-height: 1.5;
     color: var(--ink-soft);
     opacity: 0.75;
+    transition: opacity 0.6s ease;
     max-width: 200px;
 }
 .sidebar-name {
