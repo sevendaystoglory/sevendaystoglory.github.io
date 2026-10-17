@@ -29,6 +29,7 @@ function markParagraphs() {
     document.querySelectorAll('.post-body p').forEach(p => {
         const em = p.firstElementChild;
         if (!em || em.tagName !== 'EM') return;
+        if (p.closest('blockquote')) return;                       // a quotation set in italics is not a caption
         if (p.textContent.trim() === em.textContent.trim()) { p.classList.add('caption'); return; }
         // a run-in heading: the italics are the very first thing in the paragraph
         let n = p.firstChild;

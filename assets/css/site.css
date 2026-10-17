@@ -1025,13 +1025,30 @@ a.badge:hover { transform: translateY(-1px); box-shadow: 0 3px 8px -2px rgba(27,
     color: var(--ink);
     margin-right: 0.45em;
 }
+/* a quotation: upright, full ink, a clay bar; the bar says it is a quote,
+   so a paragraph the author wrapped whole in *italics* is set upright */
 .post-body blockquote {
-    border-left: 3px solid var(--pale);
-    margin: 1.5rem 0;
-    padding: 0.3rem 1rem;
-    color: var(--ink-soft);
-    font-style: italic;
+    border-left: 2px solid var(--clay);
+    margin: 1.7rem 0;
+    padding: 0.2rem 0 0.2rem 1.2rem;
+    color: var(--ink);
+    font-style: normal;
+    font-size: 1.04em;
+    line-height: 1.7;
+    text-align: left;
 }
+.post-body blockquote p { margin: 0 0 0.6em; }
+.post-body blockquote p:last-child { margin-bottom: 0; }
+.post-body blockquote > p > em:only-child { font-style: normal; }
+/* a short closing line (an attribution such as "~Thucydides") sits apart, small and quiet */
+.post-body blockquote > p:last-child:not(:first-child) {
+    margin-top: 0.7em;
+    font-family: var(--sans);
+    font-size: 0.8em;
+    letter-spacing: 0.04em;
+    color: var(--ink-soft);
+}
+.post-body blockquote > p:last-child:not(:first-child) > em:only-child { font-style: normal; }
 .post-body table { border-collapse: collapse; margin: 1.5rem 0; font-size: 0.95em; }
 .post-body th, .post-body td { border: 1px solid var(--rule); padding: 0.4em 0.7em; text-align: left; }
 .post-body th { background: var(--bg-card); font-family: var(--sans); font-weight: 600; }
