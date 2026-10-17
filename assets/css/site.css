@@ -931,7 +931,7 @@ a.badge:hover { transform: translateY(-1px); box-shadow: 0 3px 8px -2px rgba(27,
 /* the list below a hero brings its own top rule, so the hero drops its
    rule there and the two are kept apart by some air */
 .page-hero:has(+ .lower) { border-bottom: 0; }
-.page-hero + .lower { padding-top: 40px; }
+.page-hero + .lower { padding-top: 80px; }
 .page-hero .rule-and-dot { margin-bottom: 18px; }
 .page-hero .bio { margin-bottom: 20px; color: var(--ink-soft); font-style: italic; }
 .page-hero-art { display: flex; flex-direction: column; }
