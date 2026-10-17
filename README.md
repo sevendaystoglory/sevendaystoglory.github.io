@@ -1,8 +1,5 @@
 <h1 align="center">hey 🤝, i'm nishant</h1>
 
-## check out [my webpage](https://nishant-sharma.com)
-currently working on LLMs with UCSD. i founded [Eigenfrequency Technologies](https://www.insituate.ai/) where we wrote AI agents for global banks and supreme courts. I've graduated in physics from IITD'24, w/ a thesis in computational neuroscience. i am interested in AI and ML - i built [Nora](https://play.google.com/store/apps/details?id=com.insituate.nora&pli=1). i make art occasionally.
-
 ## Stats
 <a href='https://github.com/sevendaystoglory/github-stats-transparent'>
 
