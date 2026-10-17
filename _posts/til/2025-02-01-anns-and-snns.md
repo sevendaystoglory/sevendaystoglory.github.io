@@ -3,7 +3,7 @@ layout: post
 title: "How are ANNs different from Biological Neurons"
 date: 2025-02-01
 category: til
-permalink: /til/anns-snns
+permalink: /til/anns-snns/
 image: /assets/images/spikingneural.original.jpg
 ---
 
