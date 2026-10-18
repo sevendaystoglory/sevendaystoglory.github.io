@@ -8,3 +8,8 @@ Gemfile.lock
 .DS_Store 
 
 .claude/
+
+visit-tracker/node_modules/
+visit-tracker/.wrangler/
+visit-tracker/.dev.vars
+.wrangler/

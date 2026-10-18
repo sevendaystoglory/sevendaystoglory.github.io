@@ -44,3 +44,5 @@ defaults:
       path: "_posts/projects"
     values:
       category: projects
+# Private visit log (see visit-tracker/README.md). Leave empty to switch it off.
+visit_tracker_url: "https://visit-tracker.sevendaystoglory.workers.dev"

@@ -1,0 +1,31 @@
+{% if site.visit_tracker_url and site.visit_tracker_url != "" %}
+<script>
+(function () {
+    /* Private visit log: two small beacons per page view go to the Worker in visit-tracker/.
+       Browsers that have signed in to /visitors/ (mine) set a flag and are not counted. */
+    var api = {{ site.visit_tracker_url | jsonify }}.replace(/\/+$/, '');
+    try { if (localStorage.getItem('visit-tracker-ignore') === '1') return; } catch (e) {}
+    if (!navigator.sendBeacon || navigator.webdriver) return;
+    var id = (window.crypto && crypto.randomUUID) ? crypto.randomUUID() : Date.now().toString(36) + Math.random().toString(36).slice(2);
+    function send(path, data) { try { navigator.sendBeacon(api + path, JSON.stringify(data)); } catch (e) {} }
+    send('/hit', {
+        id: id,
+        path: location.pathname,
+        title: document.title,
+        ref: document.referrer,
+        utm: new URLSearchParams(location.search).get('utm_source'),
+        screen: screen.width + 'x' + screen.height,
+        lang: navigator.language
+    });
+    /* time on screen, reported each time the tab is hidden or closed */
+    var visibleMs = 0, shownAt = document.visibilityState === 'visible' ? Date.now() : 0;
+    document.addEventListener('visibilitychange', function () {
+        if (document.visibilityState === 'hidden') {
+            if (shownAt) visibleMs += Date.now() - shownAt;
+            shownAt = 0;
+            send('/leave', { id: id, seconds: Math.round(visibleMs / 1000) });
+        } else shownAt = Date.now();
+    });
+})();
+</script>
+{% endif %}

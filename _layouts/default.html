@@ -30,6 +30,7 @@
     </div>
 
     <script defer src="{{ '/assets/js/ascii-fx.js' | relative_url }}?v={{ site.time | date: '%s' }}"></script>
+    {% include visit-tracker.html %}
     <script defer src="{{ '/assets/js/post.js' | relative_url }}?v={{ site.time | date: '%s' }}"></script>
     <script defer src="{{ '/assets/js/nav.js' | relative_url }}?v={{ site.time | date: '%s' }}"></script>
     <script defer src="{{ '/assets/js/ascii-reveal.js' | relative_url }}?v={{ site.time | date: '%s' }}"></script>
