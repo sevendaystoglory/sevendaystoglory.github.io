@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="build" content="{{ site.time | date: '%s' }}">
-    <script>document.documentElement.classList.add('js');var fxOn=false;try{fxOn=localStorage.getItem('ascii-fx')==='on'}catch(e){}if(!fxOn)document.documentElement.classList.add('fx-off')</script>
+    <script>document.documentElement.classList.add('js');try{if(localStorage.getItem('ascii-fx')==='off')document.documentElement.classList.add('fx-off')}catch(e){}</script>
     <title>{% if page.url == "/" %}{{ site.title }}{% else %}{{ page.title }} | {{ site.title }}{% endif %}</title>
     <link rel="icon" type="image/png" sizes="32x32" href="{{ '/assets/images/favicon-32.png' | relative_url }}">
     <link rel="icon" type="image/png" sizes="64x64" href="{{ '/assets/images/favicon-64.png' | relative_url }}">
