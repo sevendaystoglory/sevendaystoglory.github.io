@@ -2290,7 +2290,7 @@
     window.__rays = rays;
     let nextRay = 0, rayCount = 0;
     // flux 0..1: how often rays come. The mean gap runs from 60 s down to 0.6 s on a log scale.
-    let flux = 0.35;
+    let flux = 0.25;
     try { const v = localStorage.getItem('ray-flux'); if (v != null) flux = clamp01(parseFloat(v)); } catch (_) {}
     const rayGap = () => { const mean = 60 * Math.pow(0.01, flux); return mean * (0.5 + Math.random()); };
     const showerChance = () => 0.1 + flux * 0.7;
@@ -2731,7 +2731,7 @@
     const meter = document.getElementById('flux-meter');
     const note = document.getElementById('flux-note'), count = document.getElementById('flux-count');
     if (!meter) return;
-    let v = 0.35;
+    let v = 0.25;
     try { const sv = localStorage.getItem('ray-flux'); if (sv != null) v = clamp01(parseFloat(sv)); } catch (_) {}
     let COLS = 64;
     // size the bar to the box: as many columns as fit beside "[", "] 100%"
