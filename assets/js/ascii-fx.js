@@ -1012,35 +1012,48 @@
     // (the first few thousand steps from the origin are a thin spiral)
     step(6000); filled = 0; head = 0;
     step(N);
-    // Moths. Each one cruises to a spot it has taken an interest in (usually
-    // the bright head of the trajectory, sometimes a point along the trail),
-    // hovers there inspecting it with quick little flaps, then picks a new
-    // spot. Wings beat through open / half / closed frames, faster while
-    // hovering, and the body turns into the direction of flight.
+    // Moths. Each one flies a long, smooth route to a spot it has taken an
+    // interest in: a wide circuit around the butterfly, a point along the
+    // trail, or the bright head, which it then orbits at arm's length. At the
+    // spot it hovers with quick little flaps, then picks the next. Steering is
+    // gentle (the velocity eases toward the wanted direction) so the paths
+    // come out as arcs rather than a scribble. Wings beat through open / half
+    // / closed frames, faster while hovering, and the body turns into the
+    // direction of flight.
     const moths = [];
-    for (let i = 0; i < 5; i++) moths.push({ x: 0, y: 0, vx: 0, vy: 0, phase: Math.random() * 7, hot: i === 0, seed: i * 3.1, state: 'cruise', follow: true, tx: 0, ty: 0, until: 0, heading: 0 });
+    for (let i = 0; i < 5; i++) moths.push({ x: 0, y: 0, vx: 0, vy: 0, phase: Math.random() * 7, hot: i === 0, seed: i * 3.1, spin: i % 2 ? 1 : -1, state: 'cruise', follow: false, wide: false, tx: 0, ty: 0, until: 0, heading: 0 });
     function pickTarget(m, t) {
-      m.follow = Math.random() < 0.6;
-      if (!m.follow) {
+      const r = Math.random();
+      m.follow = r < 0.3; m.wide = r >= 0.65;
+      if (m.wide) {
+        // a wide circuit: a waypoint well out from the centre, a third to half a
+        // turn round from where the moth is now, so it sweeps around the figure
+        const cx = W * 0.5, cy = H * 0.5, ang = Math.atan2(m.y - cy, m.x - cx) + m.spin * (1.8 + Math.random() * 1.6);
+        const rx = W * (0.3 + Math.random() * 0.16), ry = H * (0.3 + Math.random() * 0.16);
+        m.tx = Math.min(W - 10, Math.max(10, cx + Math.cos(ang) * rx)); m.ty = Math.min(H - 10, Math.max(10, cy + Math.sin(ang) * ry));
+      } else if (!m.follow) {
         const k = Math.floor(Math.random() * filled), i = (head - filled + k + N) % N;
         const [px, py] = project(pts[i * 3], pts[i * 3 + 1], pts[i * 3 + 2], t);
-        m.tx = px + (Math.random() - 0.5) * 30; m.ty = py + (Math.random() - 0.5) * 30;
+        m.tx = px + (Math.random() - 0.5) * 40; m.ty = py + (Math.random() - 0.5) * 40;
       }
-      m.state = 'cruise'; m.until = t + 2.5 + Math.random() * 2.5;
+      m.state = 'cruise'; m.until = t + 4 + Math.random() * 4;
     }
     function moveMoth(m, t, dt, lx, ly) {
-      if (m.follow) { m.tx = lx + Math.cos(t * 2.6 + m.seed) * 20; m.ty = ly + Math.sin(t * 2.1 + m.seed) * 20; }
+      // following the head: a slow orbit at arm's length rather than a tight jitter
+      if (m.follow) { const r = 44 + 12 * Math.sin(t * 0.7 + m.seed), a = t * 0.9 * m.spin + m.seed; m.tx = lx + Math.cos(a) * r; m.ty = ly + Math.sin(a) * r; }
       const dx = m.tx - m.x, dy = m.ty - m.y, d = Math.hypot(dx, dy) || 1;
       if (m.state === 'cruise') {
-        m.vx += (dx / d * 420 + (noise(m.x * 0.02, m.y * 0.02, t * 1.5 + m.seed) - 0.5) * 700) * dt;
-        m.vy += (dy / d * 420 + (noise(m.y * 0.02 + 5, m.x * 0.02, t * 1.5 + m.seed) - 0.5) * 700) * dt;
-        const sp = Math.hypot(m.vx, m.vy), cap = 170;
-        if (sp > cap) { m.vx *= cap / sp; m.vy *= cap / sp; }
-        if (d < 16 || t > m.until) { m.state = 'hover'; m.until = t + 0.7 + Math.random() * 1.6; }
+        // ease the velocity toward the wanted heading; a slow drift of noise bends the route
+        const cruise = 110 + 40 * noise(m.seed, t * 0.3, 0);
+        const wx = dx / d * cruise + (noise(m.x * 0.006, m.y * 0.006, t * 0.4 + m.seed) - 0.5) * 220;
+        const wy = dy / d * cruise + (noise(m.y * 0.006 + 5, m.x * 0.006, t * 0.4 + m.seed) - 0.5) * 220;
+        const k = Math.min(1, dt * 1.6);
+        m.vx += (wx - m.vx) * k; m.vy += (wy - m.vy) * k;
+        if (d < 18 || t > m.until) { m.state = 'hover'; m.until = t + (m.wide ? 0.3 : 0.7 + Math.random() * 1.4); }
       } else {
         // hover: held near the spot by a soft spring, jittering, speed bleeding off
-        m.vx += (dx * 9 + (noise(t * 4, m.seed, 0) - 0.5) * 900) * dt;
-        m.vy += (dy * 9 + (noise(m.seed, t * 4, 0) - 0.5) * 900) * dt;
+        m.vx += (dx * 9 + (noise(t * 4, m.seed, 0) - 0.5) * 600) * dt;
+        m.vy += (dy * 9 + (noise(m.seed, t * 4, 0) - 0.5) * 600) * dt;
         m.vx *= Math.pow(0.08, dt); m.vy *= Math.pow(0.08, dt);
         if (t > m.until) pickTarget(m, t);
       }
