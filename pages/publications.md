@@ -12,7 +12,7 @@ permalink: /pages/publications/
   </div>
   <div class="page-hero-art">
     <div class="scene-box"><canvas class="scene-canvas" data-scene="attractor" aria-hidden="true"></canvas></div>
-    <p class="art-caption">an eclipse of moths inspecting a Lorenz attractor.</p>
+    <p class="art-caption">an eclipse of moths inspecting a <a href="https://en.wikipedia.org/wiki/Lorenz_system" target="_blank" rel="noopener">Lorenz attractor</a>.</p>
   </div>
 </section>
 
