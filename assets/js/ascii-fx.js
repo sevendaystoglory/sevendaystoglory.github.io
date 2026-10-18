@@ -489,7 +489,7 @@
     // chaos game), the others now and then, and never the same one twice in a
     // row. The opening set is drawn the same way, so a load usually, but not
     // always, begins on the triangle.
-    const TRI_WEIGHT = 12;   // the triangle two loads in three, and most returns go back to it
+    const TRI_WEIGHT = 4.9;   // against six others: the triangle on 45% of loads, and about half of the changes return to it
     function choose(not) {
       const w = SETS.map((_, i) => (i === not ? 0 : i === 0 ? TRI_WEIGHT : 1)), sum = w.reduce((a, b) => a + b, 0);
       let r = Math.random() * sum, i = 0;
