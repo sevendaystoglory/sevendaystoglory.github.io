@@ -10,7 +10,11 @@ const PV_ID = /^[\w-]{8,64}$/;
 const FILTER_FIELDS = ["org", "kind", "country", "region", "city", "postal", "path", "ref_host", "host_domain", "device", "os", "browser", "visitor"];
 const SEARCH_FIELDS = ["org", "isp", "hostname", "city", "region", "postal", "country", "path", "title", "referrer", "ip"];
 const VISIT_COLUMNS =
-  "id, ts, visitor, ip, org, isp, asn, kind, hostname, host_domain, city, region, region_code, postal, country, continent, lat, lon, tz, path, title, referrer, ref_host, utm_source, device, os, browser, screen, lang, user_agent, duration_s, reloads, last_ts";
+  "id, pv_id, last_pv_id, ts, visitor, ip, org, isp, asn, kind, hostname, host_domain, city, region, region_code, postal, country, continent, lat, lon, tz, path, title, referrer, ref_host, utm_source, device, os, browser, screen, lang, user_agent, duration_s, reloads, last_ts";
+// What the snippet may report a visitor doing on a page (see _includes/visit-tracker.html).
+const EVENT_TYPES = new Set(["link", "download", "scroll", "click", "hold", "flux", "fx-on", "fx-off", "copy"]);
+const MAX_EVENTS_PER_VIEW = 60;
+const BIND_CHUNK = 90; // D1 allows 100 bound parameters per statement
 const LABEL_KINDS = ["academic", "other"];
 const LABEL_CACHE_MS = 60 * 1000;
 const SESSION_MS = 30 * 86400000;
@@ -25,6 +29,8 @@ export default {
           return await recordHit(request, env, ctx);
         case "/leave":
           return await recordLeave(request, env);
+        case "/event":
+          return await recordEvent(request, env);
         case "/map":
           return await publicMap(env);
         case "/":
@@ -155,6 +161,30 @@ async function recordLeave(request, env) {
   // The id may belong to the visit itself or to its latest reload.
   await env.DB.prepare("UPDATE visits SET duration_s = MAX(COALESCE(duration_s, 0), ?1) WHERE pv_id = ?2 OR last_pv_id = ?2")
     .bind(Math.min(seconds, MAX_DURATION_S), body.id)
+    .run();
+  return empty(204);
+}
+
+// Something the visitor did on the page: a link opened, a scroll milestone, an effect used, a copy.
+async function recordEvent(request, env) {
+  const rejected = await rejectEvent(request, env, allowedOrigins(env));
+  if (rejected) return rejected;
+  const userAgent = request.headers.get("User-Agent") || "";
+  if (!userAgent || isBot(userAgent)) return empty(204);
+
+  const body = await readJson(request);
+  if (!body || !PV_ID.test(body.id || "") || !EVENT_TYPES.has(body.type)) return empty(400);
+
+  // The id may be the visit's own or that of its latest reload. Each page view keeps at most a few dozen events.
+  const visit = await env.DB.prepare(
+    "SELECT visitor, (SELECT COUNT(*) FROM events WHERE pv_id = ?1) AS n FROM visits WHERE pv_id = ?1 OR last_pv_id = ?1 LIMIT 1"
+  )
+    .bind(body.id)
+    .first();
+  if (!visit || visit.n >= MAX_EVENTS_PER_VIEW) return empty(204);
+
+  await env.DB.prepare("INSERT INTO events (pv_id, visitor, ts, type, detail) VALUES (?1, ?2, ?3, ?4, ?5)")
+    .bind(body.id, visit.visitor, new Date().toISOString(), body.type, body.detail == null ? null : str(String(body.detail), 300))
     .run();
   return empty(204);
 }
@@ -437,7 +467,8 @@ async function summary(env, params) {
   }[bucket];
   const stmt = (sql, ...before) => env.DB.prepare(sql).bind(...before, ...args);
 
-  const [totals, timeline, places, pages, referrers, devices] = await env.DB.batch([
+  const inPeriod = `pv_id IN (SELECT pv_id FROM visits WHERE ${where})`;
+  const [totals, timeline, places, pages, referrers, devices, links, activity] = await env.DB.batch([
     stmt(
       `SELECT COUNT(*) AS views, COUNT(DISTINCT visitor) AS visitors, COUNT(DISTINCT country) AS countries,
               COUNT(DISTINCT org) AS orgs, COUNT(DISTINCT CASE WHEN kind = 'academic' THEN org END) AS academic_orgs,
@@ -468,6 +499,11 @@ async function summary(env, params) {
       `SELECT device, os, browser, COUNT(*) AS views, COUNT(DISTINCT visitor) AS visitors
        FROM visits WHERE ${where} GROUP BY device, os, browser ORDER BY views DESC LIMIT 50`
     ),
+    stmt(
+      `SELECT type, detail, COUNT(*) AS views, COUNT(DISTINCT visitor) AS visitors
+       FROM events WHERE type IN ('link', 'download') AND ${inPeriod} GROUP BY type, detail ORDER BY views DESC LIMIT 50`
+    ),
+    stmt(`SELECT type, COUNT(*) AS n, COUNT(DISTINCT visitor) AS visitors FROM events WHERE ${inPeriod} GROUP BY type`),
   ]);
 
   return {
@@ -480,6 +516,8 @@ async function summary(env, params) {
     pages: pages.results,
     referrers: referrers.results,
     devices: devices.results,
+    links: links.results,
+    activity: activity.results,
   };
 }
 
@@ -490,7 +528,31 @@ async function visitList(env, params) {
   const { results } = await env.DB.prepare(`SELECT ${VISIT_COLUMNS} FROM visits WHERE ${where} ORDER BY ts DESC, id DESC LIMIT ? OFFSET ?`)
     .bind(...args, limit + 1, offset)
     .all();
-  return { visits: results.slice(0, limit), more: results.length > limit };
+  const visits = results.slice(0, limit);
+  await attachEvents(env, visits);
+  return { visits, more: results.length > limit };
+}
+
+// Adds `events` (oldest first) to each visit: those of the visit itself and of its latest reload.
+async function attachEvents(env, visits) {
+  const ids = [...new Set(visits.flatMap((v) => [v.pv_id, v.last_pv_id]).filter(Boolean))];
+  const byPv = new Map();
+  for (let i = 0; i < ids.length; i += BIND_CHUNK) {
+    const chunk = ids.slice(i, i + BIND_CHUNK);
+    const { results } = await env.DB.prepare(
+      `SELECT pv_id, ts, type, detail FROM events WHERE pv_id IN (${chunk.map(() => "?").join(",")}) ORDER BY ts, id`
+    )
+      .bind(...chunk)
+      .all();
+    for (const e of results) {
+      if (!byPv.has(e.pv_id)) byPv.set(e.pv_id, []);
+      byPv.get(e.pv_id).push({ ts: e.ts, type: e.type, detail: e.detail });
+    }
+  }
+  for (const v of visits) {
+    v.events = byPv.get(v.pv_id) || [];
+    if (v.last_pv_id && v.last_pv_id !== v.pv_id) v.events = v.events.concat(byPv.get(v.last_pv_id) || []);
+  }
 }
 
 async function live(env) {

@@ -1500,6 +1500,8 @@
       } else {
         startRipple(charge.px, charge.py, now, k);
       }
+      // the visit log listens for these (assets/js in _includes/visit-tracker.html)
+      document.dispatchEvent(new CustomEvent('ascii:action', { detail: { kind: held >= SUPER_HOLD ? 'hold' : 'click' } }));
       dropCharge();
     };
     document.addEventListener('pointerup', release);
@@ -2713,6 +2715,7 @@
       document.documentElement.classList.toggle('fx-off', !on);
       if (!on) { if (fxHooks.off) fxHooks.off(performance.now() / 1000); }
       else if (fxHooks.on) fxHooks.on();
+      document.dispatchEvent(new CustomEvent('ascii:action', { detail: { kind: on ? 'fx-on' : 'fx-off' } }));
     }
     document.querySelectorAll('.fx-btn').forEach(b => b.setAttribute('aria-pressed', String((b.dataset.fx === 'off') === fxOff)));
   }

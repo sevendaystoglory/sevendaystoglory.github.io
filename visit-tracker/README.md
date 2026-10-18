@@ -5,7 +5,10 @@ Cloudflare's free tier: a Worker plus a D1 database. Every page carries a small 
 (`_includes/visit-tracker.html`) that reports the page view and, when the tab is hidden or closed,
 how long the page was on screen. The Worker adds what Cloudflare knows from the IP address:
 organisation / network, reverse-DNS hostname, city, region, postcode, country, coordinates, device,
-OS and browser. Bots and headless browsers are dropped. IP addresses are erased after
+OS and browser. A second table, `events`, holds what was done on the page: outside links and files
+opened, scroll depth in quarters, the ASCII effects used (clicks and holds are counted and sent on
+leaving), and copies (length only, never the text). Nothing typed is ever recorded. Bots and headless
+browsers are dropped. IP addresses are erased after
 `IP_RETENTION_DAYS` (wrangler.toml); everything else is kept. No cookies.
 
 The dashboard is at **https://sevendaystoglory.github.io/visitors/** (`pages/visitors.html`). It is

@@ -127,6 +127,7 @@ sitemap: false
         /* bar lists */
         .bars { list-style: none; margin: 0; padding: 0; }
         .bar-row { display: block; width: 100%; text-align: left; background: none; border: 0; padding: 7px 0 9px; cursor: pointer; border-bottom: 1px solid var(--rule); }
+        a.bar-row { color: inherit; text-decoration: none; }
         .bar-row:hover .bar-name { color: var(--link-hov); }
         .bar-top { display: flex; justify-content: space-between; gap: 12px; align-items: baseline; }
         .bar-label { display: flex; gap: 8px; align-items: baseline; min-width: 0; }
@@ -176,6 +177,13 @@ sitemap: false
         .link:hover { color: var(--link-hov); text-decoration: underline; text-underline-offset: 2px; }
         .link.small { font-size: 12px; }
         #more { margin: 14px 0; }
+
+        /* what a visitor did on the page */
+        .acts { list-style: none; margin: 6px 0 0; padding: 0; font-size: 12px; color: var(--ink-soft); }
+        .acts li { padding: 1px 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 360px; }
+        .act-time { font-family: var(--mono); font-size: 11px; color: var(--ink-dim); margin-right: 6px; }
+        .acts a { color: var(--link); }
+        .activity-line { font-size: 12.5px; color: var(--ink-dim); margin: 6px 0 0; }
 
         /* named networks */
         .labels { list-style: none; margin: 0; padding: 0; }
@@ -332,6 +340,11 @@ sitemap: false
             <section class="card">
                 <div class="card-head"><h2>devices</h2></div>
                 <div id="devices"></div>
+            </section>
+            <section class="card">
+                <div class="card-head"><h2>links opened</h2><span class="card-sub">outside links and files clicked on the site</span></div>
+                <div id="links"></div>
+                <p class="activity-line" id="activity"></p>
             </section>
         </div>
 
@@ -648,6 +661,30 @@ sitemap: false
             sub: (d) => plural(d.visitors, "visitor"),
             filter: (d) => ({ device: d.device, os: d.os, browser: d.browser }),
         });
+        renderList("links", summary.links || [], {
+            label: (l) => shortUrl(l.detail),
+            sub: (l) => `${l.type === "download" ? "file" : "link"} · ${plural(l.visitors, "visitor")}`,
+            href: (l) => l.detail,
+        });
+        const acts = Object.fromEntries((summary.activity || []).map((a) => [a.type, a]));
+        const bits = [
+            acts.scroll ? `${plural(acts.scroll.visitors, "visitor")} scrolled` : null,
+            acts.copy ? `${plural(acts.copy.n, "copy", "copies")}` : null,
+            acts.click || acts.hold ? `${plural((acts.click?.visitors || 0) + (acts.hold?.visitors || 0), "visitor")} played with the effects` : null,
+            acts["fx-off"] ? `${plural(acts["fx-off"].n, "switch-off")}` : null,
+        ].filter(Boolean);
+        $("#activity").textContent = bits.length ? `in this period: ${bits.join(" · ")}` : "";
+    }
+
+    // "https://arxiv.org/abs/2604.09258" -> "arxiv.org/abs/2604.09258"; mailto: and paths stay as they are
+    function shortUrl(u) {
+        if (!u) return "";
+        try {
+            if (/^mailto:/i.test(u)) return u;
+            const url = new URL(u, location.origin);
+            const host = url.host === location.host ? "" : url.host.replace(/^www\./, "");
+            return (host + url.pathname + url.search).replace(/\/$/, "") || u;
+        } catch { return u; }
     }
 
     function groupPlaces(rows, keyOf, init) {
@@ -688,22 +725,29 @@ sitemap: false
                 sub ? h("div", { class: "tile-sub" }, sub) : null)));
     }
 
-    function renderList(id, items, { label, sub, filter }) {
+    // Rows filter the dashboard when `filter` is given, or open `href` in a new tab.
+    function renderList(id, items, { label, sub, filter, href }) {
         const el = document.getElementById(id);
         el.replaceChildren();
         if (!items.length) { el.append(h("div", { class: "empty" }, "nothing in this selection")); return; }
         const expanded = state.expanded[id];
         const max = items[0].views;
         const shown = items.slice(0, expanded ? 50 : LIST_LIMIT);
-        el.append(h("ul", { class: "bars" }, shown.map((item) =>
-            h("li", {}, h("button", { type: "button", class: "bar-row", title: "Filter to this", onclick: () => applyFilter(filter(item)) },
+        const row = (item) => filter
+            ? h("button", { type: "button", class: "bar-row", title: "Filter to this", onclick: () => applyFilter(filter(item)) })
+            : h("a", { class: "bar-row", href: href(item), target: "_blank", rel: "noopener noreferrer" });
+        el.append(h("ul", { class: "bars" }, shown.map((item) => {
+            const r = row(item);
+            r.append(
                 h("div", { class: "bar-top" },
                     h("span", { class: "bar-label" }, [label(item)].flat().map((part) => (typeof part === "string" ? h("span", { class: "bar-name" }, part) : part))),
                     h("span", { class: "bar-value" }, fmt(item.views))),
                 h("div", { class: "bar-sub" }, sub(item)),
-                h("div", { class: "bar-track" }, h("div", { class: "bar-fill", style: `width:${Math.max(0.5, (100 * item.views) / max)}%` })))))));
+                h("div", { class: "bar-track" }, h("div", { class: "bar-fill", style: `width:${Math.max(0.5, (100 * item.views) / max)}%` })));
+            return h("li", {}, r);
+        })));
         if (items.length > LIST_LIMIT) {
-            el.append(h("button", { type: "button", class: "more-toggle", onclick: () => { state.expanded[id] = !expanded; renderList(id, items, { label, sub, filter }); } },
+            el.append(h("button", { type: "button", class: "more-toggle", onclick: () => { state.expanded[id] = !expanded; renderList(id, items, { label, sub, filter, href }); } },
                 expanded ? "show fewer" : `show all ${Math.min(items.length, 50)}`));
         }
     }
@@ -1069,7 +1113,8 @@ sitemap: false
                 v.lat != null ? h("div", { class: "muted mono" }, `${v.lat.toFixed(2)}, ${v.lon.toFixed(2)}`) : null),
             h("td", { "data-label": "page" },
                 h("div", {}, h("button", { type: "button", class: "link", onclick: () => applyFilter({ path: v.path }) }, v.title || v.path)),
-                h("div", { class: "muted" }, v.path)),
+                h("div", { class: "muted" }, v.path),
+                activityList(v.events)),
             h("td", { "data-label": "came from" }, h("div", {}, source), v.utm_source ? h("div", { class: "muted" }, `utm: ${v.utm_source}`) : null),
             h("td", { "data-label": "device" },
                 h("div", {}, `${cap(v.device)} · ${v.os}`),
@@ -1078,6 +1123,28 @@ sitemap: false
             h("td", { "data-label": "IP address" },
                 v.ip ? h("div", { class: "mono" }, v.ip) : h("div", { class: "muted" }, "erased"),
                 v.visitor ? h("button", { type: "button", class: "link small", onclick: () => applyFilter({ visitor: v.visitor }) }, "all pages by this visitor") : null));
+    }
+
+    // What the visitor did on that page, oldest first, with the clock time of each step.
+    function activityList(events) {
+        if (!events || !events.length) return null;
+        const clock = (ts) => new Date(ts).toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit", second: "2-digit" });
+        const times = (n) => (Number(n) === 1 ? "once" : `${fmt(Number(n))} times`);
+        const describe = (e) => {
+            switch (e.type) {
+                case "link": return ["opened ", h("a", { href: e.detail, target: "_blank", rel: "noopener noreferrer" }, shortUrl(e.detail))];
+                case "download": return ["downloaded ", h("a", { href: e.detail, target: "_blank", rel: "noopener noreferrer" }, shortUrl(e.detail))];
+                case "scroll": return [`scrolled to ${e.detail}%`];
+                case "click": return [`clicked the paper ${times(e.detail)}`];
+                case "hold": return [`set off the super wave ${times(e.detail)}`];
+                case "flux": return [`set the cosmic ray flux to ${e.detail}%`];
+                case "fx-on": return ["turned the effects on"];
+                case "fx-off": return ["turned the effects off"];
+                case "copy": return [`copied ${plural(Number(e.detail), "character")}`];
+                default: return [e.type];
+            }
+        };
+        return h("ul", { class: "acts" }, events.map((e) => h("li", { title: new Date(e.ts).toLocaleString("en-GB") }, h("span", { class: "act-time" }, clock(e.ts)), ...describe(e))));
     }
 
     // ---------- named networks ----------

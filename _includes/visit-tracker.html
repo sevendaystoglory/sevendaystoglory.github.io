@@ -1,7 +1,9 @@
 {% if site.visit_tracker_url and site.visit_tracker_url != "" %}
 <script>
 (function () {
-    /* Private visit log: two small beacons per page view go to the Worker in visit-tracker/.
+    /* Private visit log: small beacons go to the Worker in visit-tracker/. One on arrival, one when the
+       tab is hidden or closed (time on screen), and one per thing done on the page: an outside link or
+       a file opened, a scroll milestone, the ASCII effects used, a copy (its length, never the text).
        Browsers that have signed in to /visitors/ (mine) set a flag and are not counted. */
     var api = {{ site.visit_tracker_url | jsonify }}.replace(/\/+$/, '');
     try { if (localStorage.getItem('visit-tracker-ignore') === '1') return; } catch (e) {}
@@ -17,12 +19,67 @@
         screen: screen.width + 'x' + screen.height,
         lang: navigator.language
     });
+
+    var sent = 0;
+    function event(type, detail) {
+        if (sent++ >= 40) return;                                   /* a page view reports at most this many */
+        send('/event', { id: id, type: type, detail: detail == null ? null : String(detail).slice(0, 300) });
+    }
+
+    /* outside links and files opened */
+    document.addEventListener('click', function (e) {
+        var a = e.target && e.target.closest ? e.target.closest('a[href]') : null;
+        if (!a || !a.href) return;
+        if (/^mailto:/i.test(a.href)) { event('link', a.href); return; }
+        var file = /\.(pdf|zip|bib|txt|csv|pptx?|docx?|ipynb)(\?|#|$)/i.test(a.href);
+        if (a.host !== location.host) event(file ? 'download' : 'link', a.href);
+        else if (file) event('download', a.pathname);
+    }, true);
+
+    /* how far down the page they got, in quarters; pages shorter than a screen or so are skipped */
+    var marks = [25, 50, 75, 100], seen = 0, ticking = false;
+    function depth() {
+        var max = document.documentElement.scrollHeight - window.innerHeight;
+        if (max < 200) return;
+        var p = Math.round(window.scrollY / max * 100);
+        while (seen < marks.length && p >= marks[seen]) event('scroll', marks[seen++]);
+    }
+    window.addEventListener('scroll', function () {
+        if (ticking) return;
+        ticking = true;
+        requestAnimationFrame(function () { ticking = false; depth(); });
+    }, { passive: true });
+
+    /* the ASCII effects: clicks and holds are counted and sent when the visitor leaves, the switch and
+       the flux dial right away (the dial once it has rested for a second) */
+    var counts = { click: 0, hold: 0 };
+    document.addEventListener('ascii:action', function (e) {
+        var kind = e.detail && e.detail.kind;
+        if (kind in counts) counts[kind]++;
+        else if (kind === 'fx-on' || kind === 'fx-off') event(kind);
+    });
+    var fluxTimer;
+    document.addEventListener('ascii:flux', function (e) {
+        clearTimeout(fluxTimer);
+        fluxTimer = setTimeout(function () { event('flux', Math.round(e.detail * 100)); }, 1000);
+    });
+    function flushCounts() {
+        for (var k in counts) if (counts[k]) { event(k, counts[k]); counts[k] = 0; }
+    }
+
+    /* a copy: only how much was copied */
+    document.addEventListener('copy', function () {
+        var n = String(window.getSelection ? window.getSelection() : '').length;
+        if (n) event('copy', n);
+    });
+
     /* time on screen, reported each time the tab is hidden or closed */
     var visibleMs = 0, shownAt = document.visibilityState === 'visible' ? Date.now() : 0;
     document.addEventListener('visibilitychange', function () {
         if (document.visibilityState === 'hidden') {
             if (shownAt) visibleMs += Date.now() - shownAt;
             shownAt = 0;
+            flushCounts();
             send('/leave', { id: id, seconds: Math.round(visibleMs / 1000) });
         } else shownAt = Date.now();
     });
