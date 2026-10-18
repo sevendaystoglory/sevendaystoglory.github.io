@@ -997,7 +997,10 @@
     const ctx = canvas.getContext('2d');
     let W = 0, H = 0, lastT = 0;
     const SIG = 10, RHO = 28, BET = 8 / 3, DT = 0.004, N = 3200;
-    let x = 0.1, y = 0, z = 0;
+    const swayPhase = Math.random() * Math.PI * 2;   // the slow turn starts at a different angle each load
+    // a different start every load: the system is chaotic, so a small nudge and a
+    // random warm-up put the head somewhere new on the butterfly each time
+    let x = 0.1 + Math.random() * 2, y = Math.random() * 2, z = Math.random() * 2;
     const pts = new Float32Array(N * 3);
     let head = 0, filled = 0;
     function step(n) {
@@ -1010,7 +1013,7 @@
     }
     // warm up off-screen so the opening frame is already on the butterfly
     // (the first few thousand steps from the origin are a thin spiral)
-    step(6000); filled = 0; head = 0;
+    step(6000 + Math.floor(Math.random() * 4000)); filled = 0; head = 0;
     step(N);
     // Moths. Each one flies a long, smooth route to a spot it has taken an
     // interest in: a wide circuit around the butterfly, a point along the
@@ -1021,7 +1024,7 @@
     // / closed frames, faster while hovering, and the body turns into the
     // direction of flight.
     const moths = [];
-    for (let i = 0; i < 5; i++) moths.push({ x: 0, y: 0, vx: 0, vy: 0, phase: Math.random() * 7, hot: i === 0, seed: i * 3.1, spin: i % 2 ? 1 : -1, state: 'cruise', follow: false, wide: false, tx: 0, ty: 0, until: 0, heading: 0 });
+    for (let i = 0; i < 5; i++) moths.push({ x: 0, y: 0, vx: 0, vy: 0, phase: Math.random() * 7, hot: i === 0, seed: Math.random() * 100, spin: Math.random() < 0.5 ? 1 : -1, state: 'cruise', follow: false, wide: false, tx: 0, ty: 0, until: 0, heading: 0 });
     function pickTarget(m, t) {
       const r = Math.random();
       m.follow = r < 0.3; m.wide = r >= 0.65;
@@ -1095,7 +1098,7 @@
     // sway about the vertical axis, never far from the classic x-z view
     // (seen edge-on the butterfly collapses to a band); depth is the rotated y
     function project(px, py, pz, t) {
-      const a = 0.2 * Math.sin(t * 0.1), c = Math.cos(a), sn = Math.sin(a);     // ~12 degrees either way
+      const a = 0.2 * Math.sin(t * 0.1 + swayPhase), c = Math.cos(a), sn = Math.sin(a);     // ~12 degrees either way
       const rx = px * c - py * sn, depth = px * sn + py * c;
       const sc = Math.min(W, H) / 55;
       return [W * 0.5 + rx * sc, H * 0.52 - (pz - 26) * sc, depth];
@@ -1114,7 +1117,7 @@
       const cell = 6, gw = Math.ceil(W / cell) + 1, gh = Math.ceil(H / cell) + 1;
       if (lastK.length !== gw * gh) { lastK = new Int32Array(gw * gh); rem = new Float32Array(gw * gh); }
       lastK.fill(-1); rem.fill(1);
-      const a0 = 0.2 * Math.sin(t * 0.1), ca = Math.cos(a0), sa = Math.sin(a0), sc = Math.min(W, H) / 55;
+      const a0 = 0.2 * Math.sin(t * 0.1 + swayPhase), ca = Math.cos(a0), sa = Math.sin(a0), sc = Math.min(W, H) / 55;
       // which point owns each cell, and what the stacked opacity comes to
       for (let k = 0; k < filled; k += 2) {
         const i = (head - filled + k + N) % N;
