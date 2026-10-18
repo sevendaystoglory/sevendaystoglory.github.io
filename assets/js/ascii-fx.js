@@ -1042,6 +1042,9 @@
       m.state = 'cruise'; m.until = t + 4 + Math.random() * 4;
     }
     function moveMoth(m, t, dt, lx, ly) {
+      // first frame: hover where it was placed and set off after a delay of its own,
+      // instead of every moth dashing for the (0, 0) default target at once
+      if (!m.began) { m.began = true; m.tx = m.x; m.ty = m.y; m.state = 'hover'; m.until = t + 0.3 + Math.random() * 2.5; }
       // following the head: a slow orbit at arm's length rather than a tight jitter
       if (m.follow) { const r = 44 + 12 * Math.sin(t * 0.7 + m.seed), a = t * 0.9 * m.spin + m.seed; m.tx = lx + Math.cos(a) * r; m.ty = ly + Math.sin(a) * r; }
       const dx = m.tx - m.x, dy = m.ty - m.y, d = Math.hypot(dx, dy) || 1;
