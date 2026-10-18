@@ -485,10 +485,22 @@
     const ptx = new Float32Array(N), pty = new Float32Array(N), ptm = new Uint8Array(N);
     const M = new Float64Array(K * 6), CW = new Float64Array(K), FX = new Float64Array(K), FY = new Float64Array(K);
     const COL = [];
-    let from = 0, to = 0, morphAt = 0, morphLen = MORPH, nextAt = 0, slowUntil = 0, nextGen = 0, opening = !reduced;
+    // Which fractal to show: the triangle most of the time (it is the classic
+    // chaos game), the others now and then, and never the same one twice in a
+    // row. The opening set is drawn the same way, so a load usually, but not
+    // always, begins on the triangle.
+    const TRI_WEIGHT = 12;   // the triangle two loads in three, and most returns go back to it
+    function choose(not) {
+      const w = SETS.map((_, i) => (i === not ? 0 : i === 0 ? TRI_WEIGHT : 1)), sum = w.reduce((a, b) => a + b, 0);
+      let r = Math.random() * sum, i = 0;
+      while (i < w.length - 1 && (r -= w[i]) > 0) i++;
+      return i;
+    }
+    const first = reduced ? 0 : choose(-1);   // a still frame (reduced motion) always shows the triangle
+    let from = first, to = first, morphAt = 0, morphLen = MORPH, nextAt = 0, slowUntil = 0, nextGen = 0, opening = !reduced;
     let W = 0, H = 0, gc = 0, gr = 0, dens = null, last = null, level = 1, lastT = -1;
     const player = { x: 0, y: 0, ox: 0, oy: 0, j: 0, at: -1 };
-    let turn = 0, cosA = 1, sinA = 0, cosB = 1, sinB = 0, DEPTH = 1;
+    let turn = reduced ? 0 : (Math.random() - 0.5) * 1.2, cosA = 1, sinA = 0, cosB = 1, sinB = 0, DEPTH = 1;   // a different angle each load, still facing the reader
     // the plane of the game seen turned by `turn` about the upright axis
     // through the middle of the box and nodded about the level one, in
     // perspective from 4.5 box widths away
@@ -535,7 +547,7 @@
     }
     // straight onto the fractal, for a still frame
     function settle() { blend(0); scatter(); jump(30); dens.fill(0); for (let k = 0; k < 4; k++) { jump(1); deposit(1); } }
-    function next(t, len) { if (from === to) { to = (from + 1) % SETS.length; morphAt = t; morphLen = len; } }
+    function next(t, len) { if (from === to) { to = choose(from); morphAt = t; morphLen = len; } }
     function shake(t) { scatter(); slowUntil = t + GEN * 8; nextGen = t + GEN; }
 
     function prep(t, cols, rows) {
@@ -551,7 +563,7 @@
       const nod = 0.2 * Math.sin(turn * 0.6);
       cosA = Math.cos(turn); sinA = Math.sin(turn); cosB = Math.cos(nod); sinB = Math.sin(nod);
       // the first real frame starts the opening: noise falling onto the triangle
-      if (opening && t > 0) { opening = false; shake(t); nextAt = t + GEN * 8 + HOLD; }
+      if (opening && t > 0) { opening = false; shake(t); nextAt = t + GEN * 8 + HOLD + Math.random() * 6; }
       if (!reduced && !opening && from === to && t >= nextAt) next(t, MORPH);
       let m = 0;
       if (from !== to) {
