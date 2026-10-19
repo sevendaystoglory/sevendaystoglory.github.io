@@ -8,7 +8,8 @@
   venue: "Preprint"
   short: "arXiv"
   year: 2026
-  links: []
+  links:
+    - { label: "arXiv", url: "https://arxiv.org/pdf/2610.22623" }
 
 - title: "From Inner Randomness to Outer Stability"
   authors:
