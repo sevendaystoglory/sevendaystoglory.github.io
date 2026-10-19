@@ -813,7 +813,8 @@ a.badge:hover { transform: translateY(-1px); box-shadow: 0 3px 8px -2px rgba(27,
     padding-top: 4px;
 }
 .nw-t { color: var(--ink); }
-.nw-t a { border-bottom: 1px solid rgba(79, 111, 163, 0.45); }
+.nw-t a { color: var(--link); }                 /* plain link, no underline */
+.nw-t a:hover { color: var(--link-hov); }
 .news-logo {
     display: inline-block;
     width: auto;
