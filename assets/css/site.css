@@ -813,7 +813,7 @@ a.badge:hover { transform: translateY(-1px); box-shadow: 0 3px 8px -2px rgba(27,
     padding-top: 4px;
 }
 .nw-t { color: var(--ink); }
-.nw-t a { color: var(--link); }                 /* plain link, no underline */
+.nw-t a { color: inherit; }                     /* reads like the other items; the curious will click */
 .nw-t a:hover { color: var(--link-hov); }
 .news-logo {
     display: inline-block;
