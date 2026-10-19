@@ -1,4 +1,8 @@
 # Newest first.
+- date: "Oct 2026"
+  text: "📄 New preprint on arXiv: Understanding Stability of Outer Nesterov Momentum on Stochastic Pseudo-Gradients."
+  url: "https://arxiv.org/pdf/2610.22623"
+
 - date: "Aug 2026"
   text: "Starting my MS at Mila with Dr. Sarath Chandar, working on continual learning and optimization of deep neural nets."
   logo: "/assets/images/mila-logo.svg"
