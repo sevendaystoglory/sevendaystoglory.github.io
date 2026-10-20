@@ -11,7 +11,7 @@ permalink: /blogs/the-war-between-creators-and-proclaimers/
 > 
 > *~Thucydides*
 
-<img loading="lazy" decoding="async" src="/assets/images/jayce-viktor.webp" alt="Viktor and Jayce from Arcane" width="600" style="max-width: 100%; height: auto;">
+<img loading="lazy" decoding="async" src="/assets/images/jayce-viktor.webp" alt="Viktor and Jayce from Arcane" width="558" style="max-width: 100%; height: auto;">
 
 *Viktor (left) and Jayce (right) from the series Arcane*
 

@@ -15,7 +15,7 @@ This is an open-source tool born out of my obsession with memorizing distances i
 
 Try it out <a href="https://sevendaystoglory.github.io/deep-impact">here!</a>
 
-<video width="800" controls autoplay muted loop playsinline preload="metadata" style="max-width: 100%; height: auto;">
+<video width="744" controls autoplay muted loop playsinline preload="metadata" style="max-width: 100%; height: auto;">
   <source src="/assets/videos/orbital-demo.mp4" type="video/mp4">
   <img loading="lazy" decoding="async" src="/assets/images/deep-impact.webp" alt="Orbital Distances Visualizer Demo" style="max-width: 100%; height: auto;">
 </video>

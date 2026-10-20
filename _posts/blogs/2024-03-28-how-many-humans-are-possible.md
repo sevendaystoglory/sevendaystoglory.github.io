@@ -9,7 +9,7 @@ permalink: /blogs/how-many-humans-are-possible/
 
 In this blog, I'll explore the intriguing questions: How many humans have lived on Earth, and how many will there ever be?
 
-<img loading="lazy" decoding="async" src="/assets/images/many-people.webp" alt="Many Humans" width="800" style="max-width: 100%; height: auto;">
+<img loading="lazy" decoding="async" src="/assets/images/many-people.webp" alt="Many Humans" width="744" style="max-width: 100%; height: auto;">
 
 Before diving in, I want to clarify some assumptions. We're <b>NOT</b> counting variations in brain or body state as criteria for defining a distinct human being.
 
@@ -26,7 +26,7 @@ It begs the question - how much changes a DNA can tolerate before a person loses
 <b>Fact - You share 50% of our DNA with a banana.</b>
 I recommend you <a href="https://lab.dessimoz.org/blog/2020/12/08/human-banana-orthologs">read more</a> on where did the mythical 50% come from anyway.
 
-<img loading="lazy" decoding="async" src="/assets/images/banana-meme.jpg" alt="Banana Meme" width="600" style="max-width: 100%; height: auto;">
+<img loading="lazy" decoding="async" src="/assets/images/banana-meme.jpg" alt="Banana Meme" width="558" style="max-width: 100%; height: auto;">
 
 What do we have common with a banana? 
 

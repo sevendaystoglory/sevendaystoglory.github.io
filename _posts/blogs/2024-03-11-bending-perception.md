@@ -7,7 +7,7 @@ image: /assets/images/caesar.webp
 permalink: /blogs/bending-perception/
 ---
 
-<img loading="lazy" decoding="async" src="/assets/images/caesar.webp" alt="Caesar in Stone" width="600" style="max-width: 100%; height: auto;">
+<img loading="lazy" decoding="async" src="/assets/images/caesar.webp" alt="Caesar in Stone" width="558" style="max-width: 100%; height: auto;">
 
 Yes, that is a Twitter hashtag carved into old stone, about how Julius Caesar died. It looks like a joke. But think about what would have happened if that history had played out on the internet, where a radical idea in an unstable time could reach everyone at once.
 
@@ -21,7 +21,7 @@ Technology can do a lot of good too. It can make learning more fun, show us what
 
 --
 
-<img loading="lazy" decoding="async" src="/assets/images/generative-agents.webp" alt="Generative Agents" width="600" style="max-width: 100%; height: auto;">
+<img loading="lazy" decoding="async" src="/assets/images/generative-agents.webp" alt="Generative Agents" width="558" style="max-width: 100%; height: auto;">
 
 Generative Agents: Interactive Simulacra of Human Behavior came out as a research paper in Human Computer Interaction (HCI). The paper introduces generative agents designed to simulate believable human behavior for various interactive applications. The agents can remember what happened to them, think back on it, talk to each other and make plans as things change around them. The paper gives three things: the agents themselves, a memory system that keeps each agent consistent over a long time, and a small town like The Sims where you can watch them live. Here, Joon Sung, one of the first authors from Stanford, explains the paper in detail. I recommend watching it. The design is much simpler than you would expect, and that's what makes it beautiful.
 
