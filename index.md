@@ -6,18 +6,17 @@ title: Home
 <section class="intro-card" id="hero">
   <div class="intro-text">
     <p class="bio">
-      I'm an MS student at <a href="https://mila.quebec/">Mila</a>, advised by
-      <a href="https://sarathchandar.in/">Dr.&nbsp;Sarath Chandar</a> and co-supervised by
+      I'm a first-year Research MSc student in Machine Learning at <a href="https://mila.quebec/">Mila</a>,
+      advised by <a href="https://sarathchandar.in/">Dr.&nbsp;Sarath Chandar</a> and co-supervised by
       <a href="https://scholar.google.ca/citations?hl=en&user=lqDGv9YAAAAJ">Dr.&nbsp;Amal Zouaq</a>.
-      I work on <strong>continual learning</strong>, <strong>AI alignment</strong> and the
-      <strong>optimization of deep neural nets</strong>.
+      I am broadly interested in <strong>AI safety</strong> and the <strong>geometry of deep
+      learning</strong>.
     </p>
     <p class="bio">
-      Much of my perspective on these topics has come through the <strong>geometry of deep
-      learning</strong>, i.e. what the optimizer and the loss landscape govern about what gets
-      learned, how a network can keep learning (loss of information plasticity), and how to make
-      LLMs trustworthy through data attribution. I am always open to collaborations, so feel free
-      to reach out.
+      I apply that geometric lens to <strong>continual learning</strong> (how a network can keep
+      learning without losing plasticity), to building <strong>aligned AI systems</strong>, and to
+      the <strong>optimization of distributed training</strong>. I am always open to collaborations,
+      so feel free to reach out.
     </p>
     <p class="bio">
       Previously, I worked on building AI-native video infra and specifically visual information
