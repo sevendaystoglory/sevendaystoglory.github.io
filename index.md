@@ -30,6 +30,9 @@ title: Home
       signatures of non-coding RNAs. I graduated in Physics from IIT Delhi (2024)
       with a bachelor's thesis in computational neuroscience.
     </p>
+    <p class="bio">
+      Outside of research, I enjoy gesture drawing, digital art and design.
+    </p>
     <div class="bio-note">Open to research internships for summer 2027.</div>
   </div>
   <div class="intro-art">
