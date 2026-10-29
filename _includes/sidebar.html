@@ -15,6 +15,7 @@
             <a href="/pages/publications/"{% if page.url == "/pages/publications/" %} class="active"{% endif %}>Publications</a>
             <a href="/pages/writing/"{% if page.url == "/pages/writing/" or page.category == "blogs" or page.category == "til" %} class="active"{% endif %}>Writing</a>
             <a href="/pages/projects/"{% if page.url == "/pages/projects/" or page.category == "projects" %} class="active"{% endif %}>Projects</a>
+            <a href="/cv.pdf" target="_blank" rel="noopener">CV</a>
         </nav>
 
         <a class="sidebar-email" href="mailto:{{ site.email }}">{{ site.email }}</a>
